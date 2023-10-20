@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Beautiful Page</title>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			background-color: #f0f0f0;
+			text-align: center;
+		}
+
+		.container {
+			margin: 100px auto;
+		}
+
+		.btn {
+			background-color: #3498db;
+			color: #fff;
+			font-size: 20px;
+			padding: 15px 30px;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			transition: background-color 0.3s;
+		}
+
+		.btn:hover {
+			background-color: #2980b9;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="container">
+		<button class="btn" id="myButton">Click Me!</button>
+	</div>
+
+	<script>
+		const button = document.getElementById('myButton');
+		let isAnimating = false;
+
+		button.addEventListener('click', () => {
+			if (!isAnimating) {
+				isAnimating = true;
+				button.innerHTML = 'Animating...';
+				button.style.backgroundColor = '#e74c3c';
+
+				// Simulate an animation
+				setTimeout(() => {
+					isAnimating = false;
+					button.innerHTML = 'Click Me!';
+					button.style.backgroundColor = '#3498db';
+				}, 2000);
+			}
+		});
+	</script>
+</body>
+
+</html>
