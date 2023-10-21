@@ -33,7 +33,7 @@ public:
 		this->updateResponse();
 	}
 
-	std::string loadFile(std::string successStatusCode, std::string path, std::string comment)
+	std::string loadFile(std::string serverStatusCode, std::string path, std::string comment)
 	{
 		std::string statusCode = checkFileAccess(path);
 		if (statusCode != "200")
@@ -45,7 +45,7 @@ public:
 			std::cerr << "Error while reading " << path << "\n";
 			return "500";
 		}
-		this->set(successStatusCode, comment, path, fileContent);
+		this->set(serverStatusCode, comment, path, fileContent);
 		return "200";
 	}
 

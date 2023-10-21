@@ -13,6 +13,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <sys/stat.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -31,21 +32,23 @@ int listenToSocket(int socketFd, std::string port);
 int getFileContent(std::string path, std::string &buf);
 std::string getFileExtension(std::string fileName);
 std::string getSocketPort(int socket);
-
+ 
+class LocationBlock;
 class ServerBlock;
 class Server;
 class HttpRequest;
 class HttpResponse;
 class MediaTypes;
 
-typedef std::string (*methodHandler)(ServerBlock &block, HttpRequest &req, HttpResponse &res);
-typedef std::map<std::string, methodHandler> methods;
+typedef std::string (*pathHandlerType)(LocationBlock &block, HttpRequest &req, HttpResponse &res);
+typedef std::map<std::string, pathHandlerType> methods;
 
 #include "MediaTypes.hpp"
 #include "HttpResponse.hpp"
 #include "HttpRequest.hpp"
+#include "Block.hpp"
 #include "ServerBlock.hpp"
-// #include "ServerConfig.hpp"
+#include "LocationBlock.hpp"
 #include "Server.hpp"
 
 #endif

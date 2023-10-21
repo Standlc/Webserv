@@ -7,7 +7,7 @@ std::string getSocketPort(int socket)
 
 	if (getsockname(socket, (struct sockaddr *)&sin, &len) == -1)
 	{
-		std::cerr << strerror(errno) << "\n";
+		std::cerr << "getsockname: " << strerror(errno) << "\n";
 		return "";
 	}
 	// printf("port number %d\n", ntohs(sin.sin_port));
@@ -107,26 +107,36 @@ std::string checkFileAccess(std::string path)
 	return "200";
 }
 
-std::string getMethod(ServerBlock &block, HttpRequest &req, HttpResponse &res)
+std::string getMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 {
-	std::string path = block.getCompleteReqPath(req.getUrl());
-	std::string statusCode = res.loadFile("200", path, "OK");
+	std::string statusCode;
+
+	for (int i = 0; i < block.indexFiles.size(); i++)
+	{
+		std::string path = block.getCompleteReqPath(req.getUrl(), block.indexFiles[i]);
+		if (path == "500")
+			return "500";
+
+		statusCode = res.loadFile("200", path, "OK");
+		if (statusCode == "200" || statusCode == "500")
+			break;
+	}
 	return statusCode;
 }
 
-std::string getApi(ServerBlock &block, HttpRequest &req, HttpResponse &res)
+std::string getApi(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 {
 	std::string body = "Welcome to the API";
 	res.set("200", "OK", ".txt", body);
 	return "200";
 }
 
-std::string postMethod(ServerBlock &block, HttpRequest &req, HttpResponse &res)
+std::string postMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 {
 	return "200";
 }
 
-std::string deleteMethod(ServerBlock &block, HttpRequest &req, HttpResponse &res)
+std::string deleteMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 {
 	return "200";
 }
@@ -135,36 +145,73 @@ int main(int argc, char *argv[])
 {
 	Server server;
 
-	server.blocks.resize(3);
+	server.blocks.resize(2);
 
 	server.blocks[0].port = "3000";
 	server.blocks[0].root = "www";
 	server.blocks[0].isDefault = true;
 	server.blocks[0].indexFiles.push_back("index.html");
+	server.blocks[0].errorFiles["404"] = "/404.html";
 
 	server.blocks[1].port = "5000";
 	server.blocks[1].root = "www2";
 	server.blocks[1].isDefault = true;
+	server.blocks[1].indexFiles.push_back("index");
 	server.blocks[1].indexFiles.push_back("index.html");
+	server.blocks[1].errorFiles["404"] = "/404.html";
 
-	server.blocks[2].port = "3000";
-	server.blocks[2].root = "www2";
-	server.blocks[2].isDefault = false;
-	server.blocks[2].hostNames.push_back("virtual.com");
-	server.blocks[2].indexFiles.push_back("index.html");
+	// server.blocks[2].port = "3000";
+	// server.blocks[2].root = "www2";
+	// server.blocks[2].isDefault = false;
+	// server.blocks[2].hostNames.push_back("virtual.com");
+	// server.blocks[2].indexFiles.push_back("index.html");
 
 	if (server.listen() == -1)
 		return 1;
 
-	server.blocks[0].setHttpMethod("GET", getMethod);
-	server.blocks[0].setHttpMethod("GET", getApi, "/api");
-	server.blocks[0].setHttpMethod("POST", postMethod);
-	server.blocks[0].setHttpMethod("DELETE", deleteMethod);
+	server.blocks[0]._locationBlocks.resize(2);
 
-	server.blocks[1].setHttpMethod("GET", getMethod);
+	server.blocks[0]._locationBlocks[0].path = "/";
+	server.blocks[0]._locationBlocks[0].isExact = false;
+	server.blocks[0]._locationBlocks[0].handlers["GET"] = getMethod;
+	server.blocks[0]._locationBlocks[0].inheritServerBlock(server.blocks[0]);
 
-	server.blocks[2].setHttpMethod("GET", getMethod);
-	// server.blocks[0].setHttpMethod("GET", getApi, "/api/stuff");
+	server.blocks[0]._locationBlocks[1].path = "/folder";
+	server.blocks[0]._locationBlocks[1].indexFiles.push_back("/index");
+	server.blocks[0]._locationBlocks[1].isExact = true;
+	server.blocks[0]._locationBlocks[1].handlers["GET"] = getMethod;
+	server.blocks[0]._locationBlocks[1].inheritServerBlock(server.blocks[0]);
+
+	//
+
+	server.blocks[1]._locationBlocks.resize(1);
+
+	server.blocks[1]._locationBlocks[0].path = "/";
+	server.blocks[1]._locationBlocks[0].isExact = false;
+	server.blocks[1]._locationBlocks[0].handlers["GET"] = getMethod;
+	server.blocks[1]._locationBlocks[0].inheritServerBlock(server.blocks[1]);
+
+	// block.path = "/";
+	// block.isExact = false;
+	// block.handlers["GET"] = getMethod;
+	// server.blocks[0].addpath(block);
+
+	// server.blocks[0].addpath(block);
+
+	// server.blocks[0].http["GET"]
+	// server.blocks[0].setpath("GET", "/", getMethod);
+
+	// server.blocks[0].setpath("GET", "/api", getApi);
+
+	// server.blocks[0].setpath("POST", "/", postMethod);
+
+	//
+
+	// server.blocks[1].setpath("GET", "/", getMethod);
+
+	//
+
+	// server.blocks[2].setpath("GET", "/", getMethod);
 
 	if (server.monitorClients() == -1)
 		return 1;

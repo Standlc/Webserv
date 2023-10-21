@@ -1,3 +1,6 @@
+#ifndef SERVER_HPP
+#define SERVER_HPP
+
 #include "webserv.hpp"
 
 class Server
@@ -121,30 +124,31 @@ public:
 
 		std::string statusCode = req.parseRequest(socket);
 
-		auto block = this->findServerBlock(getSocketPort(socket), req.getHostName());
+		std::string socketPort = getSocketPort(socket);
+		if (socketPort == "")
+			return 1;
+
+		ServerBlock *block = this->findServerBlock(socketPort, req.getHostName());
+
 		if (statusCode == "200")
 			statusCode = block->execute(req, res);
+		else
+			statusCode = block->returnErrPage(statusCode, res);
 
 		if (statusCode != "200")
-			handleStatusCode(statusCode, *block, res);
+			returnDefaultErrPage(statusCode, *block, res);
 
-		// std::cout << req.getRawData() << "\n";
-		// std::cout << res.getResponse() << "\n";
+		std::cout << req.getRawData() << "\n";
+		std::cout << res.getResponse() << "\n";
 
 		if (res.sendAll(socket) == -1)
 			std::cerr << "Error while sending response\n";
 		return 0;
 	}
 
-	int handleStatusCode(std::string statusCode, ServerBlock &block, HttpResponse &res)
+	int returnDefaultErrPage(std::string statusCode, ServerBlock &block, HttpResponse &res)
 	{
-		std::string errorPagePath = block.root + "/" + statusCode + ".html";
-
-		std::string loadFileStatus = res.loadFile(statusCode, errorPagePath, _statusComments[statusCode]);
-		if (loadFileStatus == "200")
-			return 0;
-
-		if (loadFileStatus != "500" && !(this->loadDefaultErrorPage(statusCode, res)))
+		if (!(this->loadDefaultErrPage(statusCode, res)))
 			return 0;
 
 		std::string body = "The server encoutered some issue while handling your request";
@@ -152,29 +156,25 @@ public:
 		return 1;
 	}
 
-	bool loadDefaultErrorPage(std::string statusCode, HttpResponse &res)
+	bool loadDefaultErrPage(std::string statusCode, HttpResponse &res)
 	{
-		std::string defaultErrorPagePath = "defaultPages/" + statusCode + ".html";
-		if (res.loadFile(statusCode, defaultErrorPagePath, _statusComments[statusCode]) == "200")
-			return 0;
-		return 1;
+		std::string errPagePath = "defaultPages/" + statusCode + ".html";
+		return res.loadFile(statusCode, errPagePath, _statusComments[statusCode]) != "200";
 	}
 
-	std::vector<ServerBlock>::iterator findServerBlock(std::string port, std::string hostName)
+	ServerBlock *findServerBlock(std::string port, std::string hostName)
 	{
-		std::vector<ServerBlock>::iterator defaultBlock = blocks.begin();
+		ServerBlock *defaultBlock = NULL;
 
-		for (auto block = blocks.begin(); block < blocks.end(); block++)
+		for (int i = 0; i < blocks.size(); i++)
 		{
-			if (block->port == port)
+			if (blocks[i].port == port)
 			{
-				// if (block->hostNames.size())
-				// 	std::cout << block->hostNames[0] << "\n";
 				// std::cout << hostName << "\n";
-				if (std::find(block->hostNames.begin(), block->hostNames.end(), hostName) != block->hostNames.end())
-					return block;
-				if (block->isDefault)
-					defaultBlock = block;
+				if (std::find(blocks[i].hostNames.begin(), blocks[i].hostNames.end(), hostName) != blocks[i].hostNames.end())
+					return &blocks[i];
+				if (blocks[i].isDefault)
+					defaultBlock = &blocks[i];
 			}
 		}
 		return defaultBlock;
@@ -190,3 +190,5 @@ public:
 		_sockets.push_back(pollfd_socket);
 	}
 };
+
+#endif

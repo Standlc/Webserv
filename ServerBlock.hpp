@@ -2,56 +2,68 @@
 #define SERVER_BLOCK
 
 #include "webserv.hpp"
+#include "LocationBlock.hpp"
 
-class ServerBlock
+typedef std::vector<LocationBlock> locationBlocks;
+
+class ServerBlock : public Block
 {
 private:
-	std::map<std::string, methods> _httpHandlers;
-
 public:
 	bool isDefault;
-	std::string root;
 	std::string port;
-
 	std::vector<std::string> hostNames;
-	std::vector<std::string> indexFiles;
-
-	void setHttpMethod(std::string httpMethod, methodHandler handler, std::string path = "")
-	{
-		if (path == "")
-			path = "/";
-		_httpHandlers[httpMethod][path] = handler;
-	}
 
 	std::string execute(HttpRequest &req, HttpResponse &res)
 	{
-		if (!this->has(req.getHttpMethod()))
-			return "501";
+		std::string statusCode = "200";
 
-		if (_httpHandlers[req.getHttpMethod()].count(req.getUrl()))
-			return _httpHandlers[req.getHttpMethod()][req.getUrl()](*this, req, res);
+		LocationBlock *macthingLocation = this->findLocationBlockByPath(req.getUrl());
 
-		if (_httpHandlers[req.getHttpMethod()].count("/"))
-			return _httpHandlers[req.getHttpMethod()]["/"](*this, req, res);
+		if (macthingLocation == NULL)
+			statusCode = "404";
+		else if (!macthingLocation->handlers.count(req.getHttpMethod()))
+			statusCode = "501";
 
-		return "404";
+		if (statusCode == "200")
+			statusCode = macthingLocation->execute(req, res);
+
+		// std::cout << statusCode << " executing location block\n";
+
+		if (statusCode != "200")
+			return this->returnErrPage(statusCode, res);
+		return "200";
 	}
 
-	std::string getCompleteReqPath(std::string path)
+	LocationBlock *findLocationBlockByPath(std::string reqUrl)
 	{
-		// IF RELATIVE PATH
-		// 	PATH_TO_CONFIG_FILE + ROOT_PATH
+		int urlLen = reqUrl.length();
+		int maxMatchLen = 0;
+		int matchingIndex = -1;
 
-		// HANDLE MULTIPLE INDEX FILES???
-		if (path == "/")
-			return root + path + indexFiles[0];
-		return root + path;
+		for (int i = 0; i < _locationBlocks.size(); i++)
+		{
+			if (_locationBlocks[i].isExact)
+			{
+				if (_locationBlocks[i].path == reqUrl)
+					return &_locationBlocks[i];
+				continue;
+			}
+
+			int blockpathLen = _locationBlocks[i].path.length();
+			if (blockpathLen > urlLen || blockpathLen <= maxMatchLen)
+				continue;
+
+			if (reqUrl.find(_locationBlocks[i].path) != std::string::npos)
+			{
+				maxMatchLen = blockpathLen;
+				matchingIndex = i;
+			}
+		}
+		return matchingIndex == -1 ? NULL : &_locationBlocks[matchingIndex];
 	}
 
-	bool has(std::string httpMethod)
-	{
-		return _httpHandlers.find(httpMethod) != _httpHandlers.end();
-	}
+	std::vector<LocationBlock> _locationBlocks;
 };
 
 #endif
