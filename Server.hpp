@@ -9,20 +9,20 @@ private:
 	std::vector<struct pollfd> _sockets;
 	std::vector<int> _listeningSockets;
 
-	std::map<std::string, std::string> _statusComments;
+	std::map<int, std::string> _statusComments;
 
 public:
 	std::vector<ServerBlock> blocks;
 
 	Server()
 	{
-		_statusComments["200"] = "OK";
-		_statusComments["400"] = "Bad Request";
-		_statusComments["403"] = "Forbidden Resource";
-		_statusComments["404"] = "Resource Not Found";
-		_statusComments["405"] = "Method Not Allowed";
-		_statusComments["500"] = "Internal Server Error";
-		_statusComments["501"] = "Not Implemented";
+		_statusComments[200] = "OK";
+		_statusComments[400] = "Bad Request";
+		_statusComments[403] = "Forbidden Resource";
+		_statusComments[404] = "Resource Not Found";
+		_statusComments[405] = "Method Not Allowed";
+		_statusComments[500] = "Internal Server Error";
+		_statusComments[501] = "Not Implemented";
 	}
 
 	int listen()
@@ -122,7 +122,7 @@ public:
 		HttpRequest req;
 		HttpResponse res;
 
-		std::string statusCode = req.parseRequest(socket);
+		int statusCode = req.parseRequest(socket);
 
 		std::string socketPort = getSocketPort(socket);
 		if (socketPort == "")
@@ -130,36 +130,37 @@ public:
 
 		ServerBlock *block = this->findServerBlock(socketPort, req.getHostName());
 
-		if (statusCode == "200")
+		if (statusCode == 200)
 			statusCode = block->execute(req, res);
 		else
 			statusCode = block->returnErrPage(statusCode, res);
 
-		if (statusCode != "200")
+		if (statusCode != 200)
 			returnDefaultErrPage(statusCode, *block, res);
 
-		std::cout << req.getRawData() << "\n";
-		std::cout << res.getResponse() << "\n";
+		std::cout << req.getHttpMethod() << " " << req.getUrl() << " " << req.getHttpMethod() << "\n"
+				  << req.getHostName() << "\n"
+				  << res.getResponse() << "\n";
 
 		if (res.sendAll(socket) == -1)
 			std::cerr << "Error while sending response\n";
 		return 0;
 	}
 
-	int returnDefaultErrPage(std::string statusCode, ServerBlock &block, HttpResponse &res)
+	int returnDefaultErrPage(int statusCode, ServerBlock &block, HttpResponse &res)
 	{
 		if (!(this->loadDefaultErrPage(statusCode, res)))
 			return 0;
 
 		std::string body = "The server encoutered some issue while handling your request";
-		res.set("500", _statusComments["500"], ".txt", body);
+		res.set(500, _statusComments[500], ".txt", body);
 		return 1;
 	}
 
-	bool loadDefaultErrPage(std::string statusCode, HttpResponse &res)
+	bool loadDefaultErrPage(int statusCode, HttpResponse &res)
 	{
-		std::string errPagePath = "defaultPages/" + statusCode + ".html";
-		return res.loadFile(statusCode, errPagePath, _statusComments[statusCode]) != "200";
+		std::string errPagePath = "defaultPages/" + std::to_string(statusCode) + ".html";
+		return res.loadFile(statusCode, errPagePath, _statusComments[statusCode]) != 200;
 	}
 
 	ServerBlock *findServerBlock(std::string port, std::string hostName)
@@ -170,7 +171,6 @@ public:
 		{
 			if (blocks[i].port == port)
 			{
-				// std::cout << hostName << "\n";
 				if (std::find(blocks[i].hostNames.begin(), blocks[i].hostNames.end(), hostName) != blocks[i].hostNames.end())
 					return &blocks[i];
 				if (blocks[i].isDefault)

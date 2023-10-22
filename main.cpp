@@ -1,5 +1,19 @@
 #include "webserv.hpp"
 
+void compressSlashes(std::string &str)
+{
+	int startSlashPos = str.find_first_of("/");
+	int endSlashPos = str.find_first_not_of("/", startSlashPos);
+
+	while (startSlashPos != -1)
+	{
+		// std::cout << startSlashPos << " " << endSlashPos << "\n";
+		str.replace(startSlashPos, endSlashPos != -1 ? endSlashPos - startSlashPos : -1, "/");
+		startSlashPos = str.find_first_of("/", endSlashPos);
+		endSlashPos = str.find_first_not_of("/", startSlashPos);
+	}
+}
+
 std::string getSocketPort(int socket)
 {
 	struct sockaddr_in sin;
@@ -98,47 +112,59 @@ std::string getFileExtension(std::string fileName)
 	return fileName.substr(dotPos, std::string::npos);
 }
 
-std::string checkFileAccess(std::string path)
+int checkFileAccess(std::string path)
 {
 	if (access(path.c_str(), F_OK) == -1)
-		return "404";
+		return 404;
 	if (access(path.c_str(), R_OK) == -1)
-		return "403";
-	return "200";
+		return 403;
+	return 200;
 }
 
-std::string getMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
+int getMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 {
-	std::string statusCode;
+	std::string newPath = block.root + req.getUrl();
+
+	int statusCode = checkFileAccess(newPath);
+	if (statusCode != 200)
+		return statusCode;
+
+	int isDir = isDirectory(newPath);
+	if (isDir == -1)
+		return 500;
+	if (!isDir)
+		return res.loadFile(200, newPath, "OK");
 
 	for (int i = 0; i < block.indexFiles.size(); i++)
 	{
-		std::string path = block.getCompleteReqPath(req.getUrl(), block.indexFiles[i]);
-		if (path == "500")
-			return "500";
+		newPath = newPath + "/" + block.indexFiles[i];
+		statusCode = res.loadFile(200, newPath, "OK");
 
-		statusCode = res.loadFile("200", path, "OK");
-		if (statusCode == "200" || statusCode == "500")
-			break;
+		if (statusCode != 404)
+			return statusCode;
 	}
-	return statusCode;
+
+	if (!block.autoIndex)
+		return 403;
+
+	return block.listFiles(res, req.getUrl());
 }
 
-std::string getApi(LocationBlock &block, HttpRequest &req, HttpResponse &res)
+int getApi(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 {
 	std::string body = "Welcome to the API";
-	res.set("200", "OK", ".txt", body);
-	return "200";
+	res.set(200, "OK", ".txt", body);
+	return 200;
 }
 
-std::string postMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
+int postMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 {
-	return "200";
+	return 200;
 }
 
-std::string deleteMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
+int deleteMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 {
-	return "200";
+	return 200;
 }
 
 int main(int argc, char *argv[])
@@ -151,14 +177,14 @@ int main(int argc, char *argv[])
 	server.blocks[0].root = "www";
 	server.blocks[0].isDefault = true;
 	server.blocks[0].indexFiles.push_back("index.html");
-	server.blocks[0].errorFiles["404"] = "/404.html";
+	server.blocks[0].errorFiles[404] = "/404.html";
 
 	server.blocks[1].port = "5000";
 	server.blocks[1].root = "www2";
 	server.blocks[1].isDefault = true;
 	server.blocks[1].indexFiles.push_back("index");
 	server.blocks[1].indexFiles.push_back("index.html");
-	server.blocks[1].errorFiles["404"] = "/404.html";
+	server.blocks[1].errorFiles[404] = "/404.html";
 
 	// server.blocks[2].port = "3000";
 	// server.blocks[2].root = "www2";
@@ -169,18 +195,23 @@ int main(int argc, char *argv[])
 	if (server.listen() == -1)
 		return 1;
 
-	server.blocks[0]._locationBlocks.resize(2);
+	server.blocks[0]._locationBlocks.resize(3);
 
 	server.blocks[0]._locationBlocks[0].path = "/";
 	server.blocks[0]._locationBlocks[0].isExact = false;
 	server.blocks[0]._locationBlocks[0].handlers["GET"] = getMethod;
 	server.blocks[0]._locationBlocks[0].inheritServerBlock(server.blocks[0]);
 
-	server.blocks[0]._locationBlocks[1].path = "/folder";
+	server.blocks[0]._locationBlocks[1].path = "/folder/";
 	server.blocks[0]._locationBlocks[1].indexFiles.push_back("/index");
-	server.blocks[0]._locationBlocks[1].isExact = true;
+	server.blocks[0]._locationBlocks[1].isExact = false;
+	server.blocks[0]._locationBlocks[1].autoIndex = true;
 	server.blocks[0]._locationBlocks[1].handlers["GET"] = getMethod;
 	server.blocks[0]._locationBlocks[1].inheritServerBlock(server.blocks[0]);
+
+	server.blocks[0]._locationBlocks[2].path = "/api/truc";
+	server.blocks[0]._locationBlocks[2].isExact = false;
+	server.blocks[0]._locationBlocks[2].handlers["GET"] = getApi;
 
 	//
 

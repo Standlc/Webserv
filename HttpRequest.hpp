@@ -45,30 +45,31 @@ public:
 		return _hostName;
 	}
 
-	std::string parseRequest(int clientSocket)
+	int parseRequest(int clientSocket)
 	{
 		if (this->recvAll(clientSocket) == -1)
 		{
 			std::cerr << "Error while reading client socket\n";
-			return "500";
+			return 500;
 		}
 
 		this->splitHead();
 		if (_headSplit.size() != 3 || _headSplit[1][0] != '/')
 		{
 			std::cerr << "Bad request syntax\n";
-			return "400";
+			return 400;
 		}
 
 		// RETURN 400 IF HTTP METHOD IS UNKNOWN!!
 		_httpMethod = _headSplit[0];
 		_url = this->replaceUrlPercent20(_headSplit[1]);
+		compressSlashes(_url);
 		_httpProtocol = _headSplit[2];
 
 		_hostName = this->readHostName();
 
 		this->readBody();
-		return "200";
+		return 200;
 	}
 
 	int recvAll(int clientSocket)
@@ -94,7 +95,7 @@ public:
 		int startPos = _rawData.find_first_not_of(" \t");
 		int endPos = _rawData.find_first_of(" \t\r\n", startPos);
 
-		while (startPos != std::string::npos && endPos != std::string::npos && startPos < endPos && startPos < _endOfRequestLinePos)
+		while (startPos != std::string::npos && endPos != std::string::npos && startPos < _endOfRequestLinePos)
 		{
 			_headSplit.push_back(_rawData.substr(startPos, endPos - startPos));
 			startPos = _rawData.find_first_not_of(" \t", endPos);

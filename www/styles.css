@@ -1,5 +1,6 @@
 body {
-    font-family: 'Arial', sans-serif;
+    /* font-family: 'Arial', sans-serif; */
+    font-family: "monospace";
     background: darkcyan;
     margin: 0;
     padding: 0;

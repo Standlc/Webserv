@@ -4,22 +4,18 @@
 #include "ServerBlock.hpp"
 #include "webserv.hpp"
 
-#define NO_FILE_OR_DIR 2
-
 int isDirectory(std::string path)
 {
 	struct stat pathInfo;
 
 	if (stat(&path[0], &pathInfo) == -1)
 	{
-		if (errno == ENOENT)
-			return NO_FILE_OR_DIR;
 		std::cerr << "stat: " << strerror(errno) << "\n";
 		return -1;
 	}
 
 	// (s.st_mode & S_IFREG) FOR FILE
-	return pathInfo.st_mode & S_IFDIR;
+	return (pathInfo.st_mode & S_IFDIR) != 0;
 }
 
 class LocationBlock : public Block
@@ -30,28 +26,72 @@ public:
 	bool autoIndex;
 	std::map<std::string, pathHandlerType> handlers;
 
-	std::string execute(HttpRequest &req, HttpResponse &res)
+	int execute(HttpRequest &req, HttpResponse &res)
 	{
-		std::string statusCode = handlers[req.getHttpMethod()](*this, req, res);
-		if (statusCode == "200")
-			return "200";
+		int statusCode = handlers[req.getHttpMethod()](*this, req, res);
+		if (statusCode == 200)
+			return 200;
+
 		return this->returnErrPage(statusCode, res);
 	}
 
-	std::string getCompleteReqPath(std::string path, std::string index)
+	int listFiles(HttpResponse &res, std::string reqUrl)
 	{
-		// IF RELATIVE ROOT PATH
-		//	 PATH_TO_CONFIG_FILE + ROOT_PATH
+		std::string dirPath = root + reqUrl;
+		DIR *dirStream = opendir(&dirPath[0]);
+		if (!dirStream)
+		{
+			std::cerr << "opendir: " << strerror(errno) << "\n";
+			return 500;
+		}
 
-		path = root + path;
-		int isDir = isDirectory(path);
-		if (isDir == NO_FILE_OR_DIR)
-			return "404";
-		if (isDir == -1)
-			return "500";
-		if (isDir)
-			return path + "/" + index;
-		return path;
+		struct dirent *entry = readdir(dirStream);
+		if (!entry)
+		{
+			std::cerr << "readdir: " << strerror(errno) << "\n";
+			return 500;
+		}
+
+		std::string listingPage = createListingDirPage(reqUrl, entry, dirStream);
+		if (listingPage == "")
+			return 500;
+
+		res.set(200, "OK", ".html", listingPage);
+		return 200;
+	}
+
+	std::string createListingDirPage(std::string reqUrl, struct dirent *entry, DIR *dirStream)
+	{
+		std::string page;
+
+		page = "<!DOCTYPE html><html><head><title>Index of " + reqUrl + "</title></head>";
+		page += "<body style='font-family: monospace;'><h1>Index of " + reqUrl + "</h1><hr><pre style='display: flex;flex-direction: column;'>";
+
+		errno = 0;
+		while (entry)
+		{
+			std::string entry_name = entry->d_name;
+			if (entry_name != ".")
+			{
+				int isDir = isDirectory(root + reqUrl + "/" + entry->d_name);
+				if (isDir == -1)
+					return "";
+				if (isDir)
+					entry_name += "/";
+
+				page += "<a href='" + entry_name + "'>" + entry_name + "</a>";
+			}
+
+			entry = readdir(dirStream);
+			if (!entry && errno != 0)
+			{
+				std::cerr << "readdir: " << strerror(errno) << "\n";
+				return "";
+			}
+		}
+
+		page += "</pre><hr></body></html>";
+		return page;
 	}
 
 	void inheritServerBlock(Block &block)

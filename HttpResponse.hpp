@@ -21,9 +21,9 @@ public:
 		this->updateResponse();
 	}
 
-	void set(std::string statusCode, std::string statusComment, std::string path, std::string &body)
+	void set(int statusCode, std::string statusComment, std::string path, std::string &body)
 	{
-		_head = "HTTP/1.1 " + statusCode + " " + statusComment + LINE_TERM;
+		_head = "HTTP/1.1 " + std::to_string(statusCode) + " " + statusComment + LINE_TERM;
 
 		_headers = "Content-Type: " + mediaTypes.getType(path) + LINE_TERM;
 		_headers += "Content-Length: " + std::to_string(body.size()) + LINE_TERM;
@@ -33,20 +33,20 @@ public:
 		this->updateResponse();
 	}
 
-	std::string loadFile(std::string serverStatusCode, std::string path, std::string comment)
+	int loadFile(int serverStatusCode, std::string path, std::string comment)
 	{
-		std::string statusCode = checkFileAccess(path);
-		if (statusCode != "200")
+		int statusCode = checkFileAccess(path);
+		if (statusCode != 200)
 			return statusCode;
 
 		std::string fileContent;
 		if (getFileContent(path, fileContent))
 		{
 			std::cerr << "Error while reading " << path << "\n";
-			return "500";
+			return 500;
 		}
 		this->set(serverStatusCode, comment, path, fileContent);
-		return "200";
+		return 200;
 	}
 
 	int sendAll(int socket)

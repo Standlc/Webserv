@@ -23,15 +23,19 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <dirent.h>
+#include <sys/types.h>
 
 struct addrinfo *getOwnAddressInfo(const char *port);
-std::string checkFileAccess(std::string path);
+int checkFileAccess(std::string path);
 int createBindedNonBlockingSocket(struct addrinfo *addrInfo);
 int bindSocket(int socketFd, struct addrinfo *addrInfo);
 int listenToSocket(int socketFd, std::string port);
 int getFileContent(std::string path, std::string &buf);
 std::string getFileExtension(std::string fileName);
 std::string getSocketPort(int socket);
+int isDirectory(std::string path);
+void compressSlashes(std::string &str);
  
 class LocationBlock;
 class ServerBlock;
@@ -40,7 +44,7 @@ class HttpRequest;
 class HttpResponse;
 class MediaTypes;
 
-typedef std::string (*pathHandlerType)(LocationBlock &block, HttpRequest &req, HttpResponse &res);
+typedef int (*pathHandlerType)(LocationBlock &block, HttpRequest &req, HttpResponse &res);
 typedef std::map<std::string, pathHandlerType> methods;
 
 #include "MediaTypes.hpp"
