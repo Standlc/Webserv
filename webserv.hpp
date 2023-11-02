@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <string>
+#include <cstring>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -27,7 +28,7 @@
 #include <sys/types.h>
 
 struct addrinfo *getOwnAddressInfo(const char *port);
-int checkFileAccess(std::string path);
+void checkFileAccess(std::string path);
 int createBindedNonBlockingSocket(struct addrinfo *addrInfo);
 int bindSocket(int socketFd, struct addrinfo *addrInfo);
 int listenToSocket(int socketFd, std::string port);
@@ -44,7 +45,7 @@ class HttpRequest;
 class HttpResponse;
 class MediaTypes;
 
-typedef int (*pathHandlerType)(LocationBlock &block, HttpRequest &req, HttpResponse &res);
+typedef void (*pathHandlerType)(LocationBlock &block, HttpRequest &req, HttpResponse &res);
 typedef std::map<std::string, pathHandlerType> methods;
 
 #include "MediaTypes.hpp"

@@ -9,6 +9,7 @@ private:
 	std::string _response;
 	std::string _head;
 	std::string _headers;
+	std::string _permanentHeaders;
 	std::string _body;
 	static MediaTypes mediaTypes;
 
@@ -17,40 +18,36 @@ public:
 
 	void addHeader(std::string property, std::string value)
 	{
-		_headers += property + ": " + value + LINE_TERM;
-		this->updateResponse();
+		_permanentHeaders += property + ": " + value + LINE_TERM;
 	}
 
 	void set(int statusCode, std::string statusComment, std::string path, std::string &body)
 	{
 		_head = "HTTP/1.1 " + std::to_string(statusCode) + " " + statusComment + LINE_TERM;
 
-		this->addHeader("Content-Type", mediaTypes.getType(path));
-		this->addHeader("Content-Length", std::to_string(body.size()));
+		_headers = "Content-Type: " + mediaTypes.getType(path) + LINE_TERM;
+		_headers += "Content-Length: " + std::to_string(body.size()) + LINE_TERM;
 
 		_body = body + LINE_TERM;
-
-		this->updateResponse();
 	}
 
-	int loadFile(int serverStatusCode, std::string path, std::string comment)
+	void loadFile(int serverStatusCode, std::string path, std::string comment)
 	{
-		int statusCode = checkFileAccess(path);
-		if (statusCode != 200)
-			return statusCode;
+		checkFileAccess(path);
 
 		std::string fileContent;
 		if (getFileContent(path, fileContent))
 		{
 			std::cerr << "Error while reading " << path << "\n";
-			return 500;
+			throw 500;
 		}
 		this->set(serverStatusCode, comment, path, fileContent);
-		return 200;
 	}
 
 	int sendAll(int socket)
 	{
+		updateResponse();
+
 		int responseSize = _response.size();
 		int sentBytes = send(socket, &_response[0], responseSize, 0);
 		int totalSentBytes = sentBytes;
@@ -68,12 +65,12 @@ public:
 
 	void updateResponse()
 	{
-		_response = _head + _headers + LINE_TERM + _body;
+		_response = _head + _headers + _permanentHeaders + LINE_TERM + _body;
 	}
 
 	std::string getResponse()
 	{
-		// return _head + _headers + LINE_TERM + _body;
+		updateResponse();
 		return _response;
 	}
 };

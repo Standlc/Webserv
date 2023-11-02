@@ -11,7 +11,8 @@ int isDirectory(std::string path)
 	if (stat(&path[0], &pathInfo) == -1)
 	{
 		std::cerr << "stat: " << strerror(errno) << "\n";
-		return -1;
+		throw 500;
+		// return -1;
 	}
 
 	// (s.st_mode & S_IFREG) FOR FILE
@@ -26,45 +27,47 @@ public:
 	bool autoIndex;
 	std::map<std::string, pathHandlerType> handlers;
 
-	int execute(HttpRequest &req, HttpResponse &res)
+	void execute(HttpRequest &req, HttpResponse &res)
 	{
-		if (redirection.url != "")
+		try
 		{
-			std::string newUrl = this->assembleRedirectionUrl(req);
-			res.addHeader("Location", newUrl);
-			return redirection.statusCode;
+			if (redirection.url != "")
+			{
+				res.addHeader("Location", this->assembleRedirectionUrl(req));
+				this->returnErrPage(redirection.statusCode, res);
+				return;
+			}
+
+			handlers[req.getHttpMethod()](*this, req, res);
 		}
-
-		int statusCode = handlers[req.getHttpMethod()](*this, req, res);
-		if (statusCode == 200)
-			return 200;
-
-		return this->returnErrPage(statusCode, res);
+		catch (int status)
+		{
+			this->returnErrPage(status, res);
+		}
 	}
 
-	int listFiles(HttpResponse &res, std::string reqUrl)
+	void listFiles(HttpResponse &res, std::string reqUrl)
 	{
 		std::string dirPath = root + reqUrl;
 		DIR *dirStream = opendir(&dirPath[0]);
 		if (!dirStream)
 		{
 			std::cerr << "opendir: " << strerror(errno) << "\n";
-			return 500;
+			throw 500;
 		}
 
 		struct dirent *entry = readdir(dirStream);
 		if (!entry)
 		{
 			std::cerr << "readdir: " << strerror(errno) << "\n";
-			return 500;
+			throw 500;
 		}
 
 		std::string listingPage = createListingDirPage(reqUrl, entry, dirStream);
 		if (listingPage == "")
-			return 500;
+			throw 500;
 
 		res.set(200, "OK", ".html", listingPage);
-		return 200;
 	}
 
 	std::string createListingDirPage(std::string reqUrl, struct dirent *entry, DIR *dirStream)

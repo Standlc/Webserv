@@ -25,22 +25,23 @@ public:
 	std::string port;
 	std::vector<std::string> hostNames;
 
-	int execute(HttpRequest &req, HttpResponse &res)
+	void execute(HttpRequest &req, HttpResponse &res)
 	{
-		int statusCode = 200;
 		LocationBlock *macthingLocation = this->findLocationBlockByPath(req.getUrl());
 
-		if (macthingLocation == NULL)
-			statusCode = 404;
-		else if (!macthingLocation->handlers.count(req.getHttpMethod()))
-			statusCode = 501;
+		try
+		{
+			if (macthingLocation == NULL)
+				throw 404;
+			if (!macthingLocation->handlers.count(req.getHttpMethod()))
+				throw 501;
 
-		if (statusCode == 200)
-			statusCode = macthingLocation->execute(req, res);
-
-		if (statusCode != 200)
-			return this->returnErrPage(statusCode, res);
-		return 200;
+			macthingLocation->execute(req, res);
+		}
+		catch (int status)
+		{
+			this->returnErrPage(status, res);
+		}
 	}
 
 	LocationBlock *findLocationBlockByPath(std::string reqUrl)

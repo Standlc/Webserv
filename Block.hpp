@@ -17,17 +17,29 @@ public:
 	std::map<int, std::string> errorFiles;
 	Redirection redirection;
 
-	int returnErrPage(int statusCode, HttpResponse &res)
+	void returnErrPage(int statusCode, HttpResponse &res)
 	{
-		if (errorFiles.find(statusCode) == errorFiles.end())
-			return statusCode;
+		if (this->hasErrorPage(statusCode) == false)
+			throw statusCode;
 
 		std::string errPagePath = root + errorFiles[statusCode];
-		int loadFileStatus = res.loadFile(statusCode, errPagePath, "error");
 
-		if (loadFileStatus == 500)
-			return 500;
-		return loadFileStatus == 200 ? 200 : statusCode;
+		try
+		{
+			res.loadFile(statusCode, errPagePath, "error");
+		}
+		catch(int status)
+		{
+			if (status == 500)
+				throw 500;
+
+			throw statusCode;
+		}
+	}
+
+	bool hasErrorPage(int statusCode)
+	{
+		return errorFiles.find(statusCode) != errorFiles.end();
 	}
 };
 

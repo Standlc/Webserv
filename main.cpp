@@ -23,7 +23,7 @@ std::string getSocketPort(int socket)
 	if (getsockname(socket, (struct sockaddr *)&sin, &len) == -1)
 	{
 		std::cerr << "getsockname: " << strerror(errno) << "\n";
-		return "";
+		throw 500;
 	}
 	// printf("port number %d\n", ntohs(sin.sin_port));
 	return std::to_string(ntohs(sin.sin_port));
@@ -113,65 +113,74 @@ std::string getFileExtension(std::string fileName)
 	return fileName.substr(dotPos, std::string::npos);
 }
 
-int checkFileAccess(std::string path)
+void checkFileAccess(std::string path)
 {
 	if (access(path.c_str(), F_OK) == -1)
-		return 404;
+		throw 404;
 	if (access(path.c_str(), R_OK) == -1)
-		return 403;
-	return 200;
+		throw 403;
 }
 
-int getMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
+void tryGetIndexes(std::string newPath, LocationBlock &block, HttpResponse &res)
+{
+	for (int i = 0; i < block.indexFiles.size(); i++)
+	{
+		try
+		{
+			res.loadFile(200, newPath + "/" + block.indexFiles[i], "OK");
+			return;
+		}
+		catch (int status)
+		{
+			if (status != 404 && status != 403)
+				throw;
+		}
+	}
+	throw 403;
+}
+
+void getMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 {
 	std::string newPath = block.root + req.getUrl();
 
-	int statusCode = checkFileAccess(newPath);
-	if (statusCode != 200)
-		return statusCode;
-
-	int isDir = isDirectory(newPath);
-	if (isDir == -1)
-		return 500;
-	if (!isDir)
-		return res.loadFile(200, newPath, "OK");
-
-	for (int i = 0; i < block.indexFiles.size(); i++)
+	checkFileAccess(newPath);
+	if (!isDirectory(newPath))
 	{
-		statusCode = res.loadFile(200, newPath + "/" + block.indexFiles[i], "OK");
-
-		if (statusCode != 404 && statusCode != 403)
-			return statusCode;
+		res.loadFile(200, newPath, "OK");
+		return;
 	}
 
-	if (!block.autoIndex)
-		return 403;
-
-	return block.listFiles(res, req.getUrl());
+	try
+	{
+		tryGetIndexes(newPath, block, res);
+	}
+	catch (int status)
+	{
+		if (block.autoIndex == false)
+			throw;
+		block.listFiles(res, req.getUrl());
+	}
 }
 
-int getApi(LocationBlock &block, HttpRequest &req, HttpResponse &res)
+void getApi(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 {
 	std::string body = "Welcome to the API";
 	res.set(200, "OK", ".txt", body);
-	return 200;
 }
 
-int postMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
+void postMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 {
-	return 200;
 }
 
-int deleteMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
+void deleteMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 {
-	return 200;
 }
 
 int main(int argc, char *argv[])
 {
 	Server server;
 
-	server.blocks.resize(2);
+	server.blocks.resize(1);
 
 	server.blocks[0].port = "3000";
 	server.blocks[0].root = "www";
@@ -179,12 +188,12 @@ int main(int argc, char *argv[])
 	server.blocks[0].indexFiles.push_back("index.html");
 	server.blocks[0].errorFiles[404] = "/404.html";
 
-	server.blocks[1].port = "5000";
-	server.blocks[1].root = "www2";
-	server.blocks[1].isDefault = true;
-	server.blocks[1].indexFiles.push_back("index");
-	server.blocks[1].indexFiles.push_back("index.html");
-	server.blocks[1].errorFiles[404] = "/404.html";
+	// server.blocks[1].port = "5000";
+	// server.blocks[1].root = "www2";
+	// server.blocks[1].isDefault = true;
+	// server.blocks[1].indexFiles.push_back("index");
+	// server.blocks[1].indexFiles.push_back("index.html");
+	// server.blocks[1].errorFiles[404] = "/404.html";
 
 	// server.blocks[2].port = "3000";
 	// server.blocks[2].root = "www2";
@@ -218,12 +227,12 @@ int main(int argc, char *argv[])
 
 	//
 
-	server.blocks[1]._locationBlocks.resize(1);
+	// server.blocks[1]._locationBlocks.resize(1);
 
-	server.blocks[1]._locationBlocks[0].path = "/";
-	server.blocks[1]._locationBlocks[0].isExact = false;
-	server.blocks[1]._locationBlocks[0].handlers["GET"] = getMethod;
-	server.blocks[1]._locationBlocks[0].inheritServerBlock(server.blocks[1]);
+	// server.blocks[1]._locationBlocks[0].path = "/";
+	// server.blocks[1]._locationBlocks[0].isExact = false;
+	// server.blocks[1]._locationBlocks[0].handlers["GET"] = getMethod;
+	// server.blocks[1]._locationBlocks[0].inheritServerBlock(server.blocks[1]);
 
 	// block.path = "/";
 	// block.isExact = false;

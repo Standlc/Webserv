@@ -51,30 +51,29 @@ public:
 		return _hostPort;
 	}
 
-	int parseRequest(int clientSocket)
+	void parseRequest(int clientSocket)
 	{
 		if (this->recvAll(clientSocket) == -1)
 		{
 			std::cerr << "Error while reading client socket\n";
-			return 500;
+			throw 500;
 		}
 
 		this->splitHead();
 		if (_headSplit.size() != 3 || _headSplit[1][0] != '/')
 		{
 			std::cerr << "Bad request syntax\n";
-			return 400;
+			throw 400;
 		}
 
 		// RETURN 400 IF HTTP METHOD IS UNKNOWN!!
+
 		_httpMethod = _headSplit[0];
 		_url = this->replaceUrlPercent20(_headSplit[1]);
 		compressSlashes(_url);
 		_httpProtocol = _headSplit[2];
 		this->readHostName();
-
 		this->readBody();
-		return 200;
 	}
 
 	int recvAll(int clientSocket)

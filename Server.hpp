@@ -90,7 +90,6 @@ public:
 				this->handleNewConnection(_sockets[i].fd);
 			else
 			{
-				// std::cout << "Reading: " << _sockets[i].fd << "\n";
 				this->handleClientRequest(_sockets[i].fd);
 				close(_sockets[i].fd);
 				_sockets.erase(_sockets.begin() + i);
@@ -102,7 +101,7 @@ public:
 		return 0;
 	}
 
-	int handleNewConnection(int socket)
+	void handleNewConnection(int socket)
 	{
 		int newClientSocket;
 
@@ -110,57 +109,49 @@ public:
 		if (newClientSocket == -1)
 		{
 			std::cerr << "accept: " << strerror(errno) << "\n";
-			return -1;
+			return;
 		}
 
 		this->pushSocket(newClientSocket);
-		return 0;
 	}
 
-	int handleClientRequest(int socket)
+	void handleClientRequest(int socket)
 	{
 		HttpRequest req;
 		HttpResponse res;
 
-		int statusCode = req.parseRequest(socket);
-
-		std::string socketPort = getSocketPort(socket);
-		if (socketPort == "")
-			return 1;
-
-		ServerBlock *block = this->findServerBlock(socketPort, req.getHostName());
-
-		if (statusCode == 200)
-			statusCode = block->execute(req, res);
-		else
-			statusCode = block->returnErrPage(statusCode, res);
-
-		if (statusCode != 200)
-			returnDefaultErrPage(statusCode, *block, res);
-
-		// std::cout << req.getHttpMethod() << " " << req.getUrl() << " " << req.getHttpMethod() << "\n"
-		// 		  << req.getHostName() << "\n"
-		// 		  << res.getResponse() << "\n";
+		try
+		{
+			std::string socketPort = getSocketPort(socket);
+			ServerBlock *block = this->findServerBlock(socketPort, req.getHostName());
+			req.parseRequest(socket);
+			block->execute(req, res);
+		}
+		catch (int status)
+		{
+			returnDefaultErrPage(status, res);
+		}
 
 		if (res.sendAll(socket) == -1)
 			std::cerr << "Error while sending response\n";
-		return 0;
+
+		std::cout << req.getHttpMethod() << " " << req.getUrl() << " " << req.getHttpMethod() << "\n"
+				  << req.getHostName() << "\n"
+				  << res.getResponse() << "\n\n";
 	}
 
-	int returnDefaultErrPage(int statusCode, ServerBlock &block, HttpResponse &res)
+	void returnDefaultErrPage(int statusCode, HttpResponse &res)
 	{
-		if (!(this->loadDefaultErrPage(statusCode, res)))
-			return 0;
-
-		std::string body = "The server encoutered some issue while handling your request";
-		res.set(500, _statusComments[500], ".txt", body);
-		return 1;
-	}
-
-	bool loadDefaultErrPage(int statusCode, HttpResponse &res)
-	{
-		std::string errPagePath = "defaultPages/" + std::to_string(statusCode) + ".html";
-		return res.loadFile(statusCode, errPagePath, _statusComments[statusCode]) != 200;
+		try
+		{
+			std::string errPagePath = "defaultPages/" + std::to_string(statusCode) + ".html";
+			res.loadFile(statusCode, errPagePath, _statusComments[statusCode]);
+		}
+		catch (int status)
+		{
+			std::string body = "The server encoutered some issue while handling your request";
+			res.set(status, _statusComments[status], ".txt", body);
+		}
 	}
 
 	ServerBlock *findServerBlock(std::string port, std::string hostName)
@@ -184,6 +175,7 @@ public:
 	{
 		struct pollfd pollfd_socket;
 
+		fcntl(socketFd, F_SETFL, O_NONBLOCK);
 		pollfd_socket.fd = socketFd;
 		pollfd_socket.events = POLLIN | POLLOUT;
 		pollfd_socket.revents = 0;
