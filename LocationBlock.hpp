@@ -28,6 +28,13 @@ public:
 
 	int execute(HttpRequest &req, HttpResponse &res)
 	{
+		if (redirection.url != "")
+		{
+			std::string newUrl = this->assembleRedirectionUrl(req);
+			res.addHeader("Location", newUrl);
+			return redirection.statusCode;
+		}
+
 		int statusCode = handlers[req.getHttpMethod()](*this, req, res);
 		if (statusCode == 200)
 			return 200;
@@ -94,12 +101,27 @@ public:
 		return page;
 	}
 
+	std::string assembleRedirectionUrl(HttpRequest &req)
+	{
+		if (redirection.url.find("http:") == 0 || redirection.url.find("https:") == 0)
+		{
+			return redirection.url;
+		}
+
+		if (redirection.url.find_first_of("/") == 0)
+		{
+			return "http://" + req.getHostName() + ":" + req.getHostPort() + redirection.url;
+		}
+
+		return redirection.url;
+	}
+
 	void inheritServerBlock(Block &block)
 	{
+		if (redirection.url == "")
+			redirection = block.redirection;
 		if (indexFiles.size() == 0)
 			indexFiles = block.indexFiles;
-		if (errorFiles.size() == 0)
-			errorFiles = block.errorFiles;
 		if (root == "")
 			root = block.root;
 	}

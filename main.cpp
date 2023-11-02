@@ -5,11 +5,12 @@ void compressSlashes(std::string &str)
 	int startSlashPos = str.find_first_of("/");
 	int endSlashPos = str.find_first_not_of("/", startSlashPos);
 
+	// std::cout << str << "\n";
 	while (startSlashPos != -1)
 	{
 		// std::cout << startSlashPos << " " << endSlashPos << "\n";
 		str.replace(startSlashPos, endSlashPos != -1 ? endSlashPos - startSlashPos : -1, "/");
-		startSlashPos = str.find_first_of("/", endSlashPos);
+		startSlashPos = str.find_first_of("/", startSlashPos + 1);
 		endSlashPos = str.find_first_not_of("/", startSlashPos);
 	}
 }
@@ -137,10 +138,9 @@ int getMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 
 	for (int i = 0; i < block.indexFiles.size(); i++)
 	{
-		newPath = newPath + "/" + block.indexFiles[i];
-		statusCode = res.loadFile(200, newPath, "OK");
+		statusCode = res.loadFile(200, newPath + "/" + block.indexFiles[i], "OK");
 
-		if (statusCode != 404)
+		if (statusCode != 404 && statusCode != 403)
 			return statusCode;
 	}
 
@@ -210,8 +210,11 @@ int main(int argc, char *argv[])
 	server.blocks[0]._locationBlocks[1].inheritServerBlock(server.blocks[0]);
 
 	server.blocks[0]._locationBlocks[2].path = "/api/truc";
+	server.blocks[0]._locationBlocks[2].redirection.url = "/";
+	server.blocks[0]._locationBlocks[2].redirection.statusCode = 301;
 	server.blocks[0]._locationBlocks[2].isExact = false;
 	server.blocks[0]._locationBlocks[2].handlers["GET"] = getApi;
+	server.blocks[0]._locationBlocks[2].inheritServerBlock(server.blocks[0]);
 
 	//
 

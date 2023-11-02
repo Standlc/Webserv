@@ -138,9 +138,9 @@ public:
 		if (statusCode != 200)
 			returnDefaultErrPage(statusCode, *block, res);
 
-		std::cout << req.getHttpMethod() << " " << req.getUrl() << " " << req.getHttpMethod() << "\n"
-				  << req.getHostName() << "\n"
-				  << res.getResponse() << "\n";
+		// std::cout << req.getHttpMethod() << " " << req.getUrl() << " " << req.getHttpMethod() << "\n"
+		// 		  << req.getHostName() << "\n"
+		// 		  << res.getResponse() << "\n";
 
 		if (res.sendAll(socket) == -1)
 			std::cerr << "Error while sending response\n";

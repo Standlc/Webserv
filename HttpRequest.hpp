@@ -12,6 +12,7 @@ private:
 	std::string _url;
 	std::string _body;
 	std::string _hostName;
+	std::string _hostPort;
 
 	std::vector<std::string> _headSplit;
 
@@ -45,6 +46,11 @@ public:
 		return _hostName;
 	}
 
+	std::string getHostPort()
+	{
+		return _hostPort;
+	}
+
 	int parseRequest(int clientSocket)
 	{
 		if (this->recvAll(clientSocket) == -1)
@@ -65,8 +71,7 @@ public:
 		_url = this->replaceUrlPercent20(_headSplit[1]);
 		compressSlashes(_url);
 		_httpProtocol = _headSplit[2];
-
-		_hostName = this->readHostName();
+		this->readHostName();
 
 		this->readBody();
 		return 200;
@@ -74,19 +79,19 @@ public:
 
 	int recvAll(int clientSocket)
 	{
-		int readBytes = 1;
+		int readBytes = 0;
 		int totalRead = 0;
 
-		while (readBytes > 0)
+		do
 		{
+			totalRead += readBytes;
 			_rawData.resize(totalRead + BUF_SIZE + 1, '\0');
 			readBytes = recv(clientSocket, &_rawData[totalRead], BUF_SIZE, 0);
-			totalRead += readBytes;
 			// std::cout << readBytes << "\n";
-		}
+		} while (readBytes > 0);
 
 		_endOfRequestLinePos = _rawData.find(LINE_TERM);
-		return (totalRead == 0 && readBytes == -1) ? -1 : 0;
+		return (readBytes == -1 && totalRead == 0) ? -1 : 0;
 		// return readBytes == -1 ? -1 : 0;
 	}
 
@@ -106,15 +111,19 @@ public:
 		// std::cout << _headSplit[2] << '\n';
 	}
 
-	std::string readHostName()
+	void readHostName()
 	{
-		int namePos = _rawData.find("Host:");
+		int namePos = _rawData.find("\r\nHost: ");
 		if (namePos == std::string::npos)
-			return "";
+			return;
 
-		namePos += sizeof("Host: ") - 1;
+		namePos += sizeof("\r\nHost: ") - 1;
 		int endOfNamePos = _rawData.find_first_of(" :\t\r\n", namePos);
-		return _rawData.substr(namePos, endOfNamePos - namePos);
+		_hostName = _rawData.substr(namePos, endOfNamePos - namePos);
+
+		int endOfPortPos = _rawData.find_first_of(" \t\r\n", endOfNamePos);
+		_hostPort = _rawData.substr(endOfNamePos + 1, endOfPortPos - (endOfNamePos + 1));
+		// std::cout << _hostPort << "\n\n";
 	}
 
 	std::string replaceUrlPercent20(std::string url)
@@ -123,7 +132,7 @@ public:
 		while (httpSpacePos != std::string::npos)
 		{
 			url.replace(httpSpacePos, 3, " ");
-			httpSpacePos = url.find("%20", httpSpacePos);
+			httpSpacePos = url.find("%20", httpSpacePos + 1);
 		}
 		return url;
 	}

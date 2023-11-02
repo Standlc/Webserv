@@ -25,8 +25,8 @@ public:
 	{
 		_head = "HTTP/1.1 " + std::to_string(statusCode) + " " + statusComment + LINE_TERM;
 
-		_headers = "Content-Type: " + mediaTypes.getType(path) + LINE_TERM;
-		_headers += "Content-Length: " + std::to_string(body.size()) + LINE_TERM;
+		this->addHeader("Content-Type", mediaTypes.getType(path));
+		this->addHeader("Content-Length", std::to_string(body.size()));
 
 		_body = body + LINE_TERM;
 
@@ -71,8 +71,9 @@ public:
 		_response = _head + _headers + LINE_TERM + _body;
 	}
 
-	std::string &getResponse()
+	std::string getResponse()
 	{
+		// return _head + _headers + LINE_TERM + _body;
 		return _response;
 	}
 };

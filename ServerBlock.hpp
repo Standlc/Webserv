@@ -48,8 +48,6 @@ public:
 		int maxMatchLen = 0;
 		int matchIndex = -1;
 
-		std::cout << reqUrl << "\n";
-
 		for (int i = 0; i < _locationBlocks.size(); i++)
 		{
 			if (_locationBlocks[i].path == reqUrl)
@@ -70,6 +68,11 @@ public:
 			}
 		}
 		return matchIndex == -1 ? NULL : &_locationBlocks[matchIndex];
+	}
+
+	void setRedirection()
+	{
+
 	}
 
 	std::vector<LocationBlock> _locationBlocks;

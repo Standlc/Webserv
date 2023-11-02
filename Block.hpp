@@ -3,12 +3,19 @@
 
 #include "webserv.hpp"
 
+typedef struct Redirection
+{
+	std::string url;
+	int statusCode;
+} Redirection;
+
 class Block
 {
 public:
 	std::string root;
 	std::vector<std::string> indexFiles;
 	std::map<int, std::string> errorFiles;
+	Redirection redirection;
 
 	int returnErrPage(int statusCode, HttpResponse &res)
 	{
