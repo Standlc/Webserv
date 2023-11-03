@@ -26,9 +26,10 @@
 #include <algorithm>
 #include <dirent.h>
 #include <sys/types.h>
+#include <filesystem>
 
 struct addrinfo *getOwnAddressInfo(const char *port);
-void checkFileAccess(std::string path);
+int checkFileAccess(std::string path);
 int createBindedNonBlockingSocket(struct addrinfo *addrInfo);
 int bindSocket(int socketFd, struct addrinfo *addrInfo);
 int listenToSocket(int socketFd, std::string port);
@@ -48,6 +49,7 @@ class MediaTypes;
 typedef void (*pathHandlerType)(LocationBlock &block, HttpRequest &req, HttpResponse &res);
 typedef std::map<std::string, pathHandlerType> methods;
 
+#include "StatusComments.hpp"
 #include "MediaTypes.hpp"
 #include "HttpResponse.hpp"
 #include "HttpRequest.hpp"

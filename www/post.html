@@ -1,0 +1,23 @@
+<body>
+    <form action="" method="post">
+        <label for="ffilename">File name:</label>
+        <input type="text" id="ffilename"><br><br>
+
+        <label for="fname">First name:</label>
+        <input type="text" id="fname" name="fname"><br><br>
+
+        <label for="lname">Last name:</label>
+        <input type="text" id="lname" name="lname"><br><br>
+
+        <input type="submit" value="Submit" onclick="handleRequest()">
+    </form>
+
+    <script>
+        const handleRequest = () =>
+        {
+            const formElement = document.querySelector("form");
+            const fileInputElement = document.getElementById("ffilename");
+            formElement.action = "/folder/" + fileInputElement.value;
+        }
+    </script>
+</body>

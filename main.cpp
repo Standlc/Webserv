@@ -113,12 +113,13 @@ std::string getFileExtension(std::string fileName)
 	return fileName.substr(dotPos, std::string::npos);
 }
 
-void checkFileAccess(std::string path)
+int checkFileAccess(std::string path)
 {
 	if (access(path.c_str(), F_OK) == -1)
-		throw 404;
+		return 404;
 	if (access(path.c_str(), R_OK) == -1)
-		throw 403;
+		return 403;
+	return 200;
 }
 
 void tryGetIndexes(std::string newPath, LocationBlock &block, HttpResponse &res)
@@ -127,7 +128,7 @@ void tryGetIndexes(std::string newPath, LocationBlock &block, HttpResponse &res)
 	{
 		try
 		{
-			res.loadFile(200, newPath + "/" + block.indexFiles[i], "OK");
+			res.loadFile(200, newPath + "/" + block.indexFiles[i]);
 			return;
 		}
 		catch (int status)
@@ -141,18 +142,21 @@ void tryGetIndexes(std::string newPath, LocationBlock &block, HttpResponse &res)
 
 void getMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 {
-	std::string newPath = block.root + req.getUrl();
+	std::string completePath = block.getCompletePath(req.getUrl());
 
-	checkFileAccess(newPath);
-	if (!isDirectory(newPath))
+	int accessStatus = checkFileAccess(completePath);
+	if (accessStatus != 200)
+		throw accessStatus;
+
+	if (!isDirectory(completePath))
 	{
-		res.loadFile(200, newPath, "OK");
+		res.loadFile(200, completePath);
 		return;
 	}
 
 	try
 	{
-		tryGetIndexes(newPath, block, res);
+		tryGetIndexes(completePath, block, res);
 	}
 	catch (int status)
 	{
@@ -162,14 +166,41 @@ void getMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 	}
 }
 
-void getApi(LocationBlock &block, HttpRequest &req, HttpResponse &res)
+std::string getPathInfo(std::string reqUrl, std::string locationUrl)
 {
-	std::string body = "Welcome to the API";
-	res.set(200, "OK", ".txt", body);
+	int locationUrlLen = locationUrl.length();
+	if (locationUrlLen > reqUrl.length())
+		return "";
+
+	int lastSlashPos = reqUrl.substr(locationUrlLen).find_last_of("/");
+	if (lastSlashPos == -1)
+		return reqUrl.substr(locationUrlLen);
+
+	return reqUrl.substr(lastSlashPos + locationUrlLen + 1);
 }
 
 void postMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 {
+	std::string fileName = getPathInfo(req.getUrl(), block.path);
+	std::string completePath = block.getCompletePath(block.path + "/" + fileName);
+
+	// std::cout << completePath << " " << block.path << "\n";
+	int accessStatus = checkFileAccess(completePath);
+
+	if (fileName.back() == '/')
+		throw 400;
+
+	if (accessStatus != 404)
+		throw 409;
+
+	std::ofstream file(completePath);
+	if (!file)
+		throw 500;
+
+	file << req.getBody().c_str();
+	file.close();
+
+	res.loadFile(200, completePath);
 }
 
 void deleteMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
@@ -178,6 +209,21 @@ void deleteMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 
 int main(int argc, char *argv[])
 {
+
+	// std::cout << getPathInfo("/truc/truc/api", "/truc/truc") << "\n";
+	// std::cout << getPathInfo("/truc/truc/api", "/truc/truc/") << "\n";
+	// std::cout << getPathInfo("/truc/truc/api", "/truc/truc/api") << "\n";
+	// std::cout << getPathInfo("/truc/truc/api", "/truc/truc/apit") << "\n";
+	// return 0;
+
+	// std::cout << checkFileAccess("/dgnd") << "\n";
+	// std::cout << checkFileAccess("www/") << "\n";
+	// std::cout << checkFileAccess("www/index.html") << "\n";
+	// std::cout << checkFileAccess("www/index.html/") << "\n";
+	// std::ofstream file("test");
+	// file << "hello\r\n";
+	// file.close();
+	// return 0;
 	Server server;
 
 	server.blocks.resize(1);
@@ -216,13 +262,14 @@ int main(int argc, char *argv[])
 	server.blocks[0]._locationBlocks[1].isExact = false;
 	server.blocks[0]._locationBlocks[1].autoIndex = true;
 	server.blocks[0]._locationBlocks[1].handlers["GET"] = getMethod;
+	server.blocks[0]._locationBlocks[1].handlers["POST"] = postMethod;
 	server.blocks[0]._locationBlocks[1].inheritServerBlock(server.blocks[0]);
 
 	server.blocks[0]._locationBlocks[2].path = "/api/truc";
 	server.blocks[0]._locationBlocks[2].redirection.url = "/";
 	server.blocks[0]._locationBlocks[2].redirection.statusCode = 301;
 	server.blocks[0]._locationBlocks[2].isExact = false;
-	server.blocks[0]._locationBlocks[2].handlers["GET"] = getApi;
+	server.blocks[0]._locationBlocks[2].handlers["GET"] = getMethod;
 	server.blocks[0]._locationBlocks[2].inheritServerBlock(server.blocks[0]);
 
 	//

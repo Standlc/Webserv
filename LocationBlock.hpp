@@ -21,6 +21,8 @@ int isDirectory(std::string path)
 
 class LocationBlock : public Block
 {
+private:
+
 public:
 	std::string path;
 	bool isExact;
@@ -127,6 +129,16 @@ public:
 			indexFiles = block.indexFiles;
 		if (root == "")
 			root = block.root;
+	}
+
+	// void setCompletePath(std::string path)
+	// {
+	// 	_completePath = path;
+	// }
+
+	std::string getCompletePath(std::string reqUrl)
+	{
+		return root + reqUrl;
 	}
 };
 

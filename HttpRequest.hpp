@@ -110,6 +110,17 @@ public:
 		// std::cout << _headSplit[2] << '\n';
 	}
 
+	std::string getHeader(std::string attribute)
+	{
+		int attrPos = _rawData.find("\r\n" + attribute + ": ");
+		if (attrPos == std::string::npos)
+			return "";
+
+		attrPos += sizeof("\r\n" + attribute + ": ") - 1;
+		int endOfattrPos = _rawData.find_first_of(" \t\r\n", attrPos);
+		return _rawData.substr(attrPos, endOfattrPos - attrPos);
+	}
+
 	void readHostName()
 	{
 		int namePos = _rawData.find("\r\nHost: ");
@@ -141,7 +152,7 @@ public:
 		// WHAT TO DO WITH LAAARGE BODIES???
 		int endOfHeaders = _rawData.find("\r\n\r\n");
 		if (endOfHeaders != std::string::npos)
-			_body = _rawData.substr(endOfHeaders, _rawData.size() - 1);
+			_body = _rawData.substr(endOfHeaders + 4);
 		return 0;
 	}
 };

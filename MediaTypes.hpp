@@ -6,22 +6,27 @@
 class MediaTypes
 {
 private:
-	std::map<std::string, std::string> _types;
+	static std::map<std::string, std::string> _types;
 
 public:
 	MediaTypes()
 	{
-		_types["undefined"] = "text/plain";
-		_types[".txt"] = "text/plain";
-		_types[".html"] = "text/html";
-		_types[".js"] = "text/javascript";
-		_types[".css"] = "text/css";
 	}
 
-	std::string getType(std::string filePath)
+	static std::string getType(std::string filePath)
 	{
+		if (!_types.count(getFileExtension(filePath)))
+			return _types["undefined"];
 		return _types[getFileExtension(filePath)];
 	}
+};
+
+std::map<std::string, std::string> MediaTypes::_types = {
+	{"undefined", "text/plain"},
+	{".txt", "text/plain"},
+	{".html", "text/html"},
+	{".js", "text/javascript"},
+	{".css", "text/css"},
 };
 
 #endif

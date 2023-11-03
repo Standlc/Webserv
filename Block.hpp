@@ -26,7 +26,7 @@ public:
 
 		try
 		{
-			res.loadFile(statusCode, errPagePath, "error");
+			res.loadFile(statusCode, errPagePath);
 		}
 		catch(int status)
 		{

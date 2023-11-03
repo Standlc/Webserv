@@ -11,7 +11,6 @@ private:
 	std::string _headers;
 	std::string _permanentHeaders;
 	std::string _body;
-	static MediaTypes mediaTypes;
 
 public:
 	HttpResponse() {}
@@ -25,13 +24,13 @@ public:
 	{
 		_head = "HTTP/1.1 " + std::to_string(statusCode) + " " + statusComment + LINE_TERM;
 
-		_headers = "Content-Type: " + mediaTypes.getType(path) + LINE_TERM;
+		_headers = "Content-Type: " + MediaTypes::getType(path) + LINE_TERM;
 		_headers += "Content-Length: " + std::to_string(body.size()) + LINE_TERM;
 
 		_body = body + LINE_TERM;
 	}
 
-	void loadFile(int serverStatusCode, std::string path, std::string comment)
+	void loadFile(int serverStatusCode, std::string path)
 	{
 		checkFileAccess(path);
 
@@ -41,7 +40,7 @@ public:
 			std::cerr << "Error while reading " << path << "\n";
 			throw 500;
 		}
-		this->set(serverStatusCode, comment, path, fileContent);
+		this->set(serverStatusCode, StatusComments::get(serverStatusCode), path, fileContent);
 	}
 
 	int sendAll(int socket)
@@ -75,6 +74,6 @@ public:
 	}
 };
 
-MediaTypes HttpResponse::mediaTypes;
+// MediaTypes HttpResponse::mediaTypes;
 
 #endif

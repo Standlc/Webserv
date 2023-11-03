@@ -16,13 +16,6 @@ public:
 
 	Server()
 	{
-		_statusComments[200] = "OK";
-		_statusComments[400] = "Bad Request";
-		_statusComments[403] = "Forbidden Resource";
-		_statusComments[404] = "Resource Not Found";
-		_statusComments[405] = "Method Not Allowed";
-		_statusComments[500] = "Internal Server Error";
-		_statusComments[501] = "Not Implemented";
 	}
 
 	int listen()
@@ -135,9 +128,9 @@ public:
 		if (res.sendAll(socket) == -1)
 			std::cerr << "Error while sending response\n";
 
-		std::cout << req.getHttpMethod() << " " << req.getUrl() << " " << req.getHttpMethod() << "\n"
-				  << req.getHostName() << "\n"
-				  << res.getResponse() << "\n\n";
+		// std::cout << req.getHttpMethod() << " " << req.getUrl() << " " << req.getHttpMethod() << "\n"
+		// 		  << req.getHostName() << "\n"
+		// 		  << res.getResponse() << "\n\n";
 	}
 
 	void returnDefaultErrPage(int statusCode, HttpResponse &res)
@@ -145,7 +138,7 @@ public:
 		try
 		{
 			std::string errPagePath = "defaultPages/" + std::to_string(statusCode) + ".html";
-			res.loadFile(statusCode, errPagePath, _statusComments[statusCode]);
+			res.loadFile(statusCode, errPagePath);
 		}
 		catch (int status)
 		{
