@@ -8,7 +8,7 @@ DEPENDENCIES = 	Server.hpp				ServerConfig.hpp \
 				ServerBlock.hpp			LocationBlock.hpp \
 				LocationBlock.hpp		HttpResponse.hpp \
 				HttpRequest.hpp			MediaTypes.hpp \
-				webserv.hpp
+				webserv.hpp \
 
 RM = rm -rf
 

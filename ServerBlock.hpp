@@ -34,7 +34,7 @@ public:
 			if (macthingLocation == NULL)
 				throw 404;
 			if (!macthingLocation->handlers.count(req.getHttpMethod()))
-				throw 501;
+				throw 405;
 
 			macthingLocation->execute(req, res);
 		}

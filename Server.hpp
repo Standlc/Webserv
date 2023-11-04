@@ -9,8 +9,6 @@ private:
 	std::vector<struct pollfd> _sockets;
 	std::vector<int> _listeningSockets;
 
-	std::map<int, std::string> _statusComments;
-
 public:
 	std::vector<ServerBlock> blocks;
 
@@ -128,6 +126,7 @@ public:
 		if (res.sendAll(socket) == -1)
 			std::cerr << "Error while sending response\n";
 
+		// std::cout << req.getRawData() << "\n";
 		// std::cout << req.getHttpMethod() << " " << req.getUrl() << " " << req.getHttpMethod() << "\n"
 		// 		  << req.getHostName() << "\n"
 		// 		  << res.getResponse() << "\n\n";
@@ -137,13 +136,13 @@ public:
 	{
 		try
 		{
-			std::string errPagePath = "defaultPages/" + std::to_string(statusCode) + ".html";
+			std::string errPagePath = "defaultPages/error/" + std::to_string(statusCode) + ".html";
 			res.loadFile(statusCode, errPagePath);
 		}
 		catch (int status)
 		{
 			std::string body = "The server encoutered some issue while handling your request";
-			res.set(status, _statusComments[status], ".txt", body);
+			res.set(status, StatusComments::get(status), ".txt", body);
 		}
 	}
 

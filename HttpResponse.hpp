@@ -32,7 +32,9 @@ public:
 
 	void loadFile(int serverStatusCode, std::string path)
 	{
-		checkFileAccess(path);
+		int accessStatus = checkFileAccess(path);
+		if (accessStatus != 200)
+			throw accessStatus;
 
 		std::string fileContent;
 		if (getFileContent(path, fileContent))

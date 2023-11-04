@@ -5,7 +5,6 @@ void compressSlashes(std::string &str)
 	int startSlashPos = str.find_first_of("/");
 	int endSlashPos = str.find_first_not_of("/", startSlashPos);
 
-	// std::cout << str << "\n";
 	while (startSlashPos != -1)
 	{
 		// std::cout << startSlashPos << " " << endSlashPos << "\n";
@@ -13,6 +12,7 @@ void compressSlashes(std::string &str)
 		startSlashPos = str.find_first_of("/", startSlashPos + 1);
 		endSlashPos = str.find_first_not_of("/", startSlashPos);
 	}
+	// std::cout << str << "\n";
 }
 
 std::string getSocketPort(int socket)
@@ -181,22 +181,21 @@ std::string getPathInfo(std::string reqUrl, std::string locationUrl)
 
 void postMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 {
-	std::string fileName = getPathInfo(req.getUrl(), block.path);
-	std::string completePath = block.getCompletePath(block.path + "/" + fileName);
+	// std::string fileName = getPathInfo(req.getUrl(), block.path);
+	// std::string completePath = block.getCompletePath(block.path + "/" + fileName);
+	std::string completePath = block.getCompletePath(req.getUrl());
 
-	// std::cout << completePath << " " << block.path << "\n";
-	int accessStatus = checkFileAccess(completePath);
+	if (completePath.back() == '/')
+		throw 403;
 
-	if (fileName.back() == '/')
-		throw 400;
-
-	if (accessStatus != 404)
+	if (checkFileAccess(completePath) != 404)
 		throw 409;
 
-	std::ofstream file(completePath);
+	std::ofstream file(completePath.c_str());
 	if (!file)
 		throw 500;
 
+	// Extract request body???
 	file << req.getBody().c_str();
 	file.close();
 
@@ -205,11 +204,35 @@ void postMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 
 void deleteMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 {
+	// std::string fileName = getPathInfo(req.getUrl(), block.path);
+	// std::string completePath = block.getCompletePath(block.path + "/" + fileName);
+	std::string completePath = block.getCompletePath(req.getUrl());
+
+	// std::cout << req.getRawData() << "\n";
+	std::cout << "DELETE\n";
+
+	if (checkFileAccess(completePath) == 404)
+		throw 404;
+	
+	if (isDirectory(completePath))
+		throw 403;
+
+	if (std::remove(completePath.c_str()) != 0)
+		throw 500;
+
+	res.loadFile(303, "defaultPages/delete_success.html");
 }
+
+// TO DO:
+// body max size
+// cgi conig
+// make members private
 
 int main(int argc, char *argv[])
 {
-
+	// if (std::remove("www/folder") != 0)
+	// 	std::cout << "404";
+	// return 0;
 	// std::cout << getPathInfo("/truc/truc/api", "/truc/truc") << "\n";
 	// std::cout << getPathInfo("/truc/truc/api", "/truc/truc/") << "\n";
 	// std::cout << getPathInfo("/truc/truc/api", "/truc/truc/api") << "\n";
@@ -220,10 +243,11 @@ int main(int argc, char *argv[])
 	// std::cout << checkFileAccess("www/") << "\n";
 	// std::cout << checkFileAccess("www/index.html") << "\n";
 	// std::cout << checkFileAccess("www/index.html/") << "\n";
-	// std::ofstream file("test");
-	// file << "hello\r\n";
+	// std::ofstream file("test/");
+	// // file << "hello\r\n";
 	// file.close();
 	// return 0;
+
 	Server server;
 
 	server.blocks.resize(1);
@@ -263,6 +287,7 @@ int main(int argc, char *argv[])
 	server.blocks[0]._locationBlocks[1].autoIndex = true;
 	server.blocks[0]._locationBlocks[1].handlers["GET"] = getMethod;
 	server.blocks[0]._locationBlocks[1].handlers["POST"] = postMethod;
+	server.blocks[0]._locationBlocks[1].handlers["DELETE"] = deleteMethod;
 	server.blocks[0]._locationBlocks[1].inheritServerBlock(server.blocks[0]);
 
 	server.blocks[0]._locationBlocks[2].path = "/api/truc";

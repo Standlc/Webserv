@@ -62,15 +62,20 @@ public:
 		this->splitHead();
 		if (_headSplit.size() != 3 || _headSplit[1][0] != '/')
 		{
+			std::cout << _rawData << "\n";
 			std::cerr << "Bad request syntax\n";
 			throw 400;
 		}
 
-		// RETURN 400 IF HTTP METHOD IS UNKNOWN!!
+		// RETURN 501 IF HTTP METHOD IS UNKNOWN!!
 
 		_httpMethod = _headSplit[0];
 		_url = this->replaceUrlPercent20(_headSplit[1]);
 		compressSlashes(_url);
+
+		if (_url.find("../") != -1)
+			throw 400;
+
 		_httpProtocol = _headSplit[2];
 		this->readHostName();
 		this->readBody();
@@ -91,7 +96,6 @@ public:
 
 		_endOfRequestLinePos = _rawData.find(LINE_TERM);
 		return (readBytes == -1 && totalRead == 0) ? -1 : 0;
-		// return readBytes == -1 ? -1 : 0;
 	}
 
 	void splitHead()
@@ -133,7 +137,6 @@ public:
 
 		int endOfPortPos = _rawData.find_first_of(" \t\r\n", endOfNamePos);
 		_hostPort = _rawData.substr(endOfNamePos + 1, endOfPortPos - (endOfNamePos + 1));
-		// std::cout << _hostPort << "\n\n";
 	}
 
 	std::string replaceUrlPercent20(std::string url)
