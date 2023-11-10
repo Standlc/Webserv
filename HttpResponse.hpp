@@ -2,36 +2,64 @@
 #define HTTP_RESPONSE_HPP
 
 #include "webserv.hpp"
+#include "StatusComments.hpp"
+#include "MediaTypes.hpp"
+#include "ServerStream.hpp"
 
-class HttpResponse
+class HttpResponse : public ServerStream
 {
 private:
-	std::string _response;
 	std::string _head;
 	std::string _headers;
 	std::string _permanentHeaders;
 	std::string _body;
 
+	bool _isSet;
+
 public:
-	HttpResponse() {}
+	HttpResponse()
+	{
+		_isSet = false;
+	}
 
 	void addHeader(std::string property, std::string value)
 	{
 		_permanentHeaders += property + ": " + value + LINE_TERM;
 	}
 
-	void set(int statusCode, std::string statusComment, std::string path, std::string &body)
+	void reset()
 	{
-		_head = "HTTP/1.1 " + std::to_string(statusCode) + " " + statusComment + LINE_TERM;
+		_isSet = false;
+		_head = "";
+		_headers = "";
+		_permanentHeaders = "";
+		_body = "";
+		_rawData = "";
+		_outputData = "";
+	}
 
-		_headers = "Content-Type: " + MediaTypes::getType(path) + LINE_TERM;
-		_headers += "Content-Length: " + std::to_string(body.size()) + LINE_TERM;
+	void set(int statusCode, std::string path = "", std::string *body = NULL)
+	{
+		_isSet = true;
 
-		_body = body + LINE_TERM;
+		this->createHead(statusCode);
+
+		if (path != "")
+		{
+			_headers = "Content-Type: " + MediaTypes::getType(path) + LINE_TERM;
+			_headers += "Content-Length: " + std::to_string(body->size()) + LINE_TERM;
+			_body = *body;
+		}
+	}
+
+	void createHead(int statusCode)
+	{
+		_head = "HTTP/1.1 " + std::to_string(statusCode) + " " + StatusComments::get(statusCode) + LINE_TERM;
 	}
 
 	void loadFile(int serverStatusCode, std::string path)
 	{
+		this->reset();
 		int accessStatus = checkFileAccess(path);
 		if (accessStatus != 200)
 			throw accessStatus;
@@ -42,40 +70,25 @@ public:
 			std::cerr << "Error while reading " << path << "\n";
 			throw 500;
 		}
-		this->set(serverStatusCode, StatusComments::get(serverStatusCode), path, fileContent);
+		this->set(serverStatusCode, path, &fileContent);
 	}
 
-	int sendAll(int socket)
+	void updateOutputData()
 	{
-		updateResponse();
-
-		int responseSize = _response.size();
-		int sentBytes = send(socket, &_response[0], responseSize, 0);
-		int totalSentBytes = sentBytes;
-
-		// std::cout << "Sending...\n";
-		while (sentBytes != -1 && totalSentBytes < responseSize)
+		if (_rawData != "")
 		{
-			sentBytes = send(socket, &_response[totalSentBytes], responseSize - totalSentBytes, 0);
-			totalSentBytes += sentBytes;
-			// std::cout << sentBytes << "\n";
+			_outputData = _head + _headers + _permanentHeaders + _rawData + LINE_TERM;
 		}
-		// std::cout << "finished sending response\n";
-		return (sentBytes == -1) ? -1 : 0;
+		else
+		{
+			_outputData = _head + _headers + _permanentHeaders + LINE_TERM + _body + LINE_TERM;
+		}
 	}
 
-	void updateResponse()
+	bool isSet()
 	{
-		_response = _head + _headers + _permanentHeaders + LINE_TERM + _body;
-	}
-
-	std::string getResponse()
-	{
-		updateResponse();
-		return _response;
+		return _isSet;
 	}
 };
-
-// MediaTypes HttpResponse::mediaTypes;
 
 #endif

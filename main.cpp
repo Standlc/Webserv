@@ -1,19 +1,5 @@
 #include "webserv.hpp"
-
-void compressSlashes(std::string &str)
-{
-	int startSlashPos = str.find_first_of("/");
-	int endSlashPos = str.find_first_not_of("/", startSlashPos);
-
-	while (startSlashPos != -1)
-	{
-		// std::cout << startSlashPos << " " << endSlashPos << "\n";
-		str.replace(startSlashPos, endSlashPos != -1 ? endSlashPos - startSlashPos : -1, "/");
-		startSlashPos = str.find_first_of("/", startSlashPos + 1);
-		endSlashPos = str.find_first_not_of("/", startSlashPos);
-	}
-	// std::cout << str << "\n";
-}
+#include "Server.hpp"
 
 std::string getSocketPort(int socket)
 {
@@ -48,7 +34,7 @@ struct addrinfo *getOwnAddressInfo(const char *port)
 	return res;
 }
 
-int createBindedNonBlockingSocket(struct addrinfo *addrInfo)
+int createBindedSocket(struct addrinfo *addrInfo)
 {
 	int socketFd = socket(addrInfo->ai_family, addrInfo->ai_socktype, addrInfo->ai_protocol);
 	if (socketFd == -1)
@@ -56,7 +42,7 @@ int createBindedNonBlockingSocket(struct addrinfo *addrInfo)
 		std::cerr << "socket: " << strerror(errno) << "\n";
 		return -1;
 	}
-	fcntl(socketFd, F_SETFL, O_NONBLOCK);
+	// fcntl(socketFd, F_SETFL, O_NONBLOCK);
 	return socketFd;
 }
 
@@ -108,9 +94,9 @@ std::string getFileExtension(std::string fileName)
 	int lastSlashPos = fileName.find_last_of('/');
 	int dotPos = fileName.find_last_of(".");
 
-	if (dotPos == std::string::npos || dotPos < lastSlashPos)
+	if (dotPos == -1 || dotPos < lastSlashPos)
 		return "undefined";
-	return fileName.substr(dotPos, std::string::npos);
+	return fileName.substr(dotPos);
 }
 
 int checkFileAccess(std::string path)
@@ -124,7 +110,8 @@ int checkFileAccess(std::string path)
 
 void tryGetIndexes(std::string newPath, LocationBlock &block, HttpResponse &res)
 {
-	for (int i = 0; i < block.indexFiles.size(); i++)
+	int locationBlockIndexSize = block.indexFiles.size();
+	for (int i = 0; i < locationBlockIndexSize; i++)
 	{
 		try
 		{
@@ -166,23 +153,8 @@ void getMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 	}
 }
 
-std::string getPathInfo(std::string reqUrl, std::string locationUrl)
-{
-	int locationUrlLen = locationUrl.length();
-	if (locationUrlLen > reqUrl.length())
-		return "";
-
-	int lastSlashPos = reqUrl.substr(locationUrlLen).find_last_of("/");
-	if (lastSlashPos == -1)
-		return reqUrl.substr(locationUrlLen);
-
-	return reqUrl.substr(lastSlashPos + locationUrlLen + 1);
-}
-
 void postMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 {
-	// std::string fileName = getPathInfo(req.getUrl(), block.path);
-	// std::string completePath = block.getCompletePath(block.path + "/" + fileName);
 	std::string completePath = block.getCompletePath(req.getUrl());
 
 	if (completePath.back() == '/')
@@ -204,11 +176,8 @@ void postMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 
 void deleteMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
 {
-	// std::string fileName = getPathInfo(req.getUrl(), block.path);
-	// std::string completePath = block.getCompletePath(block.path + "/" + fileName);
 	std::string completePath = block.getCompletePath(req.getUrl());
 
-	// std::cout << req.getRawData() << "\n";
 	std::cout << "DELETE\n";
 
 	if (checkFileAccess(completePath) == 404)
@@ -274,7 +243,7 @@ int main(int argc, char *argv[])
 	if (server.listen() == -1)
 		return 1;
 
-	server.blocks[0]._locationBlocks.resize(3);
+	server.blocks[0]._locationBlocks.resize(4);
 
 	server.blocks[0]._locationBlocks[0].path = "/";
 	server.blocks[0]._locationBlocks[0].isExact = false;
@@ -297,36 +266,12 @@ int main(int argc, char *argv[])
 	server.blocks[0]._locationBlocks[2].handlers["GET"] = getMethod;
 	server.blocks[0]._locationBlocks[2].inheritServerBlock(server.blocks[0]);
 
-	//
-
-	// server.blocks[1]._locationBlocks.resize(1);
-
-	// server.blocks[1]._locationBlocks[0].path = "/";
-	// server.blocks[1]._locationBlocks[0].isExact = false;
-	// server.blocks[1]._locationBlocks[0].handlers["GET"] = getMethod;
-	// server.blocks[1]._locationBlocks[0].inheritServerBlock(server.blocks[1]);
-
-	// block.path = "/";
-	// block.isExact = false;
-	// block.handlers["GET"] = getMethod;
-	// server.blocks[0].addpath(block);
-
-	// server.blocks[0].addpath(block);
-
-	// server.blocks[0].http["GET"]
-	// server.blocks[0].setpath("GET", "/", getMethod);
-
-	// server.blocks[0].setpath("GET", "/api", getApi);
-
-	// server.blocks[0].setpath("POST", "/", postMethod);
-
-	//
-
-	// server.blocks[1].setpath("GET", "/", getMethod);
-
-	//
-
-	// server.blocks[2].setpath("GET", "/", getMethod);
+	server.blocks[0]._locationBlocks[3].path = "/upload";
+	server.blocks[0]._locationBlocks[3].isExact = false;
+	server.blocks[0]._locationBlocks[3].handlers["GET"] = getMethod;
+	server.blocks[0]._locationBlocks[3].handlers["POST"] = postMethod;
+	server.blocks[0]._locationBlocks[3].cgiExtensions[".py"] = "/usr/bin/python3";
+	server.blocks[0]._locationBlocks[3].inheritServerBlock(server.blocks[0]);
 
 	if (server.monitorClients() == -1)
 		return 1;

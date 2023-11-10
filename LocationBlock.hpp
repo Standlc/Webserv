@@ -1,8 +1,15 @@
 #ifndef LOCATION_BLOCK_HPP
 #define LOCATION_BLOCK_HPP
 
-#include "ServerBlock.hpp"
 #include "webserv.hpp"
+#include "Block.hpp"
+#include "HttpResponse.hpp"
+#include "HttpRequest.hpp"
+
+class LocationBlock;
+
+typedef void (*pathHandlerType)(LocationBlock &block, HttpRequest &req, HttpResponse &res);
+typedef std::map<std::string, pathHandlerType> methods;
 
 int isDirectory(std::string path)
 {
@@ -36,7 +43,7 @@ public:
 			if (redirection.url != "")
 			{
 				res.addHeader("Location", this->assembleRedirectionUrl(req));
-				this->returnErrPage(redirection.statusCode, res);
+				this->loadErrPage(redirection.statusCode, res);
 				return;
 			}
 
@@ -44,7 +51,7 @@ public:
 		}
 		catch (int status)
 		{
-			this->returnErrPage(status, res);
+			this->loadErrPage(status, res);
 		}
 	}
 
@@ -69,7 +76,7 @@ public:
 		if (listingPage == "")
 			throw 500;
 
-		res.set(200, "OK", ".html", listingPage);
+		res.set(200, ".html", &listingPage);
 	}
 
 	std::string createListingDirPage(std::string reqUrl, struct dirent *entry, DIR *dirStream)
@@ -115,7 +122,7 @@ public:
 
 		if (redirection.url.find_first_of("/") == 0)
 		{
-			return "http://" + req.getHostName() + ":" + req.getHostPort() + redirection.url;
+			return "http://" + req.getHeader("Host") + redirection.url;
 		}
 
 		return redirection.url;

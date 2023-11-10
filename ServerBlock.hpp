@@ -2,7 +2,15 @@
 #define SERVER_BLOCK
 
 #include "webserv.hpp"
+#include "Server.hpp"
+#include "Block.hpp"
 #include "LocationBlock.hpp"
+#include "PollFd.hpp"
+
+bool isUnkownMethod(std::string method)
+{
+	return method != "GET" && method != "POST" && method != "DELETE";
+}
 
 int compare(std::string str1, std::string str2)
 {
@@ -15,7 +23,7 @@ int compare(std::string str1, std::string str2)
 	return i;
 }
 
-typedef std::vector<LocationBlock> locationBlocks;
+class ClientPollFd;
 
 class ServerBlock : public Block
 {
@@ -25,38 +33,24 @@ public:
 	std::string port;
 	std::vector<std::string> hostNames;
 
-	void execute(HttpRequest &req, HttpResponse &res)
-	{
-		LocationBlock *macthingLocation = this->findLocationBlockByPath(req.getUrl());
+	void execute(Server &server, ClientPollFd &client);
 
-		try
-		{
-			if (macthingLocation == NULL)
-				throw 404;
-			if (!macthingLocation->handlers.count(req.getHttpMethod()))
-				throw 405;
-
-			macthingLocation->execute(req, res);
-		}
-		catch (int status)
-		{
-			this->returnErrPage(status, res);
-		}
-	}
+	void handleCgi(Server &server, ClientPollFd &client);
 
 	LocationBlock *findLocationBlockByPath(std::string reqUrl)
 	{
-		int maxMatchLen = 0;
+		int locationBlocksSize = _locationBlocks.size();
+		size_t maxMatchLen = 0;
 		int matchIndex = -1;
 
-		for (int i = 0; i < _locationBlocks.size(); i++)
+		for (int i = 0; i < locationBlocksSize; i++)
 		{
 			if (_locationBlocks[i].path == reqUrl)
 				return &_locationBlocks[i];
 			if (_locationBlocks[i].isExact)
 				continue;
 
-			int compLen = compare(_locationBlocks[i].path, reqUrl);
+			size_t compLen = compare(_locationBlocks[i].path, reqUrl);
 			if (compLen <= maxMatchLen || compLen < _locationBlocks[i].path.length() - 1)
 				continue;
 
@@ -69,11 +63,6 @@ public:
 			}
 		}
 		return matchIndex == -1 ? NULL : &_locationBlocks[matchIndex];
-	}
-
-	void setRedirection()
-	{
-
 	}
 
 	std::vector<LocationBlock> _locationBlocks;

@@ -1,33 +1,33 @@
 NAME = webserv
 
-SRCS = main.cpp
+SOURCES = main.cpp
 
-OBJECTS = $(SRCS:.cpp=.o)
+OBJECTS = $(SOURCES:.cpp=.o)
 
-DEPENDENCIES = 	Server.hpp				ServerConfig.hpp \
+DEPENDENCIES = 	Makefile Server.hpp				ServerConfig.hpp \
 				ServerBlock.hpp			LocationBlock.hpp \
 				LocationBlock.hpp		HttpResponse.hpp \
 				HttpRequest.hpp			MediaTypes.hpp \
 				webserv.hpp \
 
+FLAGS = -Wextra -Wall -std=c++98 #-Werror 
+
 RM = rm -rf
 
-FLAGS = #-Werror -Wall -Wextra -std=c++98
+all: fclean $(NAME)
 
-all: $(NAME)
+$(NAME): $(OBJECTS)
+	c++ $(OBJECTS) -o $(NAME)
 
-$(NAME) : $(OBJECTS)
-		c++ $(OBJECTS) -o $(NAME)
-
-%.o: %.cpp $(DEPENDENCIES)
-		c++ $(CFLAGS) -c $< -o $@
+%.o: %.cpp
+	c++ $(FLAGS) -c $< -o $@
 
 clean:
-		@$(RM) $(OBJECTS)
+	$(RM) $(OBJECTS)
 
-fclean:	clean
-		@$(RM) $(NAME)
+fclean: clean
+	$(RM) $(NAME)
 
-re : fclean all
+re: fclean all
 
-.PHONY : all re fclean clean
+.PHONY: all re fclean clean

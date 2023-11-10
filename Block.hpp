@@ -2,6 +2,7 @@
 #define BLOCK_HPP
 
 #include "webserv.hpp"
+#include "HttpResponse.hpp"
 
 typedef struct Redirection
 {
@@ -16,8 +17,9 @@ public:
 	std::vector<std::string> indexFiles;
 	std::map<int, std::string> errorFiles;
 	Redirection redirection;
+	std::map<std::string, std::string> cgiExtensions;
 
-	void returnErrPage(int statusCode, HttpResponse &res)
+	void loadErrPage(int statusCode, HttpResponse &res)
 	{
 		if (this->hasErrorPage(statusCode) == false)
 			throw statusCode;
