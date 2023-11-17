@@ -1,0 +1,5 @@
+print("Content-Type: text/plain\r\n")
+print("Transfer-Encoding: chunked\r\n")
+print("\r\n")
+print("5\r\n")
+print("hello\r\n")

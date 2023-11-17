@@ -1,152 +1,204 @@
 #ifndef LOCATION_BLOCK_HPP
 #define LOCATION_BLOCK_HPP
 
-#include "webserv.hpp"
 #include "Block.hpp"
-#include "HttpResponse.hpp"
 #include "HttpRequest.hpp"
+#include "HttpResponse.hpp"
+#include "PollFd.hpp"
+#include "Server.hpp"
+#include "webserv.hpp"
 
+class Server;
+class ServerBlock;
+class ClientPollFd;
 class LocationBlock;
 
 typedef void (*pathHandlerType)(LocationBlock &block, HttpRequest &req, HttpResponse &res);
-typedef std::map<std::string, pathHandlerType> methods;
 
-int isDirectory(std::string path)
-{
-	struct stat pathInfo;
-
-	if (stat(&path[0], &pathInfo) == -1)
-	{
-		std::cerr << "stat: " << strerror(errno) << "\n";
-		throw 500;
-		// return -1;
-	}
-
-	// (s.st_mode & S_IFREG) FOR FILE
-	return (pathInfo.st_mode & S_IFDIR) != 0;
+bool isUnkownMethod(std::string method) {
+    return method != "GET" && method != "POST" && method != "DELETE";
 }
 
-class LocationBlock : public Block
-{
-private:
+int pipeAndFork(int pipes[2]) {
+    if (pipe(pipes)) {
+        debugErr("pipe", strerror(errno));
+        return -1;
+    }
 
-public:
-	std::string path;
-	bool isExact;
-	bool autoIndex;
-	std::map<std::string, pathHandlerType> handlers;
+    int pid = fork();
+    if (pid == -1) {
+        debugErr("fork", strerror(errno));
+        close(pipes[0]);
+        close(pipes[1]);
+        return -1;
+    }
+    return pid;
+}
 
-	void execute(HttpRequest &req, HttpResponse &res)
-	{
-		try
-		{
-			if (redirection.url != "")
-			{
-				res.addHeader("Location", this->assembleRedirectionUrl(req));
-				this->loadErrPage(redirection.statusCode, res);
-				return;
-			}
+int isDirectory(std::string path) {
+    struct stat pathInfo;
 
-			handlers[req.getHttpMethod()](*this, req, res);
-		}
-		catch (int status)
-		{
-			this->loadErrPage(status, res);
-		}
-	}
+    if (stat(&path[0], &pathInfo) == -1) {
+        debugErr("stat", strerror(errno));
+        throw 500;
+    }
 
-	void listFiles(HttpResponse &res, std::string reqUrl)
-	{
-		std::string dirPath = root + reqUrl;
-		DIR *dirStream = opendir(&dirPath[0]);
-		if (!dirStream)
-		{
-			std::cerr << "opendir: " << strerror(errno) << "\n";
-			throw 500;
-		}
+    return (pathInfo.st_mode & S_IFDIR) != 0;
+}
 
-		struct dirent *entry = readdir(dirStream);
-		if (!entry)
-		{
-			std::cerr << "readdir: " << strerror(errno) << "\n";
-			throw 500;
-		}
+class LocationBlock : public Block {
+   private:
+    std::string _path;
+    bool _isExact;
+    std::map<std::string, pathHandlerType> _handlers;
 
-		std::string listingPage = createListingDirPage(reqUrl, entry, dirStream);
-		if (listingPage == "")
-			throw 500;
+   public:
+    LocationBlock(const Block &b) : Block(b), _isExact(false){};
 
-		res.set(200, ".html", &listingPage);
-	}
+    LocationBlock &operator=(const LocationBlock &b) {
+        Block::operator=(b);
+        _path = b._path;
+        _isExact = b._isExact;
+        _handlers = b._handlers;
+        return *this;
+    }
 
-	std::string createListingDirPage(std::string reqUrl, struct dirent *entry, DIR *dirStream)
-	{
-		std::string page;
+    clientPollFdHandlerType execute(Server &server, ClientPollFd &client);
+    clientPollFdHandlerType handleCgi(Server &server, ClientPollFd &client);
 
-		page = "<!DOCTYPE html><html><head><title>Index of " + reqUrl + "</title></head>";
-		page += "<body style='font-family: monospace;'><h1>Index of " + reqUrl + "</h1><hr><pre style='display: flex;flex-direction: column;'>";
+    int execveCgi(Server &server, ClientPollFd &client, int cgiReqPipes[2], std::string cgiFile) {
+        int cgiResPipes[2];
+        int pid = pipeAndFork(cgiResPipes);
+        if (pid == -1) {
+            return -1;
+        }
 
-		errno = 0;
-		while (entry)
-		{
-			std::string entry_name = entry->d_name;
-			if (entry_name != ".")
-			{
-				int isDir = isDirectory(root + reqUrl + "/" + entry->d_name);
-				if (isDir == -1)
-					return "";
-				if (isDir)
-					entry_name += "/";
+        if (pid == 0) {
+            this->handleCgiChildProcess(cgiReqPipes, cgiResPipes, cgiFile);
+            exitProgram(server);
+        }
+        client.setUpCgi(pid, cgiResPipes);
+        return 0;
+    }
 
-				page += "<a href='" + entry_name + "'>" + entry_name + "</a>";
-			}
+    void handleCgiChildProcess(int reqPipes[2], int resPipes[2], std::string filename) {
+        if (reqPipes != NULL) {
+            if (dup2(reqPipes[0], 0) == -1) {
+                debugErr("dup2", strerror(errno));
+            }
+            close(reqPipes[1]);
+        }
 
-			entry = readdir(dirStream);
-			if (!entry && errno != 0)
-			{
-				std::cerr << "readdir: " << strerror(errno) << "\n";
-				return "";
-			}
-		}
+        if (dup2(resPipes[1], 1) == -1) {
+            debugErr("dup2", strerror(errno));
+        }
+        close(resPipes[0]);
 
-		page += "</pre><hr></body></html>";
-		return page;
-	}
+        if (chdir(&(_root[0])) == -1) {
+            debugErr("chdir", strerror(errno));
+        }
+        std::string command = _cgiExtensions[getFileExtension(filename)];
+        char *const args[] = {(char *)&command[0], (char *)&filename[0], NULL};
 
-	std::string assembleRedirectionUrl(HttpRequest &req)
-	{
-		if (redirection.url.find("http:") == 0 || redirection.url.find("https:") == 0)
-		{
-			return redirection.url;
-		}
+        if (execve(args[0], args, g_env) == -1) {
+            debugErr("execve", strerror(errno));
+        }
+    }
 
-		if (redirection.url.find_first_of("/") == 0)
-		{
-			return "http://" + req.getHeader("Host") + redirection.url;
-		}
+    // void proxyPass(Server &server, ClientPollFd &client) {
+    //     // Change host name
+    //     // change connection to close
+    //     // Send 502 if request fails or res status is error
+    // }
 
-		return redirection.url;
-	}
+    void throwReqErrors(HttpRequest &req) {
+        std::string reqHttpMethod = req.getHttpMethod();
+        if (isUnkownMethod(reqHttpMethod)) {
+            throw 501;
+        }
+        if (!this->handlesHttpMethod(reqHttpMethod)) {
+            throw 405;
+        }
+        if (reqHttpMethod == "POST") {
+            if (this->exceedsReqMaxSize(req.getBodySize())) {
+                throw 413;
+            }
+        }
+        // if (req.hasBody() && reqHttpMethod != "POST") {
+        //     throw 400;
+        // }
+    }
 
-	void inheritServerBlock(Block &block)
-	{
-		if (redirection.url == "")
-			redirection = block.redirection;
-		if (indexFiles.size() == 0)
-			indexFiles = block.indexFiles;
-		if (root == "")
-			root = block.root;
-	}
+    std::string assembleRedirectionUrl(HttpRequest &req) {
+        if (_redirection.url.compare(0, 5, "http:") == 0 || _redirection.url.compare(0, 6, "https:") == 0) {
+            return _redirection.url;
+        }
+        if (_redirection.url[0] == '/') {
+            return "http://" + req.getHeader("Host") + _redirection.url;
+        }
+        return _redirection.url;
+    }
 
-	// void setCompletePath(std::string path)
-	// {
-	// 	_completePath = path;
-	// }
+    bool handlesCgiExtension(std::string extension) {
+        return _cgiExtensions.find(extension) != _cgiExtensions.end();
+    }
 
-	std::string getCompletePath(std::string reqUrl)
-	{
-		return root + reqUrl;
-	}
+    bool exceedsReqMaxSize(size_t size) {
+        if (_reqBodyMaxSize == (size_t)-1) {
+            return false;
+        }
+        return size > _reqBodyMaxSize;
+    }
+
+    std::string generateSessionCookie() {
+        std::string chars = "0123456789abcdef";
+        std::string cookie;
+        for (int i = 0; i < 6; i++) {
+            cookie += chars[(int)(std::rand() / (float)RAND_MAX * 15)];
+        }
+        return cookie;
+    }
+
+    void setPath(const std::string &path, bool isExact = false) {
+        if (path[0] != '/') {
+            _path = "/" + path;
+        }
+        _path = path;
+        compressSlashes(_path);
+        _isExact = isExact;
+    }
+
+    void setHandlers(pathHandlerType getMethod, pathHandlerType postMethod, pathHandlerType deleteMethod) {
+        if (getMethod != NULL) {
+            _handlers["GET"] = getMethod;
+        }
+        if (postMethod != NULL) {
+            _handlers["POST"] = postMethod;
+        }
+        if (deleteMethod != NULL) {
+            _handlers["DELETE"] = deleteMethod;
+        }
+    }
+
+    bool handlesHttpMethod(std::string httpMethod) {
+        return _handlers.find(httpMethod) != _handlers.end();
+    }
+
+    const std::string &getPath() {
+        return _path;
+    }
+
+    bool isExactPath() {
+        return _isExact;
+    }
+
+    const std::string &getIndex() {
+        return _index;
+    }
+
+    bool isAutoIndex() {
+        return _autoIndex;
+    }
 };
 
 #endif

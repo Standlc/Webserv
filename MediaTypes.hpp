@@ -3,139 +3,66 @@
 
 #include "webserv.hpp"
 
-class MediaTypes
-{
-private:
-	static std::map<std::string, std::string> _types;
-	static bool _isInit;
+class MediaTypes {
+   private:
+    static std::unordered_map<std::string, std::string> _types;
+    static bool _isInit;
 
-public:
-	MediaTypes()
-	{
-	}
+   public:
+    MediaTypes() {
+    }
 
-	static void init()
-	{
-		if (_isInit)
-			return;
+    static void init() {
+        if (_isInit)
+            return;
 
-		_isInit = true;
-		_types["undefined"] = "text/plain";
-		_types[".txt"] = "text/plain";
-		_types[".html"] = "text/html";
-		_types[".js"] = "text/javascript";
-		_types[".css"] = "text/css";
-	}
+        _isInit = true;
+        _types["undefined"] = "text/plain";
+        _types[".txt"] = "text/plain";
+        _types[".html"] = "text/html";
+        _types[".htm"] = "text/html";
+        _types[".css"] = "text/css";
+        _types[".js"] = "text/javascript";
+        _types[".json"] = "application/json";
+        _types[".jpeg"] = "image/jpeg";
+        _types[".jpg"] = "image/jpeg";
+        _types[".png"] = "image/png";
+        _types[".gif"] = "image/gif";
+        _types[".svg"] = "image/svg+xml";
+        _types[".bmp"] = "image/bmp";
+        _types[".webp"] = "image/webp";
+        _types[".mp3"] = "audio/mpeg";
+        _types[".wav"] = "audio/wav";
+        _types[".ogg"] = "audio/ogg";
+        _types[".mp4"] = "video/mp4";
+        _types[".webm"] = "video/webm";
+        _types[".ogv"] = "video/ogg";
+        _types[".pdf"] = "application/pdf";
+        _types[".zip"] = "application/zip";
+        _types[".csv"] = "text/csv";
+        _types[".xml"] = "application/xml";
+        _types[".woff"] = "application/font-woff";
+        _types[".ttf"] = "application/font-ttf";
+        _types[".eot"] = "application/vnd.ms-fontobject";
+        _types[".otf"] = "application/font-sfnt";
+        _types[".doc"] = "application/msword";
+        _types[".docx"] = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        _types[".xls"] = "application/vnd.ms-excel";
+        _types[".xlsx"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        _types[".ppt"] = "application/vnd.ms-powerpoint";
+        _types[".pptx"] = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+    }
 
-	static std::string getType(std::string filePath)
-	{
-		init();
-		if (!_types.count(getFileExtension(filePath)))
-			return _types["undefined"];
-		return _types[getFileExtension(filePath)];
-	}
+    static std::string getType(std::string filePath) {
+        init();
+        std::string fileExtension = getFileExtension(filePath);
+        if (_types.find(fileExtension) == _types.end())
+            return "application/octet-stream";
+        return _types[fileExtension];
+    }
 };
 
 bool MediaTypes::_isInit = false;
-std::map<std::string, std::string> MediaTypes::_types;
+std::unordered_map<std::string, std::string> MediaTypes::_types;
 
 #endif
-
-// types {
-//     text/html                                        html htm shtml;
-//     text/css                                         css;
-//     text/xml                                         xml;
-//     image/gif                                        gif;
-//     image/jpeg                                       jpeg jpg;
-//     application/javascript                           js;
-//     application/atom+xml                             atom;
-//     application/rss+xml                              rss;
-
-//     text/mathml                                      mml;
-//     text/plain                                       txt;
-//     text/vnd.sun.j2me.app-descriptor                 jad;
-//     text/vnd.wap.wml                                 wml;
-//     text/x-component                                 htc;
-
-//     image/avif                                       avif;
-//     image/png                                        png;
-//     image/svg+xml                                    svg svgz;
-//     image/tiff                                       tif tiff;
-//     image/vnd.wap.wbmp                               wbmp;
-//     image/webp                                       webp;
-//     image/x-icon                                     ico;
-//     image/x-jng                                      jng;
-//     image/x-ms-bmp                                   bmp;
-
-//     font/woff                                        woff;
-//     font/woff2                                       woff2;
-
-//     application/java-archive                         jar war ear;
-//     application/json                                 json;
-//     application/mac-binhex40                         hqx;
-//     application/msword                               doc;
-//     application/pdf                                  pdf;
-//     application/postscript                           ps eps ai;
-//     application/rtf                                  rtf;
-//     application/vnd.apple.mpegurl                    m3u8;
-//     application/vnd.google-earth.kml+xml             kml;
-//     application/vnd.google-earth.kmz                 kmz;
-//     application/vnd.ms-excel                         xls;
-//     application/vnd.ms-fontobject                    eot;
-//     application/vnd.ms-powerpoint                    ppt;
-//     application/vnd.oasis.opendocument.graphics      odg;
-//     application/vnd.oasis.opendocument.presentation  odp;
-//     application/vnd.oasis.opendocument.spreadsheet   ods;
-//     application/vnd.oasis.opendocument.text          odt;
-//     application/vnd.openxmlformats-officedocument.presentationml.presentation
-//                                                      pptx;
-//     application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
-//                                                      xlsx;
-//     application/vnd.openxmlformats-officedocument.wordprocessingml.document
-//                                                      docx;
-//     application/vnd.wap.wmlc                         wmlc;
-//     application/wasm                                 wasm;
-//     application/x-7z-compressed                      7z;
-//     application/x-cocoa                              cco;
-//     application/x-java-archive-diff                  jardiff;
-//     application/x-java-jnlp-file                     jnlp;
-//     application/x-makeself                           run;
-//     application/x-perl                               pl pm;
-//     application/x-pilot                              prc pdb;
-//     application/x-rar-compressed                     rar;
-//     application/x-redhat-package-manager             rpm;
-//     application/x-sea                                sea;
-//     application/x-shockwave-flash                    swf;
-//     application/x-stuffit                            sit;
-//     application/x-tcl                                tcl tk;
-//     application/x-x509-ca-cert                       der pem crt;
-//     application/x-xpinstall                          xpi;
-//     application/xhtml+xml                            xhtml;
-//     application/xspf+xml                             xspf;
-//     application/zip                                  zip;
-
-//     application/octet-stream                         bin exe dll;
-//     application/octet-stream                         deb;
-//     application/octet-stream                         dmg;
-//     application/octet-stream                         iso img;
-//     application/octet-stream                         msi msp msm;
-
-//     audio/midi                                       mid midi kar;
-//     audio/mpeg                                       mp3;
-//     audio/ogg                                        ogg;
-//     audio/x-m4a                                      m4a;
-//     audio/x-realaudio                                ra;
-
-//     video/3gpp                                       3gpp 3gp;
-//     video/mp2t                                       ts;
-//     video/mp4                                        mp4;
-//     video/mpeg                                       mpeg mpg;
-//     video/quicktime                                  mov;
-//     video/webm                                       webm;
-//     video/x-flv                                      flv;
-//     video/x-m4v                                      m4v;
-//     video/x-mng                                      mng;
-//     video/x-ms-asf                                   asx asf;
-//     video/x-ms-wmv                                   wmv;
-//     video/x-msvideo                                  avi;
-// }

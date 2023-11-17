@@ -1,295 +1,397 @@
-#include "webserv.hpp"
 #include "Server.hpp"
+#include "webserv.hpp"
 
-std::string getSocketPort(int socket)
-{
-	struct sockaddr_in sin;
-	socklen_t len = sizeof(sin);
-
-	if (getsockname(socket, (struct sockaddr *)&sin, &len) == -1)
-	{
-		std::cerr << "getsockname: " << strerror(errno) << "\n";
-		throw 500;
-	}
-	// printf("port number %d\n", ntohs(sin.sin_port));
-	return std::to_string(ntohs(sin.sin_port));
+bool startsWith(const std::string &str, const std::string &str2, size_t startPos) {
+    return str.compare(startPos, str2.length(), str2) == 0;
 }
 
-struct addrinfo *getOwnAddressInfo(const char *port)
-{
-	struct addrinfo *res;
-	struct addrinfo hints;
-
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;	 // AF_INET or AF_INET6 to force version
-	hints.ai_socktype = SOCK_STREAM; // TCP or UDP (datagram)
-	hints.ai_flags = AI_PASSIVE;	 // assign the address of my local host to the socket structures
-
-	int status = getaddrinfo(NULL, port, &hints, &res);
-	if (status == -1)
-	{
-		std::cerr << "getaddrinfo: " << gai_strerror(errno) << "\n";
-		return NULL;
-	}
-	return res;
+void readNextEntry(DIR *dirStream, struct dirent **entry) {
+    *entry = readdir(dirStream);
+    if (!*entry && errno != 0) {
+        debugErr("readdir", strerror(errno));
+        closedir(dirStream);
+        throw 500;
+    }
 }
 
-int createBindedSocket(struct addrinfo *addrInfo)
-{
-	int socketFd = socket(addrInfo->ai_family, addrInfo->ai_socktype, addrInfo->ai_protocol);
-	if (socketFd == -1)
-	{
-		std::cerr << "socket: " << strerror(errno) << "\n";
-		return -1;
-	}
-	// fcntl(socketFd, F_SETFL, O_NONBLOCK);
-	return socketFd;
+std::string generateDirectoryListingPage(std::string dir, std::string reqUrl, struct dirent *entry, DIR *dirStream) {
+    if (reqUrl.back() != '/') {
+        reqUrl += "/";
+    }
+
+    std::string page = "<!DOCTYPE html><html><head>";
+    page += "<title>Index of " + reqUrl + "</title></head><body ";
+    // page += "style=\"background-color: #121212;color: white;font-family: monospace;\"";
+    page += "><h1> Index of " + reqUrl + " </h1><hr><pre style='display: flex;flex-direction:column;'>";
+
+    errno = 0;
+    while (entry) {
+        std::string entry_name = entry->d_name;
+        if (entry_name != "." && checkPathAccess(dir) == 200) {
+            if (isDirectory(dir + "/" + entry_name)) {
+                entry_name += "/";
+            }
+            page += "<a href='" + reqUrl + entry_name + "'>" + entry_name + "</a>";
+        }
+
+        readNextEntry(dirStream, &entry);
+    }
+
+    page += "</pre><hr></body></html>";
+    return page;
 }
 
-int bindSocket(int socketFd, struct addrinfo *addrInfo)
-{
-	int yes = 1;
-	if (setsockopt(socketFd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
-	{
-		std::cerr << "setsockopt: " << strerror(errno) << "\n";
-		return -1;
-	}
-	int status = bind(socketFd, addrInfo->ai_addr, addrInfo->ai_addrlen);
-	if (status == -1)
-	{
-		std::cerr << "bind: " << strerror(errno) << "\n";
-		return -1;
-	}
-	return 0;
+std::string getSocketPort(int socket) {
+    struct sockaddr_in sin;
+    socklen_t len = sizeof(sin);
+
+    if (getsockname(socket, (struct sockaddr *)&sin, &len) == -1) {
+        debugErr("getsockname", strerror(errno));
+        throw 500;
+    }
+    return std::to_string(ntohs(sin.sin_port));
 }
 
-int listenToSocket(int socketFd, std::string port)
-{
-	int status = listen(socketFd, 20);
-	if (status == -1)
-	{
-		std::cerr << "listen: " << strerror(errno) << "\n";
-		return -1;
-	}
-	std::cout << "Server is listening on port " << port << "..."
-			  << "\n";
-	return 0;
+struct addrinfo *getOwnAddressInfo(const char *port) {
+    struct addrinfo *res;
+    struct addrinfo hints;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;      // AF_INET or AF_INET6 to force version
+    hints.ai_socktype = SOCK_STREAM;  // TCP or UDP (datagram)
+    hints.ai_flags = AI_PASSIVE;      // assign the address of my local host to the socket structures
+
+    int status = getaddrinfo(NULL, port, &hints, &res);
+    if (status == -1) {
+        debugErr("getaddrinfo", gai_strerror(errno));
+        return NULL;
+    }
+    if (res == NULL) {
+        debugErr("getaddrinfo", gai_strerror(errno));
+    }
+    return res;
 }
 
-int getFileContent(std::string path, std::string &buf)
-{
-	std::ifstream file(path);
-	if (!file)
-		return 1;
-
-	std::stringstream fileContent;
-	fileContent << file.rdbuf();
-	buf = fileContent.str();
-	file.close();
-	return 0;
+int createBindedSocket(struct addrinfo *addrInfo) {
+    int socketFd = socket(addrInfo->ai_family, addrInfo->ai_socktype, addrInfo->ai_protocol);
+    if (socketFd == -1) {
+        debugErr("socket", strerror(errno));
+        return -1;
+    }
+    // fcntl(socketFd, F_SETFL, O_NONBLOCK);
+    return socketFd;
 }
 
-std::string getFileExtension(std::string fileName)
-{
-	int lastSlashPos = fileName.find_last_of('/');
-	int dotPos = fileName.find_last_of(".");
-
-	if (dotPos == -1 || dotPos < lastSlashPos)
-		return "undefined";
-	return fileName.substr(dotPos);
+int bindSocket(int socketFd, struct addrinfo *addrInfo) {
+    int yes = 1;
+    if (setsockopt(socketFd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+        debugErr("setsockopt", strerror(errno));
+        return -1;
+    }
+    int status = ::bind(socketFd, addrInfo->ai_addr, addrInfo->ai_addrlen);
+    if (status == -1) {
+        debugErr("bind", strerror(errno));
+        return -1;
+    }
+    return 0;
 }
 
-int checkFileAccess(std::string path)
-{
-	if (access(path.c_str(), F_OK) == -1)
-		return 404;
-	if (access(path.c_str(), R_OK) == -1)
-		return 403;
-	return 200;
+int listenToSocket(int socketFd, std::string port) {
+    int status = listen(socketFd, 20);
+    if (status == -1) {
+        debugErr("listen", strerror(errno));
+        return -1;
+    }
+    std::cout << "Server is listening on port " << port << "...\n";
+    return 0;
 }
 
-void tryGetIndexes(std::string newPath, LocationBlock &block, HttpResponse &res)
-{
-	int locationBlockIndexSize = block.indexFiles.size();
-	for (int i = 0; i < locationBlockIndexSize; i++)
-	{
-		try
-		{
-			res.loadFile(200, newPath + "/" + block.indexFiles[i]);
-			return;
-		}
-		catch (int status)
-		{
-			if (status != 404 && status != 403)
-				throw;
-		}
-	}
-	throw 403;
+int getFileContent(std::string path, std::string &buf) {
+    std::ifstream file(path);
+    if (!file) {
+        return 1;
+    }
+
+    std::stringstream fileContent;
+    fileContent << file.rdbuf();
+    buf = fileContent.str();
+    file.close();
+    return 0;
 }
 
-void getMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
-{
-	std::string completePath = block.getCompletePath(req.getUrl());
+std::string getFileExtension(std::string fileName) {
+    int lastSlashPos = fileName.find_last_of('/');
+    int dotPos = fileName.find_last_of(".");
 
-	int accessStatus = checkFileAccess(completePath);
-	if (accessStatus != 200)
-		throw accessStatus;
-
-	if (!isDirectory(completePath))
-	{
-		res.loadFile(200, completePath);
-		return;
-	}
-
-	try
-	{
-		tryGetIndexes(completePath, block, res);
-	}
-	catch (int status)
-	{
-		if (block.autoIndex == false)
-			throw;
-		block.listFiles(res, req.getUrl());
-	}
+    if (dotPos == -1 || dotPos < lastSlashPos) {
+        return "undefined";
+    }
+    return fileName.substr(dotPos);
 }
 
-void postMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
-{
-	std::string completePath = block.getCompletePath(req.getUrl());
-
-	if (completePath.back() == '/')
-		throw 403;
-
-	if (checkFileAccess(completePath) != 404)
-		throw 409;
-
-	std::ofstream file(completePath.c_str());
-	if (!file)
-		throw 500;
-
-	// Extract request body???
-	file << req.getBody().c_str();
-	file.close();
-
-	res.loadFile(200, completePath);
+int checkPathAccess(std::string path) {
+    if (access(&path[0], F_OK) == -1) {
+        return 404;
+    }
+    if (access(&path[0], R_OK) == -1) {
+        return 403;
+    }
+    return 200;
 }
 
-void deleteMethod(LocationBlock &block, HttpRequest &req, HttpResponse &res)
-{
-	std::string completePath = block.getCompletePath(req.getUrl());
+void getMethod(LocationBlock &location, HttpRequest &req, HttpResponse &res) {
+    std::string resourcePath = location.getResourcePath(req);
 
-	std::cout << "DELETE\n";
+    int accessStatus = checkPathAccess(resourcePath);
+    if (accessStatus != 200) {
+        throw accessStatus;
+    }
 
-	if (checkFileAccess(completePath) == 404)
-		throw 404;
-	
-	if (isDirectory(completePath))
-		throw 403;
+    if (!isDirectory(resourcePath)) {
+        res.loadFile(200, resourcePath);
+        return;
+    }
 
-	if (std::remove(completePath.c_str()) != 0)
-		throw 500;
+    try {
+        res.loadFile(200, location.getResourcePath(req, location.getIndex()));
+    } catch (int status) {
+        if (status == 500) {
+            throw 500;
+        }
+        if (location.isAutoIndex() == false) {
+            throw 403;
+        }
+        res.listDirectory(resourcePath, req.getUrl());
+    }
+}
 
-	res.loadFile(303, "defaultPages/delete_success.html");
+std::string getFormBoundary(HttpRequest &req) {
+    std::vector<std::string> values = split(req.getHeader("Content-Type"), ";");
+    if (values.size() < 2 || values[0] != "multipart/form-data") {
+        debug("400: 4", "", YELLOW);
+        throw 400;
+    }
+
+    std::vector<std::string> boundary = split(values[1], "=");
+    if (boundary.size() != 2 || boundary[0] != "boundary" || boundary[1] == "") {
+        debug("400: 5", "", YELLOW);
+        throw 400;
+    }
+    return boundary[1];
+}
+
+std::string getFormFileName(HttpRequest &req, size_t from, size_t to) {
+    std::vector<std::string> headerValues = split(req.findBodyHeader("Content-Disposition", from, to), ";");
+    if (headerValues.size() < 3 || headerValues[0] != "form-data") {
+        debug("400: 6", "", YELLOW);
+        throw 400;
+    }
+
+    std::vector<std::string> filenameKey = split(headerValues[2], "=");
+    if (filenameKey.size() != 2 || filenameKey[0] != "filename" || filenameKey[1] == "\"\"") {
+        debug("400: 7", "", YELLOW);
+        throw 400;
+    }
+
+    std::string filename = filenameKey[1].substr(1, filenameKey[1].size() - 2);
+    percentDecode(filename);
+    return filename;
+}
+
+void createFile(const std::string &name, const char *data, size_t size) {
+    std::ofstream file(&name[0], std::ios::binary);
+    if (!file) {
+        throw 500;
+    }
+
+    debug("filename", name, CYAN);
+    debug("file size", std::to_string(size), CYAN);
+    file.write(data, size);
+    file.close();
+}
+
+bool findFormBoundaries(HttpRequest &req, const std::string &boundary, size_t &currFormPos, size_t &formHeadersEndPos, size_t &formBodyEndPos) {
+    currFormPos = req.searchBody(boundary, currFormPos);
+    if (currFormPos == (size_t)-1) {
+        debug("400: 1", "", YELLOW);
+        throw 400;
+    }
+    currFormPos += boundary.size();
+    if (startsWith(req.getBody(), "--", currFormPos)) {
+        return true;
+    }
+
+    formBodyEndPos = req.searchBody(boundary, currFormPos);
+    if (formBodyEndPos == (size_t)-1) {
+        debug("400: 3", "", YELLOW);
+        throw 400;
+    }
+
+    formHeadersEndPos = req.searchBody(CRLF_CRLF, currFormPos + 1, formBodyEndPos);
+    if (formHeadersEndPos == (size_t)-1) {
+        debug("400: 2", "", YELLOW);
+        throw 400;
+    }
+    formHeadersEndPos += 4;
+    return false;
+}
+
+void postMethod(LocationBlock &location, HttpRequest &req, HttpResponse &res) {
+    std::string boundary = "--" + getFormBoundary(req);
+    size_t currFormPos = 0;
+    size_t formHeadersEndPos = 0;
+    size_t formBodyEndPos = 0;
+    std::string filePath;
+
+    while (true) {
+        debug("BEGIN FORM", "", YELLOW);
+        bool isEnd = findFormBoundaries(req, boundary, currFormPos, formHeadersEndPos, formBodyEndPos);
+        if (isEnd) {
+            debug("END OF FORM", "", YELLOW);
+            break;
+        }
+
+        std::string filename = getFormFileName(req, currFormPos, formHeadersEndPos);
+        filePath = location.getUploadFilePath(filename);
+        if (checkPathAccess(filePath) != 404) {
+            throw 409;
+        }
+        // if (filename.find('/') != (size_t)-1) {
+        //     throw 403;
+        // }
+
+        size_t fileSize = (formBodyEndPos - formHeadersEndPos) - 2;
+        createFile(filePath, &req.getBody()[formHeadersEndPos], fileSize);
+    }
+
+    res.loadFile(200, filePath);
+}
+
+void deleteMethod(LocationBlock &location, HttpRequest &req, HttpResponse &res) {
+    std::string resourcePath = location.getResourcePath(req);
+    debug("deleting", resourcePath, YELLOW);
+
+    if (checkPathAccess(resourcePath) == 404) {
+        throw 404;
+    }
+    if (isDirectory(resourcePath)) {
+        throw 403;
+    }
+    if (std::remove(&resourcePath[0]) != 0) {
+        throw 500;
+    }
+
+    res.loadFile(200, "defaultPages/delete_success.html");
 }
 
 // TO DO:
-// body max size
-// cgi conig
-// make members private
+//// let client download files ✅
+//// upload files on server ✅
+//// cookies ✅
+//// continuous parsing ✅
+//// content-encoding: chunked ✅
+//// CGI envs
+//// url params ?&2
+//// Parsing utils
+//// 415 Unsupported Media Type
+//// Range?
+//// get SIGINT to exit nice and clean
+//// Expect: 100-continue
+//// proxy_pass
+//// refacto
 
-int main(int argc, char *argv[])
-{
-	// if (std::remove("www/folder") != 0)
-	// 	std::cout << "404";
-	// return 0;
-	// std::cout << getPathInfo("/truc/truc/api", "/truc/truc") << "\n";
-	// std::cout << getPathInfo("/truc/truc/api", "/truc/truc/") << "\n";
-	// std::cout << getPathInfo("/truc/truc/api", "/truc/truc/api") << "\n";
-	// std::cout << getPathInfo("/truc/truc/api", "/truc/truc/apit") << "\n";
-	// return 0;
-
-	// std::cout << checkFileAccess("/dgnd") << "\n";
-	// std::cout << checkFileAccess("www/") << "\n";
-	// std::cout << checkFileAccess("www/index.html") << "\n";
-	// std::cout << checkFileAccess("www/index.html/") << "\n";
-	// std::ofstream file("test/");
-	// // file << "hello\r\n";
-	// file.close();
-	// return 0;
-
-	Server server;
-
-	server.blocks.resize(1);
-
-	server.blocks[0].port = "3000";
-	server.blocks[0].root = "www";
-	server.blocks[0].isDefault = true;
-	server.blocks[0].indexFiles.push_back("index.html");
-	server.blocks[0].errorFiles[404] = "/404.html";
-
-	// server.blocks[1].port = "5000";
-	// server.blocks[1].root = "www2";
-	// server.blocks[1].isDefault = true;
-	// server.blocks[1].indexFiles.push_back("index");
-	// server.blocks[1].indexFiles.push_back("index.html");
-	// server.blocks[1].errorFiles[404] = "/404.html";
-
-	// server.blocks[2].port = "3000";
-	// server.blocks[2].root = "www2";
-	// server.blocks[2].isDefault = false;
-	// server.blocks[2].hostNames.push_back("virtual.com");
-	// server.blocks[2].indexFiles.push_back("index.html");
-
-	if (server.listen() == -1)
-		return 1;
-
-	server.blocks[0]._locationBlocks.resize(4);
-
-	server.blocks[0]._locationBlocks[0].path = "/";
-	server.blocks[0]._locationBlocks[0].isExact = false;
-	server.blocks[0]._locationBlocks[0].handlers["GET"] = getMethod;
-	server.blocks[0]._locationBlocks[0].inheritServerBlock(server.blocks[0]);
-
-	server.blocks[0]._locationBlocks[1].path = "/folder/";
-	server.blocks[0]._locationBlocks[1].indexFiles.push_back("/index");
-	server.blocks[0]._locationBlocks[1].isExact = false;
-	server.blocks[0]._locationBlocks[1].autoIndex = true;
-	server.blocks[0]._locationBlocks[1].handlers["GET"] = getMethod;
-	server.blocks[0]._locationBlocks[1].handlers["POST"] = postMethod;
-	server.blocks[0]._locationBlocks[1].handlers["DELETE"] = deleteMethod;
-	server.blocks[0]._locationBlocks[1].inheritServerBlock(server.blocks[0]);
-
-	server.blocks[0]._locationBlocks[2].path = "/api/truc";
-	server.blocks[0]._locationBlocks[2].redirection.url = "/";
-	server.blocks[0]._locationBlocks[2].redirection.statusCode = 301;
-	server.blocks[0]._locationBlocks[2].isExact = false;
-	server.blocks[0]._locationBlocks[2].handlers["GET"] = getMethod;
-	server.blocks[0]._locationBlocks[2].inheritServerBlock(server.blocks[0]);
-
-	server.blocks[0]._locationBlocks[3].path = "/upload";
-	server.blocks[0]._locationBlocks[3].isExact = false;
-	server.blocks[0]._locationBlocks[3].handlers["GET"] = getMethod;
-	server.blocks[0]._locationBlocks[3].handlers["POST"] = postMethod;
-	server.blocks[0]._locationBlocks[3].cgiExtensions[".py"] = "/usr/bin/python3";
-	server.blocks[0]._locationBlocks[3].inheritServerBlock(server.blocks[0]);
-
-	if (server.monitorClients() == -1)
-		return 1;
-	return 0;
+void exitProgram(Server &server) {
+    delete &server;
+    debug("-------", "", RED);
+    debug("EXITING", "", RED);
+    debug("-------", "", RED);
+    exit(0);
 }
 
-// char ipstr[INET6_ADDRSTRLEN];
-// for (p = res; p != NULL; p = p->ai_next)
-// {
-// 	void *addr;
-// 	if (p->ai_family == AF_INET)
-// 	{ // IPv4
-// 		struct sockaddr_in *ipv4 = (struct sockaddr_in *)p->ai_addr;
-// 		addr = &(ipv4->sin_addr);
-// 	}
-// 	else
-// 	{ // IPv6
-// 		struct sockaddr_in6 *ipv6 = (struct sockaddr_in6 *)p->ai_addr;
-// 		addr = &(ipv6->sin6_addr);
-// 	}
-// 	inet_ntop(p->ai_family, addr, ipstr, sizeof ipstr);
+extern std::string g_conf_path;
+extern char **g_env;
+
+std::string getRealtivePathToFile(std::string path) {
+    int lastSlash = path.find_last_of("/");
+    if (lastSlash == -1)
+        return "";
+
+    return path.substr(0, lastSlash + 1);
+}
+
+int main(int argc, char *argv[], char **env) {
+    Server *server = new Server();
+
+    if (argc != 2) {
+        debugErr("Configuration file required", "");
+        return 1;
+    }
+
+    g_env = env;
+    std::srand(std::time(0));
+    g_conf_path = getRealtivePathToFile(argv[1]);
+    server->addBlocks(1);
+
+    server->getServerBlock(0).set("3000", true);
+    server->getServerBlock(0).setHostName("localhost");
+    server->getServerBlock(0).setIndex("index.html");
+    server->getServerBlock(0).setRoot("www");
+    server->getServerBlock(0).addErrorPage(404, "/404.html");
+    server->getServerBlock(0).setSessionCookie("sessionId");
+
+    // server->getServerBlock(1).set("3000", false);
+    // server->getServerBlock(1).setHostName("virtual.org");
+    // server->getServerBlock(1).setIndex("index.html");
+    // server->getServerBlock(1).setRoot("www");
+
+    server->addLocationBlocks(0, 5);
+
+    server->getLocationBlock(0, 0).setPath("/");
+    server->getLocationBlock(0, 0).setAutoIndex(true);
+    server->getLocationBlock(0, 0).setHandlers(getMethod, postMethod, NULL);
+    server->getLocationBlock(0, 0).addCgiExtension(".sh", "/bin/sh");
+    server->getLocationBlock(0, 0).addCgiExtension(".py", "/usr/bin/python3");
+    // server->getLocationBlock(0, 0).setHeader("Set-Cookie", "cookie=123; Path=/folder");
+
+    server->getLocationBlock(0, 1).setPath("////folder////");
+    server->getLocationBlock(0, 1).setHandlers(getMethod, postMethod, NULL);
+    server->getLocationBlock(0, 1).setAutoIndex(true);
+    server->getLocationBlock(0, 1).addHeader("Set-Cookie", "cookie=123; Path=/folder");
+    server->getLocationBlock(0, 1).addErrorPage(404, "404.html");
+    // server->getLocationBlock(0, 1).setRedirection(303, "/");
+
+    server->getLocationBlock(0, 2).setPath("/upload", false);
+    server->getLocationBlock(0, 2).setHandlers(getMethod, postMethod, deleteMethod);
+    server->getLocationBlock(0, 2).setUploadRoot("www/upload");
+    server->getLocationBlock(0, 2).setAutoIndex(true);
+    server->getLocationBlock(0, 2).addCgiExtension(".py", "/usr/bin/python3");
+    server->getLocationBlock(0, 2).setMaxBodySize(2000000000);
+
+    server->getLocationBlock(0, 3).setPath("/download", false);
+    server->getLocationBlock(0, 3).addHeader("Content-Disposition", "attachement");
+    server->getLocationBlock(0, 3).setHandlers(getMethod, NULL, NULL);
+
+    server->getLocationBlock(0, 4).setPath("/folder/dir", false);
+    server->getLocationBlock(0, 4).setHandlers(getMethod, NULL, NULL);
+
+    if (server->listen() == -1) {
+        return 1;
+    }
+    delete &server;
+    return 0;
+}
+
+void debugErr(const std::string &title, const char *err) {
+    std::cerr << RED << title << ": " << err << "\n"
+              << WHITE;
+}
+
+void debug(std::string title, std::string arg, std::string color) {
+    // return;
+    std::cout << color << title;
+    if (arg != "") {
+        std::cout << ": " << arg;
+    }
+    std::cout << "\n"
+              << WHITE;
+}

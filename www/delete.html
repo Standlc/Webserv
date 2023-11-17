@@ -1,18 +1,18 @@
 <body>
-    <form action="/folder/" method="POST" X-HTTP-Method-Override="DELETE">
-        <label for="fileName">File name:</label>
-        <input type="text" id="fileName"><br><br>
-        
+    <!-- <form method="DELETE" X-HTTP-Method-Override="DELETE"> -->
+        <label for="filename">File name:</label>
+        <input type="text" id="filename"><br><br>
         <input type="submit" value="delete" onclick="handleRequest()">
-    </form>
+    <!-- </form> -->
 
     <script>
-        const handleRequest = () =>
-        {
-            const formElement = document.querySelector("form");
-            const fileInputElement = document.getElementById("fileName");
-            formElement.action = "/folder/" + fileInputElement.value;
-            // fetch("http://localhost:3000/folder/" + fileInputElement.value, {method:"DELETE"});
+        const handleRequest = async () => {
+            // const formElement = document.querySelector("form");
+            const fileInputElement = document.getElementById("filename");
+            // formElement.action = "/upload/" + fileInputElement.value;
+            const response = await fetch("http://localhost:3000/upload/" + fileInputElement.value, {method:"DELETE"});
+            document.location.replace("/upload");
+            // console.log(response);
         }
     </script>
 </body>

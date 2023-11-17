@@ -1,0 +1,1 @@
+echo "Content-Type: text\r\nContent-Length: 5\r\n\r\nHello"

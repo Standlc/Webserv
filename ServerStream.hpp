@@ -3,69 +3,56 @@
 
 #include "webserv.hpp"
 
-class ServerStream
-{
-protected:
-	std::string _rawData;
-	int _totalRead;
-	bool _isRead;
+// #define MAX_WRITE_SIZE 100000000
 
-	std::string _outputData;
-	int _outputDataSize;
-	int _totalSentBytes;
-	int _responseSize;
+class ServerStream {
+   private:
+    // size_t adjustWriteSize(size_t size) {
+    //     if (size > MAX_WRITE_SIZE) {
+    //         if (MAX_WRITE_SIZE > size - _totalSentBytes) {
+    //             return size - _totalSentBytes;
+    //         }
+    //         return MAX_WRITE_SIZE;
+    //     }
+    //     return size;
+    // }
 
-public:
-	ServerStream()
-	{
-		_isRead = false;
-		_totalRead = 0;
-		_totalSentBytes = 0;
-	}
+   protected:
+    std::string _rawData;
 
-	bool isRead()
-	{
-		return _isRead;
-	}
+    size_t _totalRead;
+    size_t _totalSentBytes;
 
-	std::string getRawData()
-	{
-		return _rawData;
-	}
+    int sendAll(int fd, char *data, size_t size) {
+        int sentBytes = write(fd, &data[_totalSentBytes], size);
+        _totalSentBytes += sentBytes;
 
-	std::string getOuputData()
-	{
-		return _outputData;
-	}
+        if (sentBytes == -1 || sentBytes == 0) {
+            debugErr("Error while writing to fd", &std::to_string(fd)[0]);
+            return -1;
+        }
+        return size - _totalSentBytes;
+    }
 
-	int recvAll(int fd)
-	{
-		_isRead = true;
+   public:
+    ServerStream() : _totalRead(0), _totalSentBytes(0) {
+    }
 
-		_rawData.resize(_totalRead + BUF_SIZE + 1, '\0');
-		int readBytes = read(fd, &_rawData[_totalRead], BUF_SIZE);
-		_totalRead += readBytes;
+    std::string &rawData() {
+        return _rawData;
+    }
 
-		return (readBytes == -1 || readBytes == 0) ? -1 : 0;
-	}
+    int recvAll(int fd) {
+        _rawData.resize(_totalRead + BUF_SIZE + 1, '\0');
+        int readBytes = read(fd, &_rawData[_totalRead], BUF_SIZE);
+        _totalRead += readBytes;
 
-	int sendAll(int fd)
-	{
-		updateOutputData();
-		_outputDataSize = std::strlen(&_outputData[0]);
-
-		int sentBytes = send(fd, &_outputData[_totalSentBytes], _outputDataSize - _totalSentBytes, 0);
-		_totalSentBytes += sentBytes;
-
-		if (sentBytes == -1)
-		{
-			std::cerr << "Error while sending response\n";
-			return -1;
-		}
-		return _outputDataSize - _totalSentBytes;
-	}
-
-	virtual void updateOutputData() = 0;
+        if (readBytes == -1 || readBytes == 0) {
+            debug("Error while reading fd", std::to_string(fd), RED);
+            return -1;
+        }
+        return 0;
+    }
 };
 
 #endif

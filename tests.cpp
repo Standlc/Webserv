@@ -18,60 +18,67 @@
 //     compressSlashesHandler("///////////api////////truc//", "/api/truc/");
 //     compressSlashesHandler("///////////api////////truc/////////", "/api/truc/");
 // }
-
-#include <iostream>
-#include <string>
-#include <cstring>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
 #include <arpa/inet.h>
-#include <sys/stat.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <poll.h>
-#include <vector>
-#include <map>
-#include <fstream>
-#include <sstream>
-#include <algorithm>
 #include <dirent.h>
+#include <fcntl.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <poll.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/types.h>
-#include <filesystem>
+#include <unistd.h>
 
-int main()
-{
+#include <algorithm>
+#include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <sstream>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+class Class {
+   private:
     std::string str;
 
-    str.resize(10, '\0');
-    // str[5] = '\0';
+   public:
+    Class() : str(100000, 'a') {
+    }
 
-    std::cout << str.length() << '\n';
-    std::cout << std::strlen(&str[0]) << '\n';
-    // int fds[2];
-    // pipe(fds);
+    const std::string &f() {
+        return str;
+    }
+};
 
-    // write(fds[1], "hello", 6);
-    // // close(fds[1]);
+int main(int argc, char **argv, char **env) {
+    std::string str = "hey yo";
 
-    // struct pollfd fd;
-    // fd.fd = fds[0];
-    // fd.events = POLLIN | POLLOUT;
+    // std::cout << str.substr(0, str.size() - 1) << '\n';
+    std::cout << str.find("y", 2);
+    // std::string str = "  ' ;; ;'  ='hey' ;attr='yo';    ; ; attr2='hey' ;   attr3;  'attr3'; 'sfb ';   ";
+    // // std::string str = "'sfb'";
+    // std::vector<std::string> res;
+    // res.push_back("' ;; ;'  ='hey'");
+    // res.push_back("attr='yo'");
+    // res.push_back("");
+    // res.push_back("");
+    // res.push_back("attr2='hey'");
+    // res.push_back("attr3");
+    // res.push_back("'attr3'");
 
-    // while (true)
-    // {
-    //     poll(&fd, 1, -1);
-    //     if (fd.revents & POLLIN)
-    //     {
-    //         std::cout << "can read from it\n";
-    //         char buf[100];
-    //         int readBytes = read(fd.fd, buf, 100);
-    //         std::cout << readBytes << '\n';
-    //     }
-    //     if (fd.revents == POLLOUT)
-    //     {
-    //         std::cout << "can write to it\n";
-    //     }
+    // std::vector<std::string> items = split(str, ";");
+    // for (int i = 0; i < items.size(); i++) {
+    //     std::cout << "---" << items[i] << "---\n";
+    //     std::cout << "---" << res[i] << "---\n";
+    //     std::cout << "\n";
+    // }
+    // std::cout << std::strlen("Hey this is just a simple test file\nNothing fancy!\nSee ya") << "\n";
+
+    // Class t;
+    // for (int i = 0; i < 1000000; i++) {
+    //     const std::string &str = t.f();
     // }
 }

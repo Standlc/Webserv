@@ -1,0 +1,9 @@
+{
+    "C_Cpp.default.compilerPath": "/usr/bin/clang",
+    "editor.formatOnSave": true,
+    "explorer.confirmDelete": false,
+    "workbench.colorTheme": "GitHub Dark Default",
+    "editor.fontSize": 12.5,
+    "C_Cpp.autocompleteAddParentheses": true,
+    "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Google, TabWidth: 4, IndentWidth: 4, ColumnLimit: 0}",
+}

@@ -1,94 +1,130 @@
 #ifndef HTTP_RESPONSE_HPP
 #define HTTP_RESPONSE_HPP
 
-#include "webserv.hpp"
-#include "StatusComments.hpp"
 #include "MediaTypes.hpp"
 #include "ServerStream.hpp"
+#include "StatusComments.hpp"
+#include "webserv.hpp"
 
-class HttpResponse : public ServerStream
-{
-private:
-	std::string _head;
-	std::string _headers;
-	std::string _permanentHeaders;
-	std::string _body;
+class HttpResponse : public ServerStream {
+   private:
+    int _statusCode;
+    std::string _head;
+    std::string _defaultHeaders;
+    std::unordered_multimap<std::string, std::string> _headers;
+    std::string _body;
 
-	bool _isSet;
+    std::string _outputData;
+    size_t _outputDataSize;
 
-public:
-	HttpResponse()
-	{
-		_isSet = false;
-	}
+    void setHead(int statusCode) {
+        _statusCode = statusCode;
+        _head = std::string(HTTP_VERSION) + " ";
+        _head += std::to_string(statusCode) + " ";
+        _head += StatusComments::get(statusCode) + CRLF;
+    }
 
-	void addHeader(std::string property, std::string value)
-	{
-		_permanentHeaders += property + ": " + value + LINE_TERM;
-	}
+    void assembleHeaders() {
+        _outputData = _head + _defaultHeaders;
 
-	void reset()
-	{
-		_isSet = false;
-		_head = "";
-		_headers = "";
-		_permanentHeaders = "";
-		_body = "";
-		_rawData = "";
-		_outputData = "";
-	}
+        for (std::unordered_multimap<std::string, std::string>::iterator h = _headers.begin(); h != _headers.end(); ++h) {
+            _outputData += h->first + ": " + h->second + CRLF;
+        }
+    }
 
-	void set(int statusCode, std::string path = "", std::string *body = NULL)
-	{
-		_isSet = true;
+    void assembleCgiResponse() {
+        this->assembleHeaders();
+        _outputDataSize = _outputData.size();
+        _outputData += _rawData;
+        _outputDataSize += _totalRead;
+    }
 
-		this->createHead(statusCode);
+    void assembleResponse() {
+        this->assembleHeaders();
+        _outputData += CRLF;
+        _outputData += _body;
+        _outputDataSize = _outputData.size();
+    }
 
-		if (path != "")
-		{
-			_headers = "Content-Type: " + MediaTypes::getType(path) + LINE_TERM;
-			_headers += "Content-Length: " + std::to_string(body->size()) + LINE_TERM;
-			_body = *body;
-		}
-	}
+   public:
+    HttpResponse() : _statusCode(200), _outputDataSize(0) {}
 
-	void createHead(int statusCode)
-	{
-		_head = "HTTP/1.1 " + std::to_string(statusCode) + " " + StatusComments::get(statusCode) + LINE_TERM;
-	}
+    void clearHeaders() {
+        _headers.clear();
+    }
 
-	void loadFile(int serverStatusCode, std::string path)
-	{
-		this->reset();
-		int accessStatus = checkFileAccess(path);
-		if (accessStatus != 200)
-			throw accessStatus;
+    void addHeader(const std::string &property, const std::string &value) {
+        _headers.insert(std::make_pair(property, value));
+    }
 
-		std::string fileContent;
-		if (getFileContent(path, fileContent))
-		{
-			std::cerr << "Error while reading " << path << "\n";
-			throw 500;
-		}
-		this->set(serverStatusCode, path, &fileContent);
-	}
+    void addHeaders(std::unordered_multimap<std::string, std::string> &headers) {
+        _headers.insert(headers.begin(), headers.end());
+    }
 
-	void updateOutputData()
-	{
-		if (_rawData != "")
-		{
-			_outputData = _head + _headers + _permanentHeaders + _rawData + LINE_TERM;
-		}
-		else
-		{
-			_outputData = _head + _headers + _permanentHeaders + LINE_TERM + _body + LINE_TERM;
-		}
-	}
+    void set(int statusCode) {
+        this->setHead(statusCode);
+        _defaultHeaders = "";
+        _body = "";
+        this->assembleResponse();
+    }
 
-	bool isSet()
-	{
-		return _isSet;
-	}
+    void set(int statusCode, const std::string &path, std::string *body) {
+        this->setHead(statusCode);
+        _defaultHeaders = "Content-Type: " + MediaTypes::getType(path) + CRLF;
+        _defaultHeaders += "Content-Length: " + std::to_string(body->size()) + CRLF;
+        _body = *body;
+        this->assembleResponse();
+    }
+
+    void loadFile(int serverStatusCode, const std::string &path) {
+        if (path.back() == '/') {
+            throw 403;
+        }
+
+        int accessStatus = checkPathAccess(path);
+        if (accessStatus != 200) {
+            throw accessStatus;
+        }
+
+        std::string fileContent;
+        if (getFileContent(path, fileContent)) {
+            debugErr("Error while reading", &path[0]);
+            throw 500;
+        }
+        this->set(serverStatusCode, path, &fileContent);
+    }
+
+    void listDirectory(const std::string &dir, const std::string &reqUrl) {
+        DIR *dirStream = opendir(&dir[0]);
+        if (!dirStream) {
+            debugErr("opendir", strerror(errno));
+            throw 500;
+        }
+
+        struct dirent *entry;
+        readNextEntry(dirStream, &entry);
+
+        std::string listingPage = generateDirectoryListingPage(dir, reqUrl, entry, dirStream);
+        closedir(dirStream);
+        this->set(200, ".html", &listingPage);
+    }
+
+    void setCgiResponse(int statusCode) {
+        this->setHead(statusCode);
+        this->assembleCgiResponse();
+    }
+
+    int sendResponse(int fd) {
+        return this->sendAll(fd, &_outputData[0], _outputDataSize);
+    }
+
+    std::string &outputData() {
+        return _outputData;
+    }
+
+    int status() {
+        return _statusCode;
+    }
 };
 
 #endif
