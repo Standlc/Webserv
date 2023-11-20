@@ -5,7 +5,7 @@
 
 class StatusComments {
    private:
-    static std::unordered_map<int, std::string> _comments;
+    static std::unordered_map<int, String> _comments;
     static bool _isInit;
 
    public:
@@ -13,10 +13,12 @@ class StatusComments {
     }
 
     static void init() {
-        if (_isInit)
+        if (_isInit) {
             return;
+        }
 
         _isInit = true;
+        _comments[0] = "undefined";
         _comments[200] = "OK";
         _comments[301] = "Moved Permanently";
         _comments[302] = "Found";
@@ -38,15 +40,12 @@ class StatusComments {
         _comments[502] = "Bad Gateway";
     }
 
-    static std::string get(int status) {
+    static const String &get(int status) {
         init();
         if (_comments.find(status) == _comments.end())
-            return "undefined";
+            return _comments[0];
         return _comments[status];
     }
 };
-
-bool StatusComments::_isInit = false;
-std::unordered_map<int, std::string> StatusComments::_comments;
 
 #endif

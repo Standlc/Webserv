@@ -5,7 +5,7 @@
 
 class MediaTypes {
    private:
-    static std::unordered_map<std::string, std::string> _types;
+    static std::unordered_map<String, String> _types;
     static bool _isInit;
 
    public:
@@ -13,11 +13,12 @@ class MediaTypes {
     }
 
     static void init() {
-        if (_isInit)
+        if (_isInit) {
             return;
+        }
 
         _isInit = true;
-        _types["undefined"] = "text/plain";
+        _types["undefined"] = "application/octet-stream";
         _types[".txt"] = "text/plain";
         _types[".html"] = "text/html";
         _types[".htm"] = "text/html";
@@ -53,16 +54,13 @@ class MediaTypes {
         _types[".pptx"] = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
     }
 
-    static std::string getType(std::string filePath) {
+    static const String &getType(String filePath) {
         init();
-        std::string fileExtension = getFileExtension(filePath);
+        String fileExtension = getFileExtension(filePath);
         if (_types.find(fileExtension) == _types.end())
-            return "application/octet-stream";
+            return _types["undefined"];
         return _types[fileExtension];
     }
 };
-
-bool MediaTypes::_isInit = false;
-std::unordered_map<std::string, std::string> MediaTypes::_types;
 
 #endif

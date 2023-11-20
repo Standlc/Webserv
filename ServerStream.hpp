@@ -3,23 +3,9 @@
 
 #include "webserv.hpp"
 
-// #define MAX_WRITE_SIZE 100000000
-
 class ServerStream {
-   private:
-    // size_t adjustWriteSize(size_t size) {
-    //     if (size > MAX_WRITE_SIZE) {
-    //         if (MAX_WRITE_SIZE > size - _totalSentBytes) {
-    //             return size - _totalSentBytes;
-    //         }
-    //         return MAX_WRITE_SIZE;
-    //     }
-    //     return size;
-    // }
-
    protected:
-    std::string _rawData;
-
+    String _rawData;
     size_t _totalRead;
     size_t _totalSentBytes;
 
@@ -38,7 +24,7 @@ class ServerStream {
     ServerStream() : _totalRead(0), _totalSentBytes(0) {
     }
 
-    std::string &rawData() {
+    String &rawData() {
         return _rawData;
     }
 

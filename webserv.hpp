@@ -1,12 +1,6 @@
 #ifndef WEBSERV_HPP
 #define WEBSERV_HPP
 
-#define BUF_SIZE 8000
-
-#define CRLF "\r\n"
-#define CRLF_CRLF "\r\n\r\n"
-#define TIMEOUT 60
-
 #include <arpa/inet.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -19,7 +13,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <algorithm>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -31,55 +24,74 @@
 #include <vector>
 
 #define HTTP_VERSION "HTTP/1.0"
+#define NPOS String::npos
+#define BUF_SIZE 8000
+#define CRLF "\r\n"
+#define CRLF_CRLF "\r\n\r\n"
+#define TIMEOUT 30
 
 #define CYAN "\033[1;36m"
 #define GRAY "\033[1;30m"
 #define PURPLE "\033[1;34m"
 #define YELLOW "\033[1;93m"
 #define GREEN "\033[1;32m"
-#define RED "\033[1;31m"
+#define RED "\033[3;31m"
 #define BOLD "\033[1m"
 #define WHITE "\033[0m"
 #define DIM_RED "\033[2;31m"
 
-void debug(std::string title, std::string arg, std::string color);
-void debugErr(const std::string &title, const char *err);
-void exitProgram(Server &server);
+typedef std::string String;
+typedef std::unordered_map<String, String> unorderedStringMap;
+typedef std::unordered_multimap<String, String> unorderedStringMultiMap;
 
-struct addrinfo *getOwnAddressInfo(const char *port);
-int checkPathAccess(std::string path);
-int createBindedSocket(struct addrinfo *addrInfo);
-int bindSocket(int socketFd, struct addrinfo *addrInfo);
-int listenToSocket(int socketFd, std::string port);
-int getFileContent(std::string path, std::string &buf);
-std::string getFileExtension(std::string fileName);
-std::string getSocketPort(int socket);
-int isDirectory(std::string path);
-void compressSlashes(std::string &str);
-std::vector<std::string> split(const std::string &str, const std::string &sep);
-std::string generateDirectoryListingPage(std::string dir, std::string reqUrl, struct dirent *entry, DIR *dirStream);
-void readNextEntry(DIR *dirStream, struct dirent **entry);
-bool startsWith(const std::string &str, const std::string &startWith, size_t fromPos = 0);
 class Server;
+class Block;
+class LocationBlock;
+class ServerBlock;
+class ServerStream;
+class HttpRequest;
+class HttpResponse;
 class PollFd;
-class ClientPollFd;
-class CgiReadPollFd;
-class CgiWritePollFd;
+class CgiPoll;
+class ClientPoll;
+// class StatusComments;
 
-int handleNewConnection(Server &server, PollFd *listen);
-int checkTimeout(time_t time);
+void debug(const String &title, const String &arg, const String &color);
+void debugErr(const String &title, const char *err);
+void exitProgram(Server &server, int exitCode);
+String parsePathFileName(const String &path);
+String parseFileDirectory(const String &filePath);
+void tryPipe(int pipes[2]);
+int tryPipeAndFork(int pipes[2]);
+void trySetenv(const String &name, const String &value);
+void tryUnsetenv(const String &name);
+int checkPathAccess(const String &path);
+int getFileContent(const String &path, String &buf);
+String getFileExtension(const String &fileName);
+int isDirectory(const String &path);
+void compressSlashes(String &str);
+std::vector<String> split(const String &str, const String &sep);
+String generateDirectoryListingPage(const String &dir, String reqUrl, struct dirent *entry, DIR *dirStream);
+void readNextEntry(DIR *dirStream, struct dirent **entry);
+bool startsWith(const String &str, const String &startWith, size_t fromPos = 0);
+bool isUnkownMethod(const String &method);
+std::vector<String> split(const String &str, const String &sep);
+size_t countBackSpaces(const String &str, const String &sep, size_t end);
+size_t countFrontSpaces(const String &str, const String &sep, size_t pos);
+size_t findEnd(const String &str, const String &sep, size_t pos);
+void compressSlashes(String &str);
+void uriDecode(String &url, const String &find, const String &replace);
+void percentDecode(String &url);
+bool isReadable(struct pollfd &pollEl);
+bool isWritable(struct pollfd &pollEl);
+int checkPollError(struct pollfd &pollEl, int error);
+int checkPollErrors(struct pollfd &pollEl);
 
-int sendResponseToClient(Server &server, ClientPollFd *client);
-int executeClientRequest(Server &server, ClientPollFd *client);
-int readClientRequest(Server &server, ClientPollFd *client);
-int timeoutClient(Server &server, ClientPollFd *client);
+typedef int (*clientPollHandlerType)(Server &, ClientPoll *);
+typedef int (*pollFdHandlerType)(Server &, PollFd *);
+typedef int (*CgiPollHandlerType)(Server &, CgiPoll *);
 
-int waitCgiProcessEnd(Server &server, ClientPollFd *client);
-int readCgiResponseFromPipe(Server &server, CgiReadPollFd *cgi);
-int sendCgiRequest(Server &server, CgiWritePollFd *cgi);
-int waitEmptyCgiPipe(Server &server, ClientPollFd *client);
-
-std::string g_conf_path;
-char **g_env;
+extern String g_conf_path;
+extern char **environ;
 
 #endif

@@ -1,25 +1,26 @@
 NAME = webserv
 
-SOURCES = main.cpp
+SOURCES = 	main.cpp utils/utils.cpp  Server.cpp \
+			blocks/Block.cpp blocks/ServerBlock.cpp blocks/LocationBlock.cpp\
+			PollEvents/PollFd.cpp PollEvents/ClientPoll.cpp PollEvents/CgiPoll.cpp  \
+			HttpRequest.cpp HttpResponse.cpp 
 
 OBJECTS = $(SOURCES:.cpp=.o)
 
-DEPENDENCIES = 	Makefile Server.hpp				ServerConfig.hpp \
-				ServerBlock.hpp			LocationBlock.hpp \
-				LocationBlock.hpp		HttpResponse.hpp \
-				HttpRequest.hpp			MediaTypes.hpp \
-				webserv.hpp \
+DEPENDENCIES = 	Makefile Server.hpp	blocks/Block.hpp PollEvents/PollFd.hpp \
+				HttpResponse.hpp HttpRequest.hpp MediaTypes.hpp \
+				webserv.hpp StatusComments.hpp MediaTypes.hpp \
 
-FLAGS = -Wextra -Wall -std=c++98 #-Werror 
+FLAGS = -Wextra -Wall -std=c++98 #-Werror
 
 RM = rm -rf
 
-all: fclean $(NAME)
+all: $(NAME)
 
-$(NAME): $(OBJECTS)
+$(NAME): $(OBJECTS) $(DEPENDENCIES)
 	c++ $(OBJECTS) -o $(NAME)
 
-%.o: %.cpp
+%.o: %.cpp 
 	c++ $(FLAGS) -c $< -o $@
 
 clean:

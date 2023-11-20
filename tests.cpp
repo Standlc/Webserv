@@ -1,9 +1,9 @@
 #include <iostream>
 // #include "webserv.hpp"
 
-// void compressSlashesHandler(std::string str, std::string expected)
+// void compressSlashesHandler(String str, String expected)
 // {
-//     std::string url = str;
+//     String url = str;
 //     compressSlashes(url);
 //     if (url != expected)
 //         std::cout << "Expected: " << expected << " Got: "<< url << "\n";
@@ -24,6 +24,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <poll.h>
+#include <signal.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -39,28 +40,61 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+// char *const args[] = {(char *)"/usr/bin/python3", (char *)"./www/cgi/hello.py", NULL};
 
-class Class {
-   private:
-    std::string str;
+int main() {
+    // int pipes[2];
+    // int pipesRead[2];
+    // pipe(pipes);
+    // pipe(pipesRead);
 
-   public:
-    Class() : str(100000, 'a') {
-    }
+    // int pid = fork();
+    // if (pid == 0) {
+    //     dup2(pipesRead[1], 1);
+    //     close(pipesRead[0]);
+    //     close(pipesRead[1]);
 
-    const std::string &f() {
-        return str;
-    }
-};
+    //     dup2(pipes[0], 0);
+    //     close(pipes[0]);
+    //     close(pipes[1]);
+    //     char *const args[] = {(char *)"/usr/bin/python3", (char *)"./www/cgi/hello.py", NULL};
+    //     if (execve(*args, args, env) == -1) {
+    //         std::cerr << strerror(errno) << "\n";
+    //     }
 
-int main(int argc, char **argv, char **env) {
-    std::string str = "hey yo";
+    //     // char buf[100 + 1];
+    //     // std::cerr << "reading" << '\n';
+    //     // buf[read(0, buf, 100)] = '\0';
+    //     // std::cerr << buf << '\n';
+
+    //     // buf[read(0, buf, 100)] = '\0';
+    //     // std::cerr << buf << '\n';
+
+    //     // write(1, "hey!", 4);
+    //     // std::cerr << "done writting" << '\n';
+    //     return 0;
+    // }
+
+    // std::cerr << "sending" << '\n';
+    // write(pipes[1], "hello", 5);
+    // close(pipes[0]);
+    // close(pipes[1]);
+    // waitpid(pid, NULL, 0);
+
+    // std::cout << "process has finished\n";
+    // char buf[100 + 1];
+    // buf[read(pipesRead[0], buf, 100)] = '\0';
+    // std::cerr << buf << "\n";
+    // close(pipesRead[1]);
+    // close(pipesRead[0]);
+    // return 0;
 
     // std::cout << str.substr(0, str.size() - 1) << '\n';
-    std::cout << str.find("y", 2);
-    // std::string str = "  ' ;; ;'  ='hey' ;attr='yo';    ; ; attr2='hey' ;   attr3;  'attr3'; 'sfb ';   ";
-    // // std::string str = "'sfb'";
-    // std::vector<std::string> res;
+    // std::cout << (str.find("y", -1) == (size_t)-1) << "\n";
+    // std::cout << str.rfind() << "\n";
+    // String str = "  ' ;; ;'  ='hey' ;attr='yo';    ; ; attr2='hey' ;   attr3;  'attr3'; 'sfb ';   ";
+    // // String str = "'sfb'";
+    // std::vector<String> res;
     // res.push_back("' ;; ;'  ='hey'");
     // res.push_back("attr='yo'");
     // res.push_back("");
@@ -69,7 +103,7 @@ int main(int argc, char **argv, char **env) {
     // res.push_back("attr3");
     // res.push_back("'attr3'");
 
-    // std::vector<std::string> items = split(str, ";");
+    // std::vector<String> items = split(str, ";");
     // for (int i = 0; i < items.size(); i++) {
     //     std::cout << "---" << items[i] << "---\n";
     //     std::cout << "---" << res[i] << "---\n";
@@ -79,6 +113,6 @@ int main(int argc, char **argv, char **env) {
 
     // Class t;
     // for (int i = 0; i < 1000000; i++) {
-    //     const std::string &str = t.f();
+    //     const String &str = t.f();
     // }
 }
