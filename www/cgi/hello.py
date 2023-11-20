@@ -3,12 +3,13 @@ import os
 
 # print("Content-Type: text/plain\r\nTransfer-Encoding: chunked\r\n\r\n8\r\nMozilla \r\n11\r\nDeveloper Network\r\n0\r\n\r\n", end='')
 
-os.write(2, str.encode("CGI: READING\n"))
+# os.write(2, str.encode("CGI: READING\n"))
 input_string = sys.stdin.read()
-os.write(2, str.encode("CGI: WRITTING\n"))
+# os.write(2, str.encode("CGI: WRITTING\n"))
 print("Content-Type: text/plain");
 print("Content-Length: " + str(len(input_string)));
 print("")
+print(input_string)
 print("REQUEST_METHOD", os.getenv("REQUEST_METHOD"))
 print("SERVER_SOFTWARE", os.getenv("SERVER_SOFTWARE"))
 print("GATEWAY_INTERFACE", os.getenv("GATEWAY_INTERFACE"))
@@ -27,4 +28,3 @@ print("PATH_TRANSLATED", os.getenv("PATH_TRANSLATED"))
 print("QUERY_STRING", os.getenv("QUERY_STRING"))
 print("CONTENT_LENGTH", os.getenv("CONTENT_LENGTH"))
 print("CONTENT_TYPE", os.getenv("CONTENT_TYPE"))
-print(input_string)

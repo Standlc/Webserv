@@ -40,54 +40,83 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-// char *const args[] = {(char *)"/usr/bin/python3", (char *)"./www/cgi/hello.py", NULL};
+#define _XOPEN_SOURCE_EXTENDED 1
 
-int main() {
-    // int pipes[2];
-    // int pipesRead[2];
-    // pipe(pipes);
-    // pipe(pipesRead);
+int main(int argc, char **argv, char **env) {
+    int pipes[2];
+    int pipesRead[2];
+    socketpair(AF_UNIX, SOCK_STREAM, 0, pipes);
+    socketpair(AF_UNIX, SOCK_STREAM, 0, pipesRead);
+    // fcntl(pipes[0], F_SETFL, O_NONBLOCK);
+    // int bufsize = 2500 * 2500;
+    // setsockopt(pipes[0], SOL_SOCKET, SO_SNDBUF, &bufsize, sizeof(bufsize));
+    // setsockopt(pipes[1], SOL_SOCKET, SO_SNDBUF, &bufsize, sizeof(bufsize));
+    // socketpair(AF_INET, SOCK_STREAM, 0, pipesRead);
 
-    // int pid = fork();
-    // if (pid == 0) {
-    //     dup2(pipesRead[1], 1);
-    //     close(pipesRead[0]);
-    //     close(pipesRead[1]);
+    int pid = fork();
+    if (pid == 0) {
+        dup2(pipes[0], 0);
+        dup2(pipesRead[1], 1);
 
-    //     dup2(pipes[0], 0);
-    //     close(pipes[0]);
-    //     close(pipes[1]);
-    //     char *const args[] = {(char *)"/usr/bin/python3", (char *)"./www/cgi/hello.py", NULL};
-    //     if (execve(*args, args, env) == -1) {
-    //         std::cerr << strerror(errno) << "\n";
-    //     }
+        close(pipes[0]);
+        close(pipes[1]);
+        close(pipesRead[0]);
+        close(pipesRead[1]);
 
-    //     // char buf[100 + 1];
-    //     // std::cerr << "reading" << '\n';
-    //     // buf[read(0, buf, 100)] = '\0';
-    //     // std::cerr << buf << '\n';
+        char *const args[] = {(char *)"/usr/bin/python3", (char *)"./www/cgi/hello.py", NULL};
+        if (execve(*args, args, env) == -1) {
+            std::cerr << strerror(errno) << "\n";
+        }
 
-    //     // buf[read(0, buf, 100)] = '\0';
-    //     // std::cerr << buf << '\n';
+        // char buf[100 + 1];
+        // std::cerr << "reading: ";
+        // // std::cerr << buf << '\n';
 
-    //     // write(1, "hey!", 4);
-    //     // std::cerr << "done writting" << '\n';
-    //     return 0;
+        // buf[read(0, buf, 100)] = '\0';
+        // std::cerr << buf << '\n';
+
+        // // std::string buf(5, '\0');
+        // // read(0, &buf[0], 5);
+        // std::cerr << "sending from child..." << '\n';
+        // write(1, "hey!", 4);
+        // std::cerr << "done writting." << '\n';
+        return 0;
+    }
+
+    sleep(2);
+
+    std::string data(5, 'a');
+    std::cerr << "sending..." << '\n';
+    if (write(pipes[1], &data[0], 5) == -1) {
+        std::cerr << "write failed\n";
+    }
+    close(pipes[1]);
+    close(pipes[0]);
+
+    waitpid(pid, NULL, 0);
+    std::cout << "process has finished.\n";
+
+    struct pollfd el = {pipesRead[0], POLLIN | POLLOUT, 0};
+    poll(&el, 1, -1);
+    std::cout << "Writable" << (el.revents & POLLOUT) << "\n";
+    std::cout << "Readable" << (el.revents & POLLIN) << "\n";
+
+    char buf[100 + 1];
+    int readBytes = read(pipesRead[0], buf, 100);
+    buf[readBytes] = '\0';
+    std::cout << readBytes << '\n';
+    std::cerr << buf << "\n";
+
+    poll(&el, 1, -1);
+    std::cout << "Writable" << (el.revents & POLLOUT) << "\n";
+    std::cout << "Readable" << (el.revents & POLLIN) << "\n";
+    // } else {
+    //     std::cout << "not readable\n";
     // }
 
-    // std::cerr << "sending" << '\n';
-    // write(pipes[1], "hello", 5);
-    // close(pipes[0]);
-    // close(pipes[1]);
-    // waitpid(pid, NULL, 0);
-
-    // std::cout << "process has finished\n";
-    // char buf[100 + 1];
-    // buf[read(pipesRead[0], buf, 100)] = '\0';
-    // std::cerr << buf << "\n";
     // close(pipesRead[1]);
     // close(pipesRead[0]);
-    // return 0;
+    return 0;
 
     // std::cout << str.substr(0, str.size() - 1) << '\n';
     // std::cout << (str.find("y", -1) == (size_t)-1) << "\n";

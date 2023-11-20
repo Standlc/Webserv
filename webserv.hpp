@@ -23,6 +23,7 @@
 #include <unordered_map>
 #include <vector>
 
+#define DEBUG true
 #define HTTP_VERSION "HTTP/1.0"
 #define NPOS String::npos
 #define BUF_SIZE 8000
@@ -54,15 +55,13 @@ class HttpResponse;
 class PollFd;
 class CgiPoll;
 class ClientPoll;
-// class StatusComments;
 
+void closeOpenFd(int &fd);
 void debug(const String &title, const String &arg, const String &color);
 void debugErr(const String &title, const char *err);
 void exitProgram(Server &server, int exitCode);
 String parsePathFileName(const String &path);
 String parseFileDirectory(const String &filePath);
-void tryPipe(int pipes[2]);
-int tryPipeAndFork(int pipes[2]);
 void trySetenv(const String &name, const String &value);
 void tryUnsetenv(const String &name);
 int checkPathAccess(const String &path);

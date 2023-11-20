@@ -7,11 +7,11 @@ PollFd::PollFd(int fd) : _status(new int(0)) {
 }
 
 PollFd::~PollFd() {
-    close(_fd);
+    closeOpenFd(_fd);
     *_status = -1;
 };
 
-std::shared_ptr<int> ClientPoll::getStatus() {
+std::shared_ptr<int> PollFd::getStatus() {
     return _status;
 }
 

@@ -5,6 +5,8 @@
 #include "blocks/Block.hpp"
 #include "webserv.hpp"
 
+struct CgiSockets;
+
 class Server {
    private:
     std::vector<struct pollfd> _fds;
@@ -21,20 +23,21 @@ class Server {
     int monitorClients();
     void scanForEventSockets(int eventsAmount);
 
+    // size_t findPollFd(int fd);
+    // CgiPoll& pushNewCgiPoll(int* cgiSockets, ClientPoll& client);
+    // void pushNewCgiResponsePoll(int* cgiSockets, ClientPoll& client);
+    // void pushNewCgiRequestPoll(int* cgiSockets, ClientPoll& client);
+
+    void loadDefaultErrPage(int statusCode, HttpResponse& res);
+    String getDefaultErrorPagePath(int statusCode);
+
     void removePollFd(int index);
     void pushNewClient(int clientSocket);
     void pushNewListeningSocket(int listeningSocket);
-    void pushNewCgiResponsePoll(int* pipes, ClientPoll& client);
-    void pushNewCgiRequestPoll(int* pipes, ClientPoll& client);
+    CgiPoll& pushNewCgiPoll(CgiSockets& cgiSockets, ClientPoll& client);
     void pushStructPollfd(int fd);
 
-    void loadDefaultErrPage(int statusCode, HttpResponse& res);
-
-    String getDefaultErrorPagePath(int statusCode);
     ServerBlock& findServerBlock(String port, String host);
-
-    size_t findPollFd(int fd);
-
     void addBlocks(int size);
     void addLocationBlocks(int serverIndex, int size);
     ServerBlock& getServerBlock(int index);

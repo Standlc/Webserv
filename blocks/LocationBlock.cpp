@@ -46,27 +46,54 @@ LocationBlock &LocationBlock::operator=(const LocationBlock &b) {
     return *this;
 }
 
-void LocationBlock::handlePOSTCgi(Server &server, ClientPoll &client, const String &cgiResourcePath, const String &cgiScriptCommand) {
-    int pipes[2];
-    tryPipe(pipes);
-    client.execveCgi(server, cgiResourcePath, cgiScriptCommand, pipes);
-    server.pushNewCgiRequestPoll(pipes, client);
+void closeSocketPairs(CgiSockets &sockets) {
+    closeOpenFd(sockets.response[0]);
+    closeOpenFd(sockets.response[1]);
+    closeOpenFd(sockets.request[0]);
+    closeOpenFd(sockets.request[1]);
+}
+
+CgiSockets createCgiReqResSocketPairs() {
+    CgiSockets sockets = {{-1, -1}, {-1, -1}};
+    try {
+        if (socketpair(AF_UNIX, SOCK_STREAM, 0, sockets.response) == -1) {
+            throw 500;
+        }
+        if (socketpair(AF_UNIX, SOCK_STREAM, 0, sockets.request) == -1) {
+            throw 500;
+        }
+        int bufsize = 2500 * 2500;
+        if (setsockopt(sockets.response[0], SOL_SOCKET, SO_SNDBUF, &bufsize, sizeof(bufsize)) == -1) {
+            throw 500;
+        }
+        if (setsockopt(sockets.request[1], SOL_SOCKET, SO_SNDBUF, &bufsize, sizeof(bufsize)) == -1) {
+            throw 500;
+        }
+    } catch (int status) {
+        closeSocketPairs(sockets);
+        throw status;
+    }
+    return sockets;
 }
 
 clientPollHandlerType LocationBlock::handleCgi(Server &server, ClientPoll &client, const String &cgiScriptPath) {
-    debug("cgi script path", cgiScriptPath, YELLOW);
     String cgiResourcePath = this->getResourcePath(cgiScriptPath);
+    debug("cgi script path", cgiScriptPath, YELLOW);
     debug("cgi resource path", cgiResourcePath, YELLOW);
     this->checkCgiScriptAccess(cgiScriptPath);
-
     this->setenvCgi(client.req(), cgiScriptPath);
+
     String cgiExtension = getFileExtension(cgiScriptPath);
+    CgiSockets cgiSockets = createCgiReqResSocketPairs();
+    CgiPoll &cgiPoll = server.pushNewCgiPoll(cgiSockets, client);
+
     if (client.req().getHttpMethod() == "POST" && client.req().hasBody()) {
-        this->handlePOSTCgi(server, client, cgiResourcePath, _cgiCommands[cgiExtension]);
-        return checkCgiWrite;
+        cgiPoll.setWriteHandler(sendCgiRequest);
+    } else {
+        cgiPoll.setWriteHandler(waitCgiProcessEnd);
     }
-    client.execveCgi(server, cgiResourcePath, _cgiCommands[cgiExtension]);
-    return waitCgiProcessEnd;
+    cgiPoll.forkAndexecuteScript(server, cgiResourcePath, _cgiCommands[cgiExtension]);
+    return checkCgiPoll;
 }
 
 void LocationBlock::setenvCgi(HttpRequest &req, const String &cgiScriptPath) {

@@ -153,20 +153,15 @@ void Server::pushNewListeningSocket(int listeningSocket) {
     _pollFds.push_back(newListeningPollFd);
 }
 
-void Server::pushNewCgiResponsePoll(int* pipes, ClientPoll& client) {
-    this->pushStructPollfd(client.cgiResponsePipes()[0]);
+CgiPoll& Server::pushNewCgiPoll(CgiSockets& cgiSockets, ClientPoll& client) {
+    this->pushStructPollfd(cgiSockets.request[1]);
+    // fcntl(cgiSockets.response[1], F_SETFL, O_NONBLOCK);
+    // fcntl(cgiSockets.request[0], F_SETFL, O_NONBLOCK);
+    // fcntl(cgiSockets.request[1], F_SETFL, O_NONBLOCK);
 
-    CgiPoll* newCgi = new CgiPoll(pipes[0], pipes, client);
-    newCgi->setReadHandler(readCgiResponseFromPipe);
+    CgiPoll* newCgi = new CgiPoll(cgiSockets, client, _fds[_fds.size() - 1]);
     _pollFds.push_back(newCgi);
-}
-
-void Server::pushNewCgiRequestPoll(int* pipes, ClientPoll& client) {
-    this->pushStructPollfd(client.cgiResponsePipes()[1]);
-
-    CgiPoll* newCgi = new CgiPoll(pipes[1], pipes, client);
-    newCgi->setWriteHandler(sendCgiRequest);
-    _pollFds.push_back(newCgi);
+    return *newCgi;
 }
 
 void Server::pushStructPollfd(int fd) {
@@ -208,15 +203,6 @@ ServerBlock& Server::findServerBlock(String port, String host) {
     return *defaultBlock;
 }
 
-size_t Server::findPollFd(int fd) {
-    for (size_t i = 0; i < _pollFds.size(); i++) {
-        if (_pollFds[i]->getFd() == fd) {
-            return i;
-        }
-    }
-    return -1;
-}
-
 void Server::addBlocks(int size) {
     _blocks.resize(_serverBlockSize + size);
     _serverBlockSize += size;
@@ -233,8 +219,6 @@ ServerBlock& Server::getServerBlock(int index) {
 LocationBlock& Server::getLocationBlock(int serverIndex, int locationIndex) {
     return _blocks[serverIndex].getLocationBlock(locationIndex);
 }
-
-// // // // // // // // // // // // // // // // // // // // // // // // // //
 
 int handleNewConnection(Server& server, PollFd* listen) {
     int newClientSocket = accept(listen->getFd(), NULL, NULL);

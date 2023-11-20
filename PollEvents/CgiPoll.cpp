@@ -1,19 +1,27 @@
 #include "PollFd.hpp"
 
-CgiPoll::CgiPoll(int fd, int *pipes, ClientPoll &client) : PollFd(fd),
-                                                           _client(client) {
-    _pipes[0] = pipes[0];
-    _pipes[1] = pipes[1];
+CgiPoll::CgiPoll(CgiSockets &cgiSockets, ClientPoll &client, struct pollfd &structPollfd) : PollFd(structPollfd.fd),
+                                                                                            _pollfd(structPollfd),
+                                                                                            _client(client) {
+    _cgiSockets = cgiSockets;
+    _scriptLaunchTime = -1;
+    _pid = -1;
     _clientStatus = client.getStatus();
     client.setCgiPollStatus(_status);
 }
 
 CgiPoll::~CgiPoll() {
-    if (_pipes[0] != _fd) {
-        close(_pipes[0]);
-    }
-    if (_pipes[1] != _fd) {
-        close(_pipes[1]);
+    closeOpenFd(_cgiSockets.response[0]);
+    closeOpenFd(_cgiSockets.response[1]);
+    closeOpenFd(_cgiSockets.request[0]);
+    closeOpenFd(_cgiSockets.request[1]);
+    this->killCgiProcess();
+}
+
+void CgiPoll::killCgiProcess() {
+    if (_pid != -1) {
+        kill(_pid, SIGKILL);
+        _pid = -1;
     }
 }
 
@@ -24,8 +32,9 @@ int CgiPoll::clientStatus() {
     return 0;
 }
 
-int *CgiPoll::getPipes() {
-    return _pipes;
+void CgiPoll::closeRequestSockets() {
+    closeOpenFd(_cgiSockets.request[0]);
+    closeOpenFd(_cgiSockets.request[1]);
 }
 
 ClientPoll &CgiPoll::client() {
@@ -54,9 +63,111 @@ int CgiPoll::handleWrite(Server &server, PollFd *pollFd) {
     return _writeHandler(server, (CgiPoll *)pollFd);
 }
 
+void CgiPoll::switchToResponseReadableSocket() {
+    _fd = _cgiSockets.response[0];
+    _pollfd.fd = _fd;
+    _pollfd.revents = 0;
+}
+void CgiPoll::switchToResponseWritableSocket() {
+    _fd = _cgiSockets.response[1];
+    _pollfd.fd = _fd;
+    _pollfd.revents = 0;
+}
+void CgiPoll::switchToRequestReadableSocket() {
+    _fd = _cgiSockets.request[0];
+    _pollfd.fd = _fd;
+    _pollfd.revents = 0;
+}
+void CgiPoll::switchToRequestWritableSocket() {
+    _fd = _cgiSockets.request[1];
+    _pollfd.fd = _fd;
+    _pollfd.revents = 0;
+}
+
+int CgiPoll::tryFork() {
+    int pid = fork();
+    if (pid == -1) {
+        debugErr("fork", strerror(errno));
+        this->setWriteHandler(quitPollError);
+        throw 500;
+    }
+    return pid;
+}
+
+void CgiPoll::forkAndexecuteScript(Server &server, const String &cgiResourcePath, const String &cgiScriptCommand) {
+    _pid = tryFork();
+
+    if (_pid == 0) {
+        try {
+            this->redirectCgiProcessInputOutput();
+            this->execveScript(cgiResourcePath, cgiScriptCommand);
+        } catch (int status) {
+            _pid = -1;
+            exitProgram(server, status);
+        }
+    }
+
+    _scriptLaunchTime = std::time(0);
+}
+
+void CgiPoll::redirectCgiProcessInputOutput() {
+    if (dup2(_cgiSockets.request[0], 0) == -1) {
+        debugErr("dup2", strerror(errno));
+        throw 1;
+    }
+    if (dup2(_cgiSockets.response[1], 1) == -1) {
+        debugErr("dup2", strerror(errno));
+        throw 1;
+    }
+    closeOpenFd(_cgiSockets.response[0]);
+    closeOpenFd(_cgiSockets.response[1]);
+    closeOpenFd(_cgiSockets.request[0]);
+    closeOpenFd(_cgiSockets.request[1]);
+}
+
+void CgiPoll::execveScript(const String &cgiScriptResourcePath, const String &cgiScriptCommand) {
+    String cgiScriptDir = parseFileDirectory(cgiScriptResourcePath);
+    if (chdir(&cgiScriptDir[0]) == -1) {
+        debugErr("chdir", strerror(errno));
+        throw 1;
+    }
+
+    String scriptName = "./" + parsePathFileName(cgiScriptResourcePath);
+    char *const args[] = {(char *)&cgiScriptCommand[0], (char *)&scriptName[0], NULL};
+
+    // debugErr("cgi dir", &cgiScriptDir[0]);
+    // debugErr("script name", &scriptName[0]);
+    // debugErr("command", &cgiScriptCommand[0]);
+
+    if (execve(args[0], args, environ) == -1) {
+        debugErr("execve", strerror(errno));
+        throw 1;
+    }
+}
+
+time_t CgiPoll::scriptLaunchTime() {
+    return _scriptLaunchTime;
+}
+
+int CgiPoll::cgiPid() {
+    return _pid;
+}
+
 //////////////////////////////////////////////////////////////////
 
-int readCgiResponseFromPipe(Server &server, CgiPoll *cgi) {
+int quitPollError(Server &server, CgiPoll *cgi) {
+    return -1;
+}
+
+int quitPollSuccess(Server &server, CgiPoll *cgi) {
+    if (cgi->clientStatus() == -1) {
+        return -1;
+    }
+    cgi->client().setWriteHandler(setCgiResponse);
+    return -1;
+}
+
+int readCgiResponse(Server &server, CgiPoll *cgi) {
     if (cgi->clientStatus() == -1) {
         return -1;
     }
@@ -66,7 +177,29 @@ int readCgiResponseFromPipe(Server &server, CgiPoll *cgi) {
     if (client.res().recvAll(cgi->getFd()) == -1) {
         return -1;
     }
-    client.setWriteHandler(waitEmptyCgiPipe);
+    return 0;
+}
+
+int waitCgiProcessEnd(Server &server, CgiPoll *cgi) {
+    if (cgi->clientStatus() == -1 || checkTimeout(cgi->scriptLaunchTime(), 10)) {
+        return -1;
+    }
+
+    int pid = cgi->cgiPid();
+    int waitpidStatus;
+
+    // debug("checking cgi pid", std::to_string(pid), WHITE);
+    if (waitpid(pid, &waitpidStatus, WNOHANG) == -1) {
+        if (WIFEXITED(waitpidStatus) && WEXITSTATUS(waitpidStatus) != 0) {
+            debug("cgi process has exit with error", std::to_string(waitpidStatus), RED);
+            return -1;
+        }
+
+        debug("cgi process has exit", std::to_string(pid), WHITE);
+        cgi->setWriteHandler(quitPollSuccess);
+        cgi->setReadHandler(readCgiResponse);
+        cgi->switchToResponseReadableSocket();
+    }
     return 0;
 }
 
@@ -75,14 +208,13 @@ int sendCgiRequest(Server &server, CgiPoll *cgi) {
         return -1;
     }
 
-    ClientPoll &client = cgi->client();
-    int *pipes = cgi->getPipes();
-
-    debug("sending cgi request", std::to_string(pipes[1]), WHITE);
-    int sendStatus = client.req().sendBody(pipes[1]);
+    debug("sending cgi request", std::to_string(cgi->getFd()), WHITE);
+    int sendStatus = cgi->client().req().sendBody(cgi->getFd());
     if (sendStatus == 0) {
-        client.setWriteHandler(waitCgiProcessEnd);
-        return -1;
+        cgi->closeRequestSockets();
+        cgi->switchToResponseWritableSocket();
+        cgi->setWriteHandler(waitCgiProcessEnd);
+        return waitCgiProcessEnd(server, cgi);
     }
     return (sendStatus == -1) ? -1 : 0;
 }

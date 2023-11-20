@@ -2,12 +2,19 @@
 #include "../Server.hpp"
 #include "../webserv.hpp"
 
+void closeOpenFd(int &fd) {
+    if (fd != -1) {
+        close(fd);
+        fd = -1;
+    }
+}
+
 bool isReadable(struct pollfd &pollEl) {
     return (pollEl.revents & POLLIN) == 1;
 }
 
 bool isWritable(struct pollfd &pollEl) {
-    return (pollEl.revents & POLLOUT);
+    return (pollEl.revents & POLLOUT) == 4;
 }
 
 int checkPollError(struct pollfd &pollEl, int error) {
@@ -125,26 +132,6 @@ String parseFileDirectory(const String &filePath) {
     return filePath.substr(0, finalSlashPos + 1);
 }
 
-void tryPipe(int pipes[2]) {
-    if (pipe(pipes)) {
-        debugErr("pipe", strerror(errno));
-        throw 500;
-    }
-}
-
-int tryPipeAndFork(int pipes[2]) {
-    tryPipe(pipes);
-
-    int pid = fork();
-    if (pid == -1) {
-        debugErr("fork", strerror(errno));
-        close(pipes[0]);
-        close(pipes[1]);
-        throw 500;
-    }
-    return pid;
-}
-
 void tryUnsetenv(const String &name) {
     if (unsetenv(&name[0])) {
         debugErr("unsetenv", strerror(errno));
@@ -182,7 +169,7 @@ int checkPathAccess(const String &path) {
 
 void exitProgram(Server &server, int exitCode) {
     delete &server;
-    // debugErr("EXITING", "");
+    debugErr("EXITING", "");
     exit(exitCode);
 }
 
@@ -196,7 +183,9 @@ void debugErr(const String &title, const char *err) {
 }
 
 void debug(const String &title, const String &arg, const String &color) {
-    return;
+    if (!DEBUG) {
+        return;
+    }
     std::cout << color << title;
     if (arg != "") {
         std::cout << ": " << arg;

@@ -13,16 +13,17 @@ typedef int (*CgiPollHandlerType)(Server &, CgiPoll *);
 int handleNewConnection(Server &server, PollFd *listen);
 int checkTimeout(time_t time, int seconds);
 
+int setCgiResponse(Server &server, ClientPoll *client);
 int sendResponseToClient(Server &server, ClientPoll *client);
 int executeClientRequest(Server &server, ClientPoll *client);
 int readClientRequest(Server &server, ClientPoll *client);
 int timeoutClient(Server &server, ClientPoll *client);
 
-int checkCgiWrite(Server &server, ClientPoll *client);
-int waitCgiProcessEnd(Server &server, ClientPoll *client);
-int readCgiResponseFromPipe(Server &server, CgiPoll *cgi);
+int quitPollError(Server &server, CgiPoll *cgi);
+int checkCgiPoll(Server &server, ClientPoll *client);
+int waitCgiProcessEnd(Server &server, CgiPoll *cgi);
+int readCgiResponse(Server &server, CgiPoll *cgi);
 int sendCgiRequest(Server &server, CgiPoll *cgi);
-int waitEmptyCgiPipe(Server &server, ClientPoll *client);
 
 class PollFd {
    protected:
@@ -35,6 +36,7 @@ class PollFd {
     PollFd(int fd);
     virtual ~PollFd();
 
+    std::shared_ptr<int> getStatus();
     int getFd();
     void setWriteHandler(pollFdHandlerType f);
     void setReadHandler(pollFdHandlerType f);
@@ -51,52 +53,62 @@ class ClientPoll : public PollFd {
     time_t _acceptTime;
 
     std::shared_ptr<int> _cgiPollStatus;
-    int _cgiPid;
-    int _cgiResponsePipes[2];
-    time_t _cgiLaunchTime;
 
    public:
     ClientPoll(int &fd);
     ~ClientPoll();
 
     time_t getAcceptTime();
-    void setCgiPollStatus(std::shared_ptr<int> cgiStatus);
     int cgiPollStatus();
-    time_t cgiLaunchTime();
-    int cgiPid();
-    int *cgiResponsePipes();
-    std::shared_ptr<int> getStatus();
 
     HttpResponse &res();
     HttpRequest &req();
 
+    void setCgiPollStatus(std::shared_ptr<int> cgiStatus);
     void setWriteHandler(clientPollHandlerType f);
     void setReadHandler(clientPollHandlerType f);
     int handleWrite(Server &server, PollFd *pollFd);
     int handleRead(Server &server, PollFd *pollFd);
-
-    void execveCgi(Server &server, const String &cgiResourcePath, const String &cgiScriptCommand, int cgiReqPipes[2] = NULL);
-    void redirectCgiProcessInputOutput(int cgiResPipes[2], int cgiReqPipes[2] = NULL);
-    void executeCgiScript(const String &cgiScriptResourcePath, const String &cgiScriptCommand);
-    void killCgiProcess();
-    void closeCgiResponsePipes();
+    int sendInternalError(Server &server);
 };
+
+typedef struct CgiSockets {
+    int request[2];
+    int response[2];
+} CgiSockets;
 
 class CgiPoll : public PollFd {
    private:
     CgiPollHandlerType _readHandler;
     CgiPollHandlerType _writeHandler;
+    struct pollfd &_pollfd;
     ClientPoll &_client;
     std::shared_ptr<int> _clientStatus;
-    int _pipes[2];
+    time_t _scriptLaunchTime;
+
+    CgiSockets _cgiSockets;
+    int _pid;
 
    public:
-    CgiPoll(int fd, int *pipes, ClientPoll &client);
+    CgiPoll(CgiSockets &cgiSockets, ClientPoll &client, struct pollfd &structPollfd);
     ~CgiPoll();
 
+    int cgiPid();
+    int tryFork();
+    void killCgiProcess();
+    time_t scriptLaunchTime();
+    void closeRequestSockets();
+
     int clientStatus();
-    int *getPipes();
     ClientPoll &client();
+    void forkAndexecuteScript(Server &server, const String &cgiResourcePath, const String &cgiScriptCommand);
+    void redirectCgiProcessInputOutput();
+    void execveScript(const String &cgiScriptResourcePath, const String &cgiScriptCommand);
+
+    void switchToResponseReadableSocket();
+    void switchToResponseWritableSocket();
+    void switchToRequestReadableSocket();
+    void switchToRequestWritableSocket();
 
     void setReadHandler(CgiPollHandlerType f);
     void setWriteHandler(CgiPollHandlerType f);

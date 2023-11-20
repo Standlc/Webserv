@@ -95,7 +95,6 @@ class LocationBlock : public Block {
     String generateSessionCookie();
 
     clientPollHandlerType execute(Server &server, ClientPoll &client);
-    void handlePOSTCgi(Server &server, ClientPoll &client, const String &cgiResourcePath, const String &cgiScriptCommand);
     clientPollHandlerType handleCgi(Server &server, ClientPoll &client, const String &cgiScriptPath);
     void checkCgiScriptAccess(const String &cgiScriptPath);
     String isCgiScriptRequest(HttpRequest &req);
