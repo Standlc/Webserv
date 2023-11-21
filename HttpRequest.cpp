@@ -169,7 +169,7 @@ const URL &HttpRequest::url() {
 }
 
 bool HttpRequest::hasBody() {
-    return _endOfHeadersPos < _totalRead;
+    return _bodySize > 0;
 }
 
 bool HttpRequest::isComplete() {
@@ -274,6 +274,37 @@ size_t HttpRequest::searchBody(const String &find, size_t from, size_t upto) {
         return (pos <= upto) ? pos : -1;
     }
     return pos;
+}
+
+String HttpRequest::getClientHostName() {
+    struct sockaddr_in addr;
+    socklen_t addr_len = sizeof(addr);
+
+    if (getpeername(_clientSocket, (struct sockaddr *)&addr, &addr_len) == -1) {
+        debugErr("getpeername", strerror(errno));
+        throw 500;
+    }
+
+    char host[NI_MAXHOST];
+    if (getnameinfo((struct sockaddr *)&addr, addr_len, host, NI_MAXHOST, NULL, 0, 0) == -1) {
+        debugErr("getnameinfo", strerror(errno));
+        throw 500;
+    }
+    return host;
+}
+
+String HttpRequest::getClientIpAddress() {
+    struct sockaddr_in addr;
+    socklen_t addr_len = sizeof(addr);
+
+    if (getpeername(_clientSocket, (struct sockaddr *)&addr, &addr_len) == -1) {
+        debugErr("getpeername", strerror(errno));
+        throw 500;
+    }
+
+    char ipAddress[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &(addr.sin_addr), ipAddress, INET_ADDRSTRLEN);
+    return String(ipAddress);
 }
 
 String HttpRequest::getSocketIpAddress() {

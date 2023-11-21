@@ -13,7 +13,7 @@ typedef int (*CgiPollHandlerType)(Server &, CgiPoll *);
 int handleNewConnection(Server &server, PollFd *listen);
 int checkTimeout(time_t time, int seconds);
 
-int setCgiResponse(Server &server, ClientPoll *client);
+// int setCgiResponse(Server &server, ClientPoll *client);
 int sendResponseToClient(Server &server, ClientPoll *client);
 int executeClientRequest(Server &server, ClientPoll *client);
 int readClientRequest(Server &server, ClientPoll *client);
@@ -48,18 +48,18 @@ class ClientPoll : public PollFd {
    private:
     clientPollHandlerType _writeHandler;
     clientPollHandlerType _readHandler;
-    HttpRequest _req;
-    HttpResponse _res;
+    HttpRequest *_req;
+    HttpResponse *_res;
     time_t _acceptTime;
-
     std::shared_ptr<int> _cgiPollStatus;
 
    public:
-    ClientPoll(int &fd);
+    ClientPoll(int fd);
     ~ClientPoll();
 
     time_t getAcceptTime();
     int cgiPollStatus();
+    void resetConnection();
 
     HttpResponse &res();
     HttpRequest &req();
@@ -109,6 +109,7 @@ class CgiPoll : public PollFd {
     void switchToResponseWritableSocket();
     void switchToRequestReadableSocket();
     void switchToRequestWritableSocket();
+    int quitPollSuccess();
 
     void setReadHandler(CgiPollHandlerType f);
     void setWriteHandler(CgiPollHandlerType f);

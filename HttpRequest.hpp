@@ -55,6 +55,8 @@ class HttpRequest : public ServerStream {
     int sendBody(int fd);
     size_t searchBody(const String &find, size_t from = 0, size_t upto = -1);
     String getSocketIpAddress();
+    String getClientIpAddress();
+    String getClientHostName();
     String getSocketPort();
 };
 

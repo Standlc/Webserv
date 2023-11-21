@@ -10,7 +10,7 @@ class ServerStream {
     size_t _totalSentBytes;
 
     int sendAll(int fd, char *data, size_t size) {
-        int sentBytes = write(fd, &data[_totalSentBytes], size);
+        int sentBytes = send(fd, &data[_totalSentBytes], size, 0);
         _totalSentBytes += sentBytes;
 
         if (sentBytes == -1 || sentBytes == 0) {
@@ -30,7 +30,8 @@ class ServerStream {
 
     int recvAll(int fd) {
         _rawData.resize(_totalRead + BUF_SIZE + 1, '\0');
-        int readBytes = read(fd, &_rawData[_totalRead], BUF_SIZE);
+
+        int readBytes = recv(fd, &_rawData[_totalRead], BUF_SIZE, 0);
         _totalRead += readBytes;
 
         if (readBytes == -1 || readBytes == 0) {

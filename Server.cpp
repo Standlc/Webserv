@@ -26,7 +26,6 @@ struct addrinfo* getServerAddressInfo(String serverIpAddress, String port) {
     }
     if (res == NULL) {
         debugErr("getaddrinfo", gai_strerror(errno));
-        freeaddrinfo(res);
         throw -1;
     }
     return res;
@@ -59,11 +58,12 @@ void bindSocket(int socketFd, struct addrinfo* addrInfo) {
 }
 
 void listenToSocket(int socketFd, String port) {
-    int status = listen(socketFd, 20);
+    int status = listen(socketFd, 50);
     if (status == -1) {
         debugErr("listen", strerror(errno));
         throw -1;
     }
+    // print specific <server_name>
     std::cout << "Server is listening on port " << port << "...\n";
 }
 
@@ -154,12 +154,14 @@ void Server::pushNewListeningSocket(int listeningSocket) {
 }
 
 CgiPoll& Server::pushNewCgiPoll(CgiSockets& cgiSockets, ClientPoll& client) {
-    this->pushStructPollfd(cgiSockets.request[1]);
+    this->pushStructPollfd(cgiSockets.response[0]);
     // fcntl(cgiSockets.response[1], F_SETFL, O_NONBLOCK);
     // fcntl(cgiSockets.request[0], F_SETFL, O_NONBLOCK);
     // fcntl(cgiSockets.request[1], F_SETFL, O_NONBLOCK);
 
     CgiPoll* newCgi = new CgiPoll(cgiSockets, client, _fds[_fds.size() - 1]);
+    newCgi->setWriteHandler(waitCgiProcessEnd);
+    newCgi->setReadHandler(readCgiResponse);
     _pollFds.push_back(newCgi);
     return *newCgi;
 }

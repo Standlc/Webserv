@@ -10,25 +10,27 @@ void closeOpenFd(int &fd) {
 }
 
 bool isReadable(struct pollfd &pollEl) {
-    return (pollEl.revents & POLLIN) == 1;
+    return (pollEl.revents & POLLIN);
 }
 
 bool isWritable(struct pollfd &pollEl) {
-    return (pollEl.revents & POLLOUT) == 4;
+    return (pollEl.revents & POLLOUT);
 }
 
 int checkPollError(struct pollfd &pollEl, int error) {
-    if (pollEl.revents & error) {
-        debug("POLL ERROR", std::to_string(error), RED);
-        debug("ON FD", std::to_string(pollEl.fd), RED);
+    if ((pollEl.revents & error)) {
+        debug("socket event", std::to_string(error) + ", on fd: " + std::to_string(pollEl.fd), RED);
         return error;
     }
     return 0;
 }
 
 int checkPollErrors(struct pollfd &pollEl) {
-    if (checkPollError(pollEl, POLLERR) || checkPollError(pollEl, POLLHUP) || checkPollError(pollEl, POLLNVAL))
+    if (checkPollError(pollEl, POLLERR) ||
+        checkPollError(pollEl, POLLHUP) ||
+        checkPollError(pollEl, POLLNVAL)) {
         return -1;
+    }
     return 0;
 }
 
@@ -167,8 +169,8 @@ int checkPathAccess(const String &path) {
     return 200;
 }
 
-void exitProgram(Server &server, int exitCode) {
-    delete &server;
+void exitProgram(Server *server, int exitCode) {
+    delete server;
     debugErr("EXITING", "");
     exit(exitCode);
 }

@@ -40,108 +40,101 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#define _XOPEN_SOURCE_EXTENDED 1
+
+class Myclass {
+   public:
+    std::shared_ptr<int> yo;
+    std::string data1;
+    std::string data2;
+    std::string data3;
+    std::string data4;
+    std::string data5;
+    std::string data6;
+    std::string data7;
+    std::string data8;
+    std::string data9;
+    std::string data10;
+
+    Myclass() : yo(new int(123)) {
+    }
+
+    void doSomething() {
+        data1 = std::string(10000, 'a');
+        data2 = std::string(10000, 'a');
+        data3 = std::string(10000, 'a');
+        data4 = std::string(10000, 'a');
+        data5 = std::string(10000, 'a');
+        data6 = std::string(10000, 'a');
+        data7 = std::string(10000, 'a');
+        data8 = std::string(10000, 'a');
+        data9 = std::string(10000, 'a');
+        data10 = std::string(10000, 'a');
+    }
+
+    void clear() {
+        data1.clear();
+        data2.clear();
+        data3.clear();
+        data4.clear();
+        data5.clear();
+        data6.clear();
+        data7.clear();
+        data8.clear();
+        data9.clear();
+        data10.clear();
+    }
+
+    void reset() {
+        data1 = "";
+        data2 = "";
+        data3 = "";
+        data4 = "";
+        data5 = "";
+        data6 = "";
+        data7 = "";
+        data8 = "";
+        data9 = "";
+        data10 = "";
+    }
+};
 
 int main(int argc, char **argv, char **env) {
-    int pipes[2];
-    int pipesRead[2];
-    socketpair(AF_UNIX, SOCK_STREAM, 0, pipes);
-    socketpair(AF_UNIX, SOCK_STREAM, 0, pipesRead);
-    // fcntl(pipes[0], F_SETFL, O_NONBLOCK);
-    // int bufsize = 2500 * 2500;
-    // setsockopt(pipes[0], SOL_SOCKET, SO_SNDBUF, &bufsize, sizeof(bufsize));
-    // setsockopt(pipes[1], SOL_SOCKET, SO_SNDBUF, &bufsize, sizeof(bufsize));
-    // socketpair(AF_INET, SOCK_STREAM, 0, pipesRead);
-
-    int pid = fork();
-    if (pid == 0) {
-        dup2(pipes[0], 0);
-        dup2(pipesRead[1], 1);
-
-        close(pipes[0]);
-        close(pipes[1]);
-        close(pipesRead[0]);
-        close(pipesRead[1]);
-
-        char *const args[] = {(char *)"/usr/bin/python3", (char *)"./www/cgi/hello.py", NULL};
-        if (execve(*args, args, env) == -1) {
-            std::cerr << strerror(errno) << "\n";
-        }
-
-        // char buf[100 + 1];
-        // std::cerr << "reading: ";
-        // // std::cerr << buf << '\n';
-
-        // buf[read(0, buf, 100)] = '\0';
-        // std::cerr << buf << '\n';
-
-        // // std::string buf(5, '\0');
-        // // read(0, &buf[0], 5);
-        // std::cerr << "sending from child..." << '\n';
-        // write(1, "hey!", 4);
-        // std::cerr << "done writting." << '\n';
-        return 0;
+    // setenv("HEY", "", 1);
+    if (unsetenv("shtkjwbfkjbn") != 0) {
+        std::cout << "error\n";
     }
-
-    sleep(2);
-
-    std::string data(5, 'a');
-    std::cerr << "sending..." << '\n';
-    if (write(pipes[1], &data[0], 5) == -1) {
-        std::cerr << "write failed\n";
+    // std::cout << getenv("HEY") << "\n";
+    if (getenv("HEY") == NULL) {
+        return 1;
     }
-    close(pipes[1]);
-    close(pipes[0]);
-
-    waitpid(pid, NULL, 0);
-    std::cout << "process has finished.\n";
-
-    struct pollfd el = {pipesRead[0], POLLIN | POLLOUT, 0};
-    poll(&el, 1, -1);
-    std::cout << "Writable" << (el.revents & POLLOUT) << "\n";
-    std::cout << "Readable" << (el.revents & POLLIN) << "\n";
-
-    char buf[100 + 1];
-    int readBytes = read(pipesRead[0], buf, 100);
-    buf[readBytes] = '\0';
-    std::cout << readBytes << '\n';
-    std::cerr << buf << "\n";
-
-    poll(&el, 1, -1);
-    std::cout << "Writable" << (el.revents & POLLOUT) << "\n";
-    std::cout << "Readable" << (el.revents & POLLIN) << "\n";
-    // } else {
-    //     std::cout << "not readable\n";
-    // }
-
-    // close(pipesRead[1]);
-    // close(pipesRead[0]);
     return 0;
+    // printf("%s\n", getenv("HEY"));
+    // Myclass *hey = new Myclass();
+    // std::shared_ptr<int> yo;
 
-    // std::cout << str.substr(0, str.size() - 1) << '\n';
-    // std::cout << (str.find("y", -1) == (size_t)-1) << "\n";
-    // std::cout << str.rfind() << "\n";
-    // String str = "  ' ;; ;'  ='hey' ;attr='yo';    ; ; attr2='hey' ;   attr3;  'attr3'; 'sfb ';   ";
-    // // String str = "'sfb'";
-    // std::vector<String> res;
-    // res.push_back("' ;; ;'  ='hey'");
-    // res.push_back("attr='yo'");
-    // res.push_back("");
-    // res.push_back("");
-    // res.push_back("attr2='hey'");
-    // res.push_back("attr3");
-    // res.push_back("'attr3'");
+    // yo = hey->yo;
+    // delete hey;
+    // std::cout << *yo << '\n';
+    // yo = NULL;
+    // Myclass hey;
 
-    // std::vector<String> items = split(str, ";");
-    // for (int i = 0; i < items.size(); i++) {
-    //     std::cout << "---" << items[i] << "---\n";
-    //     std::cout << "---" << res[i] << "---\n";
-    //     std::cout << "\n";
+    // for (int i = 0; i < 100000; i++) {
+    //     hey.doSomething();
+    //     hey.reset();
     // }
-    // std::cout << std::strlen("Hey this is just a simple test file\nNothing fancy!\nSee ya") << "\n";
 
-    // Class t;
-    // for (int i = 0; i < 1000000; i++) {
-    //     const String &str = t.f();
+    // Myclass hey;
+
+    // for (int i = 0; i < 100000; i++) {
+    //     hey.doSomething();
+    //     hey.clear();
     // }
+
+    // for (int i = 0; i < 10000; i++) {
+    //     hey->doSomething();
+    //     delete hey;
+    //     hey = new Myclass();
+    // }
+    // delete hey;
+    return 0;
 }

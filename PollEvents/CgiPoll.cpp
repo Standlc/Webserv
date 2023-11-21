@@ -67,6 +67,8 @@ void CgiPoll::switchToResponseReadableSocket() {
     _fd = _cgiSockets.response[0];
     _pollfd.fd = _fd;
     _pollfd.revents = 0;
+    this->setReadHandler(readCgiResponse);
+    this->setWriteHandler(waitCgiProcessEnd);
 }
 void CgiPoll::switchToResponseWritableSocket() {
     _fd = _cgiSockets.response[1];
@@ -82,6 +84,14 @@ void CgiPoll::switchToRequestWritableSocket() {
     _fd = _cgiSockets.request[1];
     _pollfd.fd = _fd;
     _pollfd.revents = 0;
+    this->setReadHandler(NULL);
+    this->setWriteHandler(sendCgiRequest);
+}
+
+int CgiPoll::quitPollSuccess() {
+    _client.res().setCgiResponse(200);
+    _client.setWriteHandler(sendResponseToClient);
+    return -1;
 }
 
 int CgiPoll::tryFork() {
@@ -103,7 +113,7 @@ void CgiPoll::forkAndexecuteScript(Server &server, const String &cgiResourcePath
             this->execveScript(cgiResourcePath, cgiScriptCommand);
         } catch (int status) {
             _pid = -1;
-            exitProgram(server, status);
+            exitProgram(&server, status);
         }
     }
 
@@ -127,19 +137,25 @@ void CgiPoll::redirectCgiProcessInputOutput() {
 
 void CgiPoll::execveScript(const String &cgiScriptResourcePath, const String &cgiScriptCommand) {
     String cgiScriptDir = parseFileDirectory(cgiScriptResourcePath);
+    String scriptName = "./" + parsePathFileName(cgiScriptResourcePath);
+    // debugErr("cgi dir", &cgiScriptDir[0]);
+    // debugErr("script name", &scriptName[0]);
+    // debugErr("command", &cgiScriptCommand[0]);
+
     if (chdir(&cgiScriptDir[0]) == -1) {
         debugErr("chdir", strerror(errno));
         throw 1;
     }
 
-    String scriptName = "./" + parsePathFileName(cgiScriptResourcePath);
-    char *const args[] = {(char *)&cgiScriptCommand[0], (char *)&scriptName[0], NULL};
+    std::vector<char *> args(1, NULL);
+    if (cgiScriptCommand != "") {
+        args.insert(args.begin() + 0, (char *)&cgiScriptCommand[0]);
+        args.insert(args.begin() + 1, (char *)&scriptName[0]);
+    } else {
+        args.insert(args.begin() + 0, (char *)&scriptName[0]);
+    }
 
-    // debugErr("cgi dir", &cgiScriptDir[0]);
-    // debugErr("script name", &scriptName[0]);
-    // debugErr("command", &cgiScriptCommand[0]);
-
-    if (execve(args[0], args, environ) == -1) {
+    if (execve(args[0], &args[0], environ) == -1) {
         debugErr("execve", strerror(errno));
         throw 1;
     }
@@ -156,49 +172,41 @@ int CgiPoll::cgiPid() {
 //////////////////////////////////////////////////////////////////
 
 int quitPollError(Server &server, CgiPoll *cgi) {
-    return -1;
-}
-
-int quitPollSuccess(Server &server, CgiPoll *cgi) {
-    if (cgi->clientStatus() == -1) {
-        return -1;
-    }
-    cgi->client().setWriteHandler(setCgiResponse);
+    debug("----------6----------", "", RED);
     return -1;
 }
 
 int readCgiResponse(Server &server, CgiPoll *cgi) {
     if (cgi->clientStatus() == -1) {
+        debug("----------3----------", "", RED);
         return -1;
     }
 
     ClientPoll &client = cgi->client();
-    debug("reading cgi response from pipe", std::to_string(cgi->getFd()), WHITE);
+    debug("reading cgi response from socket", std::to_string(cgi->getFd()), WHITE);
     if (client.res().recvAll(cgi->getFd()) == -1) {
+        debug("----------2----------", "", RED);
         return -1;
     }
     return 0;
 }
 
 int waitCgiProcessEnd(Server &server, CgiPoll *cgi) {
-    if (cgi->clientStatus() == -1 || checkTimeout(cgi->scriptLaunchTime(), 10)) {
+    if (cgi->clientStatus() == -1 || checkTimeout(cgi->scriptLaunchTime(), CGI_TIMEOUT)) {
+        debug("----------1----------", "", RED);
         return -1;
     }
 
     int pid = cgi->cgiPid();
-    int waitpidStatus;
+    int exitStatus = 0;
 
-    // debug("checking cgi pid", std::to_string(pid), WHITE);
-    if (waitpid(pid, &waitpidStatus, WNOHANG) == -1) {
-        if (WIFEXITED(waitpidStatus) && WEXITSTATUS(waitpidStatus) != 0) {
-            debug("cgi process has exit with error", std::to_string(waitpidStatus), RED);
+    if (waitpid(pid, &exitStatus, WNOHANG) == -1) {
+        if (WIFEXITED(exitStatus) && WEXITSTATUS(exitStatus) != 0) {
+            debug("cgi process has exit with an error", std::to_string(WEXITSTATUS(exitStatus)), RED);
             return -1;
         }
-
         debug("cgi process has exit", std::to_string(pid), WHITE);
-        cgi->setWriteHandler(quitPollSuccess);
-        cgi->setReadHandler(readCgiResponse);
-        cgi->switchToResponseReadableSocket();
+        return cgi->quitPollSuccess();
     }
     return 0;
 }
@@ -212,9 +220,7 @@ int sendCgiRequest(Server &server, CgiPoll *cgi) {
     int sendStatus = cgi->client().req().sendBody(cgi->getFd());
     if (sendStatus == 0) {
         cgi->closeRequestSockets();
-        cgi->switchToResponseWritableSocket();
-        cgi->setWriteHandler(waitCgiProcessEnd);
-        return waitCgiProcessEnd(server, cgi);
+        cgi->switchToResponseReadableSocket();
     }
     return (sendStatus == -1) ? -1 : 0;
 }

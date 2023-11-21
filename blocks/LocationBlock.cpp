@@ -62,11 +62,11 @@ CgiSockets createCgiReqResSocketPairs() {
         if (socketpair(AF_UNIX, SOCK_STREAM, 0, sockets.request) == -1) {
             throw 500;
         }
-        int bufsize = 2500 * 2500;
-        if (setsockopt(sockets.response[0], SOL_SOCKET, SO_SNDBUF, &bufsize, sizeof(bufsize)) == -1) {
+        int cgiSockSize = CGI_SOCK_SIZE;
+        if (setsockopt(sockets.response[0], SOL_SOCKET, SO_SNDBUF, &cgiSockSize, sizeof(cgiSockSize)) == -1) {
             throw 500;
         }
-        if (setsockopt(sockets.request[1], SOL_SOCKET, SO_SNDBUF, &bufsize, sizeof(bufsize)) == -1) {
+        if (setsockopt(sockets.request[1], SOL_SOCKET, SO_SNDBUF, &cgiSockSize, sizeof(cgiSockSize)) == -1) {
             throw 500;
         }
     } catch (int status) {
@@ -78,8 +78,8 @@ CgiSockets createCgiReqResSocketPairs() {
 
 clientPollHandlerType LocationBlock::handleCgi(Server &server, ClientPoll &client, const String &cgiScriptPath) {
     String cgiResourcePath = this->getResourcePath(cgiScriptPath);
-    debug("cgi script path", cgiScriptPath, YELLOW);
-    debug("cgi resource path", cgiResourcePath, YELLOW);
+    // debug("cgi script path", cgiScriptPath, YELLOW);
+    // debug("cgi resource path", cgiResourcePath, YELLOW);
     this->checkCgiScriptAccess(cgiScriptPath);
     this->setenvCgi(client.req(), cgiScriptPath);
 
@@ -87,49 +87,51 @@ clientPollHandlerType LocationBlock::handleCgi(Server &server, ClientPoll &clien
     CgiSockets cgiSockets = createCgiReqResSocketPairs();
     CgiPoll &cgiPoll = server.pushNewCgiPoll(cgiSockets, client);
 
-    if (client.req().getHttpMethod() == "POST" && client.req().hasBody()) {
-        cgiPoll.setWriteHandler(sendCgiRequest);
-    } else {
-        cgiPoll.setWriteHandler(waitCgiProcessEnd);
+    if (client.req().hasBody()) {
+        cgiPoll.switchToRequestWritableSocket();
     }
     cgiPoll.forkAndexecuteScript(server, cgiResourcePath, _cgiCommands[cgiExtension]);
     return checkCgiPoll;
 }
 
+String parseCgiPathInfo(HttpRequest &req, const String &cgiScriptPath) {
+    const String &reqUrl = req.url().path;
+    return reqUrl.substr(cgiScriptPath.size(), -1);
+}
+
 void LocationBlock::setenvCgi(HttpRequest &req, const String &cgiScriptPath) {
-    trySetenv("REQUEST_METHOD", req.getHttpMethod());
-    trySetenv("SERVER_SOFTWARE", "webserv/1.0");
     trySetenv("GATEWAY_INTERFACE", "CGI/1.1");
+    trySetenv("SERVER_SOFTWARE", WEBSERV_V);
     trySetenv("SERVER_NAME", &(split(req.getHeader("Host"), ":")[0])[0]);
     trySetenv("SERVER_PORT", req.getSocketPort());
     trySetenv("SERVER_PROTOCOL", req.getProtocol());
-    trySetenv("REMOTE_ADDR", &req.getSocketIpAddress()[0]);
-    // trySetenv("REMOTE_HOST", &req.getSocketIpAddress()[0]);
+    trySetenv("REMOTE_ADDR", &req.getClientIpAddress()[0]);
+    trySetenv("REMOTE_HOST", &req.getClientHostName()[0]);
 
-    trySetenv("HTTP_ACCEPT", req.getHeader("Accept"));
-    trySetenv("HTTP_USER_AGENT", req.getHeader("User-Agent"));
-    trySetenv("HTTP_ACCEPT_LANGUAGE", req.getHeader("Accept-Language"));
-    trySetenv("HTTP_COOKIE", req.getHeader("Cookie"));
-    trySetenv("HTTP_REFERER", req.getHeader("Referer"));
-
+    trySetenv("REQUEST_METHOD", req.getHttpMethod());
+    trySetenv("QUERY_STRING", req.url().params);
     trySetenv("SCRIPT_NAME", cgiScriptPath);
-    const String &reqUrl = req.url().path;
-    const String &pathInfo = reqUrl.substr(cgiScriptPath.size(), -1);
-    trySetenv("PATH_INFO", pathInfo);
-    trySetenv("PATH_TRANSLATED", this->getResourcePath(pathInfo));
-    // trySetenv("SCRIPT_FILENAME", cgiPaths.);
 
-    if (req.getHttpMethod() == "GET") {
-        trySetenv("QUERY_STRING", req.url().params);
-        trySetenv("CONTENT_LENGTH", "");
-        trySetenv("CONTENT_TYPE", "");
+    String pathInfo = parseCgiPathInfo(req, cgiScriptPath);
+    trySetenv("PATH_INFO", pathInfo);
+    if (pathInfo != "") {
+        trySetenv("PATH_TRANSLATED", this->getResourcePath(pathInfo));
+    } else {
+        unsetenv("PATH_TRANSLATED");
     }
 
     if (req.hasBody()) {
-        trySetenv("QUERY_STRING", "");
-        trySetenv("CONTENT_LENGTH", req.getHeader("Content-Length"));
+        trySetenv("CONTENT_LENGTH", std::to_string(req.getBodySize()));
         trySetenv("CONTENT_TYPE", req.getHeader("Content-Type"));
+    } else {
+        tryUnsetenv("CONTENT_LENGTH");
     }
+
+    // trySetenv("HTTP_ACCEPT", req.getHeader("Accept"));
+    // trySetenv("HTTP_USER_AGENT", req.getHeader("User-Agent"));
+    // trySetenv("HTTP_ACCEPT_LANGUAGE", req.getHeader("Accept-Language"));
+    // trySetenv("HTTP_COOKIE", req.getHeader("Cookie"));
+    // trySetenv("HTTP_REFERER", req.getHeader("Referer"));
 }
 
 void LocationBlock::checkCgiScriptAccess(const String &cgiScriptPath) {
@@ -175,10 +177,8 @@ void LocationBlock::throwReqErrors(HttpRequest &req) {
     if (!this->handlesHttpMethod(reqHttpMethod)) {
         throw 405;
     }
-    if (reqHttpMethod == "POST") {
-        if (this->exceedsReqMaxSize(req.getBodySize())) {
-            throw 413;
-        }
+    if (this->exceedsReqMaxSize(req.getBodySize())) {
+        throw 413;
     }
 }
 

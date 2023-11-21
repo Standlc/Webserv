@@ -25,7 +25,7 @@ void HttpResponse::assembleCgiResponse() {
 void HttpResponse::assembleResponse() {
     this->assembleHeaders();
     _outputData += CRLF;
-    _outputData += _body;
+    _outputData += _body + CRLF;
     _outputDataSize = _outputData.size();
 }
 
@@ -54,7 +54,13 @@ void HttpResponse::set(int statusCode, const String &path, String *body) {
     this->setHead(statusCode);
     _defaultHeaders = "Content-Type: " + MediaTypes::getType(path) + CRLF;
     _defaultHeaders += "Content-Length: " + std::to_string(body->size()) + CRLF;
-    _defaultHeaders += "Server: webserv/1.1" + String(CRLF);
+    _defaultHeaders += "Server: " + String(WEBSERV_V) + String(CRLF);
+    if (statusCode >= 400) {
+        _defaultHeaders += "Connection: close" + String(CRLF);
+    } else {
+        _defaultHeaders += "Connection: keep-alive" + String(CRLF);
+    }
+
     _body = *body;
     this->assembleResponse();
 }

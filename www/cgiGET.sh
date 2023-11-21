@@ -1,1 +1,1 @@
-echo "Content-Type: text\r\nContent-Length: 5\r\n\r\nHello"
+echo "Content-Type: text/plain\r\nContent-Length: 5\r\n\r\nHello\r\n"

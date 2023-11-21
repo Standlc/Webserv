@@ -1,11 +1,24 @@
 #include "PollFd.hpp"
 
-ClientPoll::ClientPoll(int& fd) : PollFd(fd), _req(fd) {
+ClientPoll::ClientPoll(int fd) : PollFd(fd) {
+    _req = new HttpRequest(fd);
+    _res = new HttpResponse();
     _cgiPollStatus = NULL;
     _acceptTime = std::time(0);
 }
 
 ClientPoll::~ClientPoll() {
+    delete _res;
+    delete _req;
+}
+
+void ClientPoll::resetConnection() {
+    delete _res;
+    delete _req;
+    _req = new HttpRequest(_fd);
+    _res = new HttpResponse();
+    _cgiPollStatus = NULL;
+    _acceptTime = std::time(0);
 }
 
 time_t ClientPoll::getAcceptTime() {
@@ -23,11 +36,11 @@ int ClientPoll::cgiPollStatus() {
 }
 
 HttpResponse& ClientPoll::res() {
-    return _res;
+    return *_res;
 }
 
 HttpRequest& ClientPoll::req() {
-    return _req;
+    return *_req;
 }
 
 void ClientPoll::setWriteHandler(clientPollHandlerType f) {
@@ -51,7 +64,7 @@ int ClientPoll::handleRead(Server& server, PollFd* pollFd) {
 }
 
 int ClientPoll::sendInternalError(Server& server) {
-    server.loadDefaultErrPage(500, _res);
+    server.loadDefaultErrPage(500, *_res);
     this->setWriteHandler(sendResponseToClient);
     return sendResponseToClient(server, this);
 }
@@ -59,21 +72,24 @@ int ClientPoll::sendInternalError(Server& server) {
 ////////////////////////////////////////////////////////////////////
 
 int sendResponseToClient(Server& server, ClientPoll* client) {
+    HttpRequest& req = client->req();
+    HttpResponse& res = client->res();
     int clientSocket = client->getFd();
 
-    // std::cout << "-------------------------\n";
-    // std::cout << client->res().headers() << "\n";
-    // std::cout << "--------------------------------------------------\n";
+    // debug("-------------------------", "", WHITE);
+    // debug("", "\n" + res.outputData(), WHITE);
+    // debug("--------------------------------------------------", "", WHITE);
     debug("sending response back to client", std::to_string(clientSocket), GREEN);
-    int sendStatus = client->res().sendResponse(clientSocket);
-    if (sendStatus == -1) {
-        return -1;
-    }
+    int sendStatus = res.sendResponse(clientSocket);
     if (sendStatus == 0) {
-        // client->setWriteHandler(timeoutClient);
-        return -1;
+        if (res.status() >= 400 || req.getHeader("Connection") == "close") {
+            return -1;
+        }
+        client->setWriteHandler(timeoutClient);
+        client->setReadHandler(readClientRequest);
+        client->resetConnection();
     }
-    return 0;
+    return (sendStatus == -1) ? -1 : 0;
 }
 
 int readClientRequest(Server& server, ClientPoll* client) {
@@ -87,9 +103,9 @@ int readClientRequest(Server& server, ClientPoll* client) {
 
     try {
         if (req.isComplete() == false && req.resumeParsing() == true) {
-            // std::cout << "--------------------------------------------------\n";
-            // std::cout << req.rawData() << "\n";
-            // std::cout << "-------------------------\n";
+            // debug("--------------------------------------------------", "", WHITE);
+            // debug("", "\n" + req.rawData(), WHITE);
+            // debug("-------------------------", "", WHITE);
             client->setWriteHandler(executeClientRequest);
         }
     } catch (int statusCode) {
@@ -129,12 +145,6 @@ int executeClientRequest(Server& server, ClientPoll* client) {
 
     client->setWriteHandler(writeHandler);
     return writeHandler(server, client);
-}
-
-int setCgiResponse(Server& server, ClientPoll* client) {
-    client->res().setCgiResponse(200);
-    client->setWriteHandler(sendResponseToClient);
-    return sendResponseToClient(server, client);
 }
 
 int checkCgiPoll(Server& server, ClientPoll* client) {

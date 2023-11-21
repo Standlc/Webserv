@@ -193,8 +193,7 @@ void deleteMethod(LocationBlock &location, HttpRequest &req, HttpResponse &res) 
 //// PATH_INFO ✅
 //// kill() cgi process if client gets kicked out? ✅
 //// allow user to choose ip address for server ✅
-
-//// persistant connexions
+//// persistant connexions ✅
 
 //// get SIGINT to exit nice and clean
 //// Parsing utils
@@ -226,7 +225,19 @@ int main(int argc, char *argv[]) {
     g_conf_path = getRealtivePathToFile(argv[1]);
     server->addBlocks(1);
 
-    // server->getServerBlock(0).set("192.168.0.176", "3000", true);
+    // server->getServerBlock(0).set("0.0.0.0", "3000", true);
+    // server->getServerBlock(0).setIndex("index.html");
+    // server->getServerBlock(0).setRoot("www");
+
+    // server->addLocationBlocks(0, 1);
+
+    // server->getLocationBlock(0, 0).setPath("/", false);
+    // server->getLocationBlock(0, 0).setHandlers(getMethod, NULL, NULL);
+    // server->getLocationBlock(0, 0).addCgiCommand(".cgi", "");
+    // server->getLocationBlock(0, 0).addCgiCommand(".py", "/usr/bin/python3");
+
+    ///////////////////////////////////////////////////////////////
+    server->getServerBlock(0).set("192.168.0.176", "3000", true);
     server->getServerBlock(0).set("0.0.0.0", "3000", true);
     server->getServerBlock(0).setHostName("localhost");
     server->getServerBlock(0).setIndex("index.html");

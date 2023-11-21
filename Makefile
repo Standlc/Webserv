@@ -9,7 +9,7 @@ OBJECTS = $(SOURCES:.cpp=.o)
 
 DEPENDENCIES = 	Makefile Server.hpp	blocks/Block.hpp PollEvents/PollFd.hpp \
 				HttpResponse.hpp HttpRequest.hpp MediaTypes.hpp \
-				webserv.hpp StatusComments.hpp MediaTypes.hpp \
+				webserv.hpp StatusComments.hpp MediaTypes.hpp ServerStream.hpp \
 
 FLAGS = -Wextra -Wall -std=c++98 #-Werror
 
