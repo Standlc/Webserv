@@ -147,11 +147,9 @@ int executeClientRequest(ClientPoll* client) {
     clientPollHandlerType writeHandler = NULL;
 
     try {
-        ServerBlock* block = client->server().findServerBlock(client->req());
-        if (!block) {
-            throw 400;
-        }
-        writeHandler = block->execute(client->server(), *client);
+        ServerBlock* serverBlock = client->server().findServerBlock(client->req());
+        throwIf(!serverBlock, 400);
+        writeHandler = serverBlock->execute(*client);
     } catch (int statusCode) {
         return client->sendErrorPage(statusCode);
     }

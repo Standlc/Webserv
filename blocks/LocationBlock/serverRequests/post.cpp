@@ -16,7 +16,8 @@ String getFormBoundary(HttpRequest &req) {
 }
 
 String getFormFileName(HttpRequest &req, size_t from, size_t to) {
-    std::vector<String> headerValues = split(req.findBodyHeader("Content-Disposition", from, to), ";");
+    String formContentDisposition = req.findBodyHeader("Content-Disposition", from, to);
+    std::vector<String> headerValues = split(formContentDisposition, ";");
     if (headerValues.size() < 3 || headerValues[0] != "form-data") {
         debug("400: 6", "", YELLOW);
         throw 400;
@@ -28,7 +29,8 @@ String getFormFileName(HttpRequest &req, size_t from, size_t to) {
         throw 400;
     }
 
-    String filename = filenameKey[1].substr(1, filenameKey[1].size() - 2);
+    size_t quotesSize = 2;
+    String filename = filenameKey[1].substr(1, filenameKey[1].size() - quotesSize);
     percentDecode(filename);
     return filename;
 }
@@ -41,8 +43,12 @@ void createFile(const String &name, const char *data, size_t size) {
 
     debug("filename", name, CYAN);
     debug("file size", std::to_string(size), CYAN);
+
     file.write(data, size);
     file.close();
+    if (!file) {
+        throw 500;
+    }
 }
 
 bool findFormBoundaries(HttpRequest &req, const String &boundary, size_t &currFormPos, size_t &formHeadersEndPos, size_t &formBodyEndPos) {
@@ -88,9 +94,7 @@ void LocationBlock::postMethod(HttpRequest &req, HttpResponse &res) {
 
         String filename = getFormFileName(req, currFormPos, formHeadersEndPos);
         filePath = this->getUploadFilePath(filename);
-        if (checkPathAccess(filePath) != 404) {
-            throw 409;
-        }
+        throwIf(checkPathAccess(filePath) != 404, 409);
         // if (filename.find('/') != NPOS) {
         //     throw 403;
         // }

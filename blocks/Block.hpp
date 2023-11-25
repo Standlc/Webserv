@@ -55,7 +55,7 @@ class ServerBlock : public Block {
     ServerBlock();
     ServerBlock &operator=(const ServerBlock &b);
 
-    clientPollHandlerType execute(Server &server, ClientPoll &client);
+    clientPollHandlerType execute(ClientPoll &client);
     LocationBlock *findLocationBlockByPath(const String &reqPath);
     bool isHost(const String &hostName);
     const String &port();
@@ -93,7 +93,6 @@ class LocationBlock : public Block {
     LocationBlock &operator=(const LocationBlock &b);
 
     ServerBlock &serverBlock();
-    void throwReqErrors(HttpRequest &req);
     bool handlesHttpMethod(const String &httpMethod);
     bool isMethodAllowed(const String &httpMethod);
     String assembleRedirectionUrl(HttpRequest &req);
@@ -109,7 +108,7 @@ class LocationBlock : public Block {
     clientPollHandlerType proxyHandler(ClientPoll &client);
 
     clientPollHandlerType reverseProxy(Server &server, ClientPoll &client);
-    clientPollHandlerType execute(Server &server, ClientPoll &client);
+    clientPollHandlerType execute(ClientPoll &client);
     clientPollHandlerType handleCgi(ClientPoll &client, const String &cgiScriptPath);
     void checkCgiScriptAccess(const String &cgiScriptPath);
     String isCgiScriptRequest(HttpRequest &req);

@@ -2,6 +2,12 @@
 #include "../Server.hpp"
 #include "../webserv.hpp"
 
+void throwIf(bool condition, int status) {
+    if (condition) {
+        throw status;
+    }
+}
+
 void closeOpenFd(int &fd) {
     if (fd != -1) {
         close(fd);

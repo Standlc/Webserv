@@ -240,9 +240,7 @@ size_t HttpParser::findCRLF(int *sizeCRLF, size_t from) {
 
     if (_rawData[pos] == '\r') {
         *sizeCRLF = 2;
-        if (_rawData[pos + 1] != '\n') {
-            throw 1;
-        }
+        throwIf(_rawData[pos + 1] != '\n', 1);
     } else {
         *sizeCRLF = 1;
     }

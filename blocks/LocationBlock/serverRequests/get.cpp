@@ -4,9 +4,7 @@ void LocationBlock::getMethod(HttpRequest &req, HttpResponse &res) {
     String resourcePath = this->getResourcePath(req.url().path);
 
     int accessStatus = checkPathAccess(resourcePath);
-    if (accessStatus != 200) {
-        throw accessStatus;
-    }
+    throwIf(accessStatus != 200, accessStatus);
 
     if (!isDirectory(resourcePath)) {
         res.loadFile(200, resourcePath);
@@ -14,14 +12,10 @@ void LocationBlock::getMethod(HttpRequest &req, HttpResponse &res) {
     }
 
     try {
-        res.loadFile(200, this->getResourcePath(req.url().path, this->getIndex()));
+        res.loadFile(200, this->getResourcePath(req.url().path, _index));
     } catch (int status) {
-        if (status == 500) {
-            throw 500;
-        }
-        if (this->isAutoIndex() == false) {
-            throw 403;
-        }
+        throwIf(status == 500, 500);
+        throwIf(_autoIndex == false, 403);
         res.listDirectory(resourcePath, req.url().path);
     }
 }

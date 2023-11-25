@@ -3,28 +3,18 @@
 clientPollHandlerType LocationBlock::serverMethodHandler(ClientPoll &client) {
     HttpResponse &res = client.res();
     HttpRequest &req = client.req();
-    String cgiScriptPath;
+    const String &reqHttpMethod = req.getHttpMethod();
 
-    this->throwReqErrors(req);
+    throwIf(isUnkownMethod(reqHttpMethod), 501);
+    throwIf(!handlesHttpMethod(reqHttpMethod), 405);
 
-    if ((cgiScriptPath = this->isCgiScriptRequest(req)) != "") {
+    String cgiScriptPath = this->isCgiScriptRequest(req);
+    if (cgiScriptPath != "") {
         return this->handleCgi(client, cgiScriptPath);
     }
-    (this->*(_serverMethodshandlers[req.getHttpMethod()]))(req, res);
-    return sendResponseToClient;
-}
 
-void LocationBlock::throwReqErrors(HttpRequest &req) {
-    String reqHttpMethod = req.getHttpMethod();
-    if (isUnkownMethod(reqHttpMethod)) {
-        throw 501;
-    }
-    if (!this->handlesHttpMethod(reqHttpMethod)) {
-        throw 405;
-    }
-    if (this->exceedsReqMaxSize(req.getBodySize())) {
-        throw 413;
-    }
+    (this->*(_serverMethodshandlers[reqHttpMethod]))(req, res);
+    return sendResponseToClient;
 }
 
 String LocationBlock::isCgiScriptRequest(HttpRequest &req) {
@@ -52,15 +42,9 @@ void closeSocketPairs(CgiSockets &sockets) {
 }
 
 void createCgiSocketPair(int *sockets, long socketCapacity) {
-    if (socketpair(AF_UNIX, SOCK_STREAM, 0, sockets) == -1) {
-        throw 500;
-    }
-    if (setsockopt(sockets[0], SOL_SOCKET, SO_SNDBUF, &socketCapacity, sizeof(socketCapacity)) == -1) {
-        throw 500;
-    }
-    if (setsockopt(sockets[1], SOL_SOCKET, SO_SNDBUF, &socketCapacity, sizeof(socketCapacity)) == -1) {
-        throw 500;
-    }
+    throwIf(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets) == -1, 500);
+    throwIf(setsockopt(sockets[0], SOL_SOCKET, SO_SNDBUF, &socketCapacity, sizeof(socketCapacity)) == -1, 500);
+    throwIf(setsockopt(sockets[1], SOL_SOCKET, SO_SNDBUF, &socketCapacity, sizeof(socketCapacity)) == -1, 500);
 }
 
 CgiSockets createCgiReqResSocketPairs() {
@@ -94,6 +78,13 @@ clientPollHandlerType LocationBlock::handleCgi(ClientPoll &client, const String 
     }
     cgiPoll.forkAndexecuteScript(cgiResourcePath, _cgiCommands[cgiExtension]);
     return checkCgiPoll;
+}
+
+void LocationBlock::checkCgiScriptAccess(const String &cgiScriptPath) {
+    String resourcePath = this->getResourcePath(cgiScriptPath);
+    int fileAccessStatus = checkPathAccess(resourcePath);
+    throwIf(fileAccessStatus != 200, fileAccessStatus);
+    throwIf(isDirectory(resourcePath), 400);
 }
 
 String parseCgiPathInfo(HttpRequest &req, const String &cgiScriptPath) {

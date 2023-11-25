@@ -28,7 +28,6 @@ String generateDirectoryListingPage(const String &dir, String reqUrl, struct dir
             }
             page += "<a href='" + reqUrl + entry_name + "'>" + entry_name + "</a>";
         }
-
         readNextEntry(dirStream, &entry);
     }
 

@@ -19,14 +19,13 @@ LocationBlock &LocationBlock::operator=(const LocationBlock &b) {
     return *this;
 }
 
-clientPollHandlerType LocationBlock::execute(Server &server, ClientPoll &client) {
+clientPollHandlerType LocationBlock::execute(ClientPoll &client) {
     HttpResponse &res = client.res();
     HttpRequest &req = client.req();
 
     try {
-        if (!this->isMethodAllowed(req.getHttpMethod())) {
-            throw 405;
-        }
+        throwIf(!isMethodAllowed(req.getHttpMethod()), 405);
+        throwIf(exceedsReqMaxSize(req.getBodySize()), 413);
 
         res.addHeaders(_headers);
         if (_sessionCookieName != "" && req.findCookie(_sessionCookieName) == "") {
@@ -36,19 +35,7 @@ clientPollHandlerType LocationBlock::execute(Server &server, ClientPoll &client)
         return (this->*_requestHandler)(client);
     } catch (int status) {
         this->loadErrPage(status, res, req);
-    }
-    return sendResponseToClient;
-}
-
-void LocationBlock::checkCgiScriptAccess(const String &cgiScriptPath) {
-    String resourcePath = this->getResourcePath(cgiScriptPath);
-
-    int fileAccessStatus = checkPathAccess(resourcePath);
-    if (fileAccessStatus != 200) {
-        throw fileAccessStatus;
-    }
-    if (isDirectory(resourcePath)) {
-        throw 400;
+        return sendResponseToClient;
     }
 }
 

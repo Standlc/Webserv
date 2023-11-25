@@ -11,13 +11,12 @@ ServerBlock &ServerBlock::operator=(const ServerBlock &b) {
     return *this;
 }
 
-clientPollHandlerType ServerBlock::execute(Server &server, ClientPoll &client) {
+clientPollHandlerType ServerBlock::execute(ClientPoll &client) {
     try {
         LocationBlock *macthingLocation = this->findLocationBlockByPath(client.req().url().path);
-        if (macthingLocation == NULL) {
-            throw 404;
-        }
-        return macthingLocation->execute(server, client);
+        throwIf(macthingLocation == NULL, 400);
+
+        return macthingLocation->execute(client);
     } catch (int status) {
         this->loadErrPage(status, client.res(), client.req());
         return sendResponseToClient;

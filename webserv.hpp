@@ -74,6 +74,7 @@ class SigintError : public std::exception {
     }
 };
 
+void throwIf(bool condition, int status);
 size_t tryFind(const String &str, const String &find, size_t from = 0);
 struct addrinfo *getServerAddressInfo(String serverIpAddress, String port);
 void handleSigint(int sig);

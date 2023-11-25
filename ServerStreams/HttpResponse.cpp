@@ -49,11 +49,6 @@ void HttpResponse::addHeaders(Headers &headers) {
     _headers.add(headers);
 }
 
-void HttpResponse::set(const String &response) {
-    // _outputData = response;
-    // _outputDataSize = response.size();
-}
-
 void HttpResponse::set(int statusCode) {
     this->setHead(statusCode);
     _defaultHeaders.clear();

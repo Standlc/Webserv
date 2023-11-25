@@ -132,7 +132,6 @@ void CgiPoll::execveScript(const String &cgiScriptResourcePath, const String &cg
     }
 
     char *args[] = {(char *)&cgiScriptCommand[0], (char *)&scriptName[0], NULL};
-
     if (execve(args[0], &args[0], environ) == -1) {
         debugErr("execve", strerror(errno));
         throw 1;
@@ -161,7 +160,6 @@ int readCgiResponse(CgiPoll *cgi) {
     }
 
     CgiResponse &cgiRes = cgi->cgiRes();
-
     debug(">> reading CGI response", std::to_string(cgi->getFd()), YELLOW);
     if (cgiRes.recvAll(cgi->getFd()) <= 0) {
         return 500;
@@ -169,11 +167,9 @@ int readCgiResponse(CgiPoll *cgi) {
 
     try {
         if (!cgiRes.isComplete() && cgiRes.resumeParsing()) {
-            debugHttpMessage(cgiRes.rawData(), YELLOW);
             cgiRes.parseLocationHeader();
             cgiRes.parseStatusHeader();
-            cgi->setReadHandler(NULL);
-            cgi->setWriteHandler(handleCgiResponse);
+            return handleCgiResponse(cgi);
         }
     } catch (int parsingErr) {
         return 502;
@@ -183,7 +179,8 @@ int readCgiResponse(CgiPoll *cgi) {
 
 int handleCgiResponse(CgiPoll *cgi) {
     CgiResponse &cgiRes = cgi->cgiRes();
-    if (cgiRes.isComplete() == false) {
+    debugHttpMessage(cgiRes.rawData(), YELLOW);
+    if (!cgiRes.isComplete()) {
         return 502;
     }
 

@@ -37,7 +37,6 @@ class HttpResponse : public ServerStream {
     void addDefaultHeader(const String &field, const String &value);
     void addHeaders(Headers &headers);
     void set(int statusCode);
-    void set(const String &response);
     void set(int statusCode, const String &path, const String &body);
     void setBody(const String &body);
     void loadFile(int serverStatusCode, const String &path);
