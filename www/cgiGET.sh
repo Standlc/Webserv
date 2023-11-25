@@ -1,1 +1,9 @@
-echo "Content-Type: text/plain\r\nContent-Length: 5\r\n\r\nHello\r\n"
+echo "Content-Type: text/plain"
+echo "Content-Length: 0";
+echo "Transfer-Encoding: chunked"
+echo ""
+echo "9"
+echo "hello"
+echo "yoo"
+echo "0"
+echo ""

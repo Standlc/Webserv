@@ -1,10 +1,10 @@
 #include "PollFd.hpp"
 
-ClientPoll::ClientPoll(int fd) : PollFd(fd) {
+ClientPoll::ClientPoll(int fd, Server& server) : PollFd(fd, server) {
     _req = new HttpRequest(fd);
-    _res = new HttpResponse();
+    _res = new HttpResponse(*_req);
     _cgiPollStatus = NULL;
-    _acceptTime = std::time(0);
+    _proxyStatus = NULL;
 }
 
 ClientPoll::~ClientPoll() {
@@ -16,22 +16,31 @@ void ClientPoll::resetConnection() {
     delete _res;
     delete _req;
     _req = new HttpRequest(_fd);
-    _res = new HttpResponse();
+    _res = new HttpResponse(*_req);
     _cgiPollStatus = NULL;
-    _acceptTime = std::time(0);
-}
-
-time_t ClientPoll::getAcceptTime() {
-    return _acceptTime;
+    _proxyStatus = NULL;
+    this->resetStartTime();
 }
 
 void ClientPoll::setCgiPollStatus(std::shared_ptr<int> cgiStatus) {
     _cgiPollStatus = cgiStatus;
 }
 
+void ClientPoll::setProxyStatus(std::shared_ptr<int> proxyStatus) {
+    _proxyStatus = proxyStatus;
+}
+
+int ClientPoll::proxyPollStatus() {
+    if (_proxyStatus != NULL) {
+        return *_proxyStatus;
+    }
+    return *_proxyStatus;
+}
+
 int ClientPoll::cgiPollStatus() {
-    if (_cgiPollStatus != NULL)
+    if (_cgiPollStatus != NULL) {
         return *_cgiPollStatus;
+    }
     return 0;
 }
 
@@ -51,38 +60,43 @@ void ClientPoll::setReadHandler(clientPollHandlerType f) {
     _readHandler = f;
 }
 
-int ClientPoll::handleWrite(Server& server, PollFd* pollFd) {
+int ClientPoll::handleWrite(PollFd* pollFd) {
     if (_writeHandler == NULL)
         return 0;
-    return _writeHandler(server, (ClientPoll*)pollFd);
+    return _writeHandler((ClientPoll*)pollFd);
 }
 
-int ClientPoll::handleRead(Server& server, PollFd* pollFd) {
+int ClientPoll::handleRead(PollFd* pollFd) {
     if (_readHandler == NULL)
         return 0;
-    return _readHandler(server, (ClientPoll*)pollFd);
+    return _readHandler((ClientPoll*)pollFd);
 }
 
-int ClientPoll::sendInternalError(Server& server) {
-    server.loadDefaultErrPage(500, *_res);
+int ClientPoll::sendErrorPage(int statusCode) {
+    if (statusCode >= -1 && statusCode <= POLLNVAL) {
+        statusCode = 500;
+    }
+
+    // try {
+    //     _location->loadErrPage(statusCode, *_res, *_req);
+    // } catch (int status) {
+    //     try {
+    //         _location->serverBlock().loadErrPage(statusCode, *_res, *_req);
+    //     } catch (int status) {
+    //         _server.loadDefaultErrPage(status, *_res);
+    //     }
+    // }
+    _server.loadDefaultErrPage(statusCode, *_res);
     this->setWriteHandler(sendResponseToClient);
-    return sendResponseToClient(server, this);
+    return sendResponseToClient(this);
 }
 
-////////////////////////////////////////////////////////////////////
-
-int sendResponseToClient(Server& server, ClientPoll* client) {
-    HttpRequest& req = client->req();
-    HttpResponse& res = client->res();
+int sendResponseToClient(ClientPoll* client) {
     int clientSocket = client->getFd();
 
-    // debug("-------------------------", "", WHITE);
-    // debug("", "\n" + res.outputData(), WHITE);
-    // debug("--------------------------------------------------", "", WHITE);
-    debug("sending response back to client", std::to_string(clientSocket), GREEN);
-    int sendStatus = res.sendResponse(clientSocket);
+    int sendStatus = client->res().sendResponse(clientSocket);
     if (sendStatus == 0) {
-        if (res.status() >= 400 || req.getHeader("Connection") == "close") {
+        if (client->res().keepAlive() == false) {
             return -1;
         }
         client->setWriteHandler(timeoutClient);
@@ -92,32 +106,30 @@ int sendResponseToClient(Server& server, ClientPoll* client) {
     return (sendStatus == -1) ? -1 : 0;
 }
 
-int readClientRequest(Server& server, ClientPoll* client) {
+int readClientRequest(ClientPoll* client) {
     HttpRequest& req = client->req();
-    HttpResponse& res = client->res();
 
-    debug("reading client request", std::to_string(client->getFd()), WHITE);
-    if (req.recvAll(client->getFd()) == -1) {
+    debug(">> recieving client request", std::to_string(client->getFd()), CYAN);
+    if (req.recvAll(client->getFd()) <= 0) {
         return -1;
     }
 
     try {
-        if (req.isComplete() == false && req.resumeParsing() == true) {
-            // debug("--------------------------------------------------", "", WHITE);
-            // debug("", "\n" + req.rawData(), WHITE);
-            // debug("-------------------------", "", WHITE);
+        if (!req.isComplete() && req.resumeParsing() == true) {
+            debugHttpMessage(req.rawData(), CYAN);
+            client->setReadHandler(NULL);
             client->setWriteHandler(executeClientRequest);
         }
-    } catch (int statusCode) {
-        debug("parsing error", "", RED);
-        server.loadDefaultErrPage(statusCode, res);
+    } catch (int parsingErr) {
+        client->setReadHandler(NULL);
+        client->server().loadDefaultErrPage(400, client->res());
         client->setWriteHandler(sendResponseToClient);
     }
     return 0;
 }
 
-int timeoutClient(Server& server, ClientPoll* client) {
-    if (checkTimeout(client->getAcceptTime(), TIMEOUT)) {
+int timeoutClient(ClientPoll* client) {
+    if (checkTimeout(client->startTime(), TIMEOUT)) {
         return -1;
     }
     return 0;
@@ -125,31 +137,41 @@ int timeoutClient(Server& server, ClientPoll* client) {
 
 int checkTimeout(time_t time, int seconds) {
     if (std::time(0) - time > seconds) {
-        debug("timing out", "", DIM_RED);
+        debug("connection timed out", "", DIM_RED);
         return 1;
     }
     return 0;
 }
 
-int executeClientRequest(Server& server, ClientPoll* client) {
+int executeClientRequest(ClientPoll* client) {
     clientPollHandlerType writeHandler = NULL;
 
     try {
-        String socketPort = client->req().getSocketPort();
-        ServerBlock& block = server.findServerBlock(socketPort, client->req().getHeader("Host"));
-        writeHandler = block.execute(server, *client);
+        ServerBlock* block = client->server().findServerBlock(client->req());
+        if (!block) {
+            throw 400;
+        }
+        writeHandler = block->execute(client->server(), *client);
     } catch (int statusCode) {
-        server.loadDefaultErrPage(statusCode, client->res());
-        writeHandler = sendResponseToClient;
+        return client->sendErrorPage(statusCode);
     }
 
     client->setWriteHandler(writeHandler);
-    return writeHandler(server, client);
+    return writeHandler(client);
 }
 
-int checkCgiPoll(Server& server, ClientPoll* client) {
-    if (client->cgiPollStatus() == -1) {
-        return client->sendInternalError(server);
+int checkCgiPoll(ClientPoll* client) {
+    int cgiStatus = client->cgiPollStatus();
+    if (cgiStatus != 0) {
+        return client->sendErrorPage(cgiStatus);
+    }
+    return 0;
+}
+
+int checkProxyPoll(ClientPoll* client) {
+    int proxyStatus = client->proxyPollStatus();
+    if (proxyStatus != 0) {
+        return client->sendErrorPage(proxyStatus);
     }
     return 0;
 }

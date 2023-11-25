@@ -34,6 +34,7 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <map>
 #include <sstream>
@@ -43,98 +44,95 @@
 
 class Myclass {
    public:
-    std::shared_ptr<int> yo;
-    std::string data1;
-    std::string data2;
-    std::string data3;
-    std::string data4;
-    std::string data5;
-    std::string data6;
-    std::string data7;
-    std::string data8;
-    std::string data9;
-    std::string data10;
-
-    Myclass() : yo(new int(123)) {
+    void f1(int n) {
+        std::cout << "f1()\n";
+    }
+    void f2(int n) {
+        std::cout << "f2()\n";
+    }
+    // std::function<void(MyClass *, int)> func
+    // template <typename ClassType>
+    void function(int n, void (Myclass::*f)(int)) {
+        (this->*f)(n);
     }
 
-    void doSomething() {
-        data1 = std::string(10000, 'a');
-        data2 = std::string(10000, 'a');
-        data3 = std::string(10000, 'a');
-        data4 = std::string(10000, 'a');
-        data5 = std::string(10000, 'a');
-        data6 = std::string(10000, 'a');
-        data7 = std::string(10000, 'a');
-        data8 = std::string(10000, 'a');
-        data9 = std::string(10000, 'a');
-        data10 = std::string(10000, 'a');
-    }
-
-    void clear() {
-        data1.clear();
-        data2.clear();
-        data3.clear();
-        data4.clear();
-        data5.clear();
-        data6.clear();
-        data7.clear();
-        data8.clear();
-        data9.clear();
-        data10.clear();
-    }
-
-    void reset() {
-        data1 = "";
-        data2 = "";
-        data3 = "";
-        data4 = "";
-        data5 = "";
-        data6 = "";
-        data7 = "";
-        data8 = "";
-        data9 = "";
-        data10 = "";
+    void handler(int n) {
+        if (n > 0) {
+            function(n, (&Myclass::f1));
+        }
     }
 };
 
+class GradeTooLowException : public std::exception {
+    const char *what() const throw() {
+        return "The grade is too low";
+    }
+};
+void handler(int sig) {
+    throw GradeTooLowException();
+    std::cout << sig << "\n";
+    exit(0);
+}
+
+// void something() {
+//     std::cout << "first something\n";
+//     std::cout << "something\n";
+//     std::cout << "something\n";
+//     std::cout << "something\n";
+//     std::cout << "something\n";
+//     std::cout << "something\n";
+//     std::cout << "something\n";
+//     std::cout << "last something\n";
+//     std::cout << std::endl;
+// }
+struct addrinfo *getServerAddressInfo(std::string serverIpAddress, std::string port) {
+    struct addrinfo *res;
+    struct addrinfo hints;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_PASSIVE;
+
+    int status = getaddrinfo(&serverIpAddress[0], &port[0], &hints, &res);
+    if (status != 0) {
+        std::cerr << gai_strerror(errno) << '\n';
+        throw 1;
+    }
+    return res;
+}
+
+void checkPoll(int fd) {
+    struct pollfd readable = {fd, POLLIN | POLLOUT, 0};
+    poll(&readable, 1, -1);
+    if ((readable.revents & POLLIN) == 1) {
+        std::cerr << "readable" << std::endl;
+    }
+    if ((readable.revents & POLLOUT) == 4) {
+        std::cerr << "writable" << std::endl;
+    }
+}
+
+typedef std::multimap<int, int> stuff;
+
+void f(std::multimap<int, int> *m) {
+    for (stuff::iterator i = m->begin(); i != m->end(); i++) {
+        std::cout << i->first << " " << i->second << '\n';
+    }
+}
+
+typedef struct header {
+    std::string field;
+    std::string value;
+} header;
+
+#include <chrono>
+#include <iostream>
+#include <map>
+#include <unordered_map>
+
 int main(int argc, char **argv, char **env) {
-    // setenv("HEY", "", 1);
-    if (unsetenv("shtkjwbfkjbn") != 0) {
-        std::cout << "error\n";
-    }
-    // std::cout << getenv("HEY") << "\n";
-    if (getenv("HEY") == NULL) {
-        return 1;
-    }
-    return 0;
-    // printf("%s\n", getenv("HEY"));
-    // Myclass *hey = new Myclass();
-    // std::shared_ptr<int> yo;
-
-    // yo = hey->yo;
-    // delete hey;
-    // std::cout << *yo << '\n';
-    // yo = NULL;
-    // Myclass hey;
-
-    // for (int i = 0; i < 100000; i++) {
-    //     hey.doSomething();
-    //     hey.reset();
-    // }
-
-    // Myclass hey;
-
-    // for (int i = 0; i < 100000; i++) {
-    //     hey.doSomething();
-    //     hey.clear();
-    // }
-
-    // for (int i = 0; i < 10000; i++) {
-    //     hey->doSomething();
-    //     delete hey;
-    //     hey = new Myclass();
-    // }
-    // delete hey;
+    std::string str = " hello hello world";
+    std::cout << (str.rfind("he", 1)) << "\n";
     return 0;
 }

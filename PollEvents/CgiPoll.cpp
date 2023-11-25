@@ -1,13 +1,15 @@
 #include "PollFd.hpp"
 
-CgiPoll::CgiPoll(CgiSockets &cgiSockets, ClientPoll &client, struct pollfd &structPollfd) : PollFd(structPollfd.fd),
+CgiPoll::CgiPoll(CgiSockets &cgiSockets, ClientPoll &client, struct pollfd &structPollfd) : PollFd(structPollfd.fd, client.server()),
                                                                                             _pollfd(structPollfd),
                                                                                             _client(client) {
     _cgiSockets = cgiSockets;
-    _scriptLaunchTime = -1;
     _pid = -1;
     _clientStatus = client.getStatus();
     client.setCgiPollStatus(_status);
+    _concurrentReadWrite = false;
+    _cgiReq = new CgiRequest(client.req());
+    _cgiRes = new CgiResponse(client.res());
 }
 
 CgiPoll::~CgiPoll() {
@@ -15,6 +17,8 @@ CgiPoll::~CgiPoll() {
     closeOpenFd(_cgiSockets.response[1]);
     closeOpenFd(_cgiSockets.request[0]);
     closeOpenFd(_cgiSockets.request[1]);
+    delete _cgiReq;
+    delete _cgiRes;
     this->killCgiProcess();
 }
 
@@ -45,53 +49,34 @@ void CgiPoll::setReadHandler(CgiPollHandlerType f) {
     _readHandler = f;
 }
 
-int CgiPoll::handleRead(Server &server, PollFd *pollFd) {
+int CgiPoll::handleRead(PollFd *pollFd) {
     if (_readHandler == NULL) {
         return 0;
     }
-    return _readHandler(server, (CgiPoll *)pollFd);
+    return _readHandler((CgiPoll *)pollFd);
 }
 
 void CgiPoll::setWriteHandler(CgiPollHandlerType f) {
     _writeHandler = f;
 }
 
-int CgiPoll::handleWrite(Server &server, PollFd *pollFd) {
+int CgiPoll::handleWrite(PollFd *pollFd) {
     if (_writeHandler == NULL) {
         return 0;
     }
-    return _writeHandler(server, (CgiPoll *)pollFd);
+    return _writeHandler((CgiPoll *)pollFd);
 }
 
 void CgiPoll::switchToResponseReadableSocket() {
     _fd = _cgiSockets.response[0];
     _pollfd.fd = _fd;
     _pollfd.revents = 0;
-    this->setReadHandler(readCgiResponse);
-    this->setWriteHandler(waitCgiProcessEnd);
 }
-void CgiPoll::switchToResponseWritableSocket() {
-    _fd = _cgiSockets.response[1];
-    _pollfd.fd = _fd;
-    _pollfd.revents = 0;
-}
-void CgiPoll::switchToRequestReadableSocket() {
-    _fd = _cgiSockets.request[0];
-    _pollfd.fd = _fd;
-    _pollfd.revents = 0;
-}
+
 void CgiPoll::switchToRequestWritableSocket() {
     _fd = _cgiSockets.request[1];
     _pollfd.fd = _fd;
     _pollfd.revents = 0;
-    this->setReadHandler(NULL);
-    this->setWriteHandler(sendCgiRequest);
-}
-
-int CgiPoll::quitPollSuccess() {
-    _client.res().setCgiResponse(200);
-    _client.setWriteHandler(sendResponseToClient);
-    return -1;
 }
 
 int CgiPoll::tryFork() {
@@ -104,7 +89,7 @@ int CgiPoll::tryFork() {
     return pid;
 }
 
-void CgiPoll::forkAndexecuteScript(Server &server, const String &cgiResourcePath, const String &cgiScriptCommand) {
+void CgiPoll::forkAndexecuteScript(const String &cgiResourcePath, const String &cgiScriptCommand) {
     _pid = tryFork();
 
     if (_pid == 0) {
@@ -113,11 +98,10 @@ void CgiPoll::forkAndexecuteScript(Server &server, const String &cgiResourcePath
             this->execveScript(cgiResourcePath, cgiScriptCommand);
         } catch (int status) {
             _pid = -1;
-            exitProgram(&server, status);
+            handleSigint(1);
         }
     }
-
-    _scriptLaunchTime = std::time(0);
+    this->resetStartTime();
 }
 
 void CgiPoll::redirectCgiProcessInputOutput() {
@@ -147,13 +131,7 @@ void CgiPoll::execveScript(const String &cgiScriptResourcePath, const String &cg
         throw 1;
     }
 
-    std::vector<char *> args(1, NULL);
-    if (cgiScriptCommand != "") {
-        args.insert(args.begin() + 0, (char *)&cgiScriptCommand[0]);
-        args.insert(args.begin() + 1, (char *)&scriptName[0]);
-    } else {
-        args.insert(args.begin() + 0, (char *)&scriptName[0]);
-    }
+    char *args[] = {(char *)&cgiScriptCommand[0], (char *)&scriptName[0], NULL};
 
     if (execve(args[0], &args[0], environ) == -1) {
         debugErr("execve", strerror(errno));
@@ -161,40 +139,72 @@ void CgiPoll::execveScript(const String &cgiScriptResourcePath, const String &cg
     }
 }
 
-time_t CgiPoll::scriptLaunchTime() {
-    return _scriptLaunchTime;
+CgiRequest &CgiPoll::cgiReq() {
+    return *_cgiReq;
+}
+
+CgiResponse &CgiPoll::cgiRes() {
+    return *_cgiRes;
 }
 
 int CgiPoll::cgiPid() {
     return _pid;
 }
 
-//////////////////////////////////////////////////////////////////
-
-int quitPollError(Server &server, CgiPoll *cgi) {
-    debug("----------6----------", "", RED);
+int quitPollError(CgiPoll *cgi) {
     return -1;
 }
 
-int readCgiResponse(Server &server, CgiPoll *cgi) {
-    if (cgi->clientStatus() == -1) {
-        debug("----------3----------", "", RED);
+int readCgiResponse(CgiPoll *cgi) {
+    if (cgi->clientStatus() != 0) {
         return -1;
     }
 
-    ClientPoll &client = cgi->client();
-    debug("reading cgi response from socket", std::to_string(cgi->getFd()), WHITE);
-    if (client.res().recvAll(cgi->getFd()) == -1) {
-        debug("----------2----------", "", RED);
-        return -1;
+    CgiResponse &cgiRes = cgi->cgiRes();
+
+    debug(">> reading CGI response", std::to_string(cgi->getFd()), YELLOW);
+    if (cgiRes.recvAll(cgi->getFd()) <= 0) {
+        return 500;
+    }
+
+    try {
+        if (!cgiRes.isComplete() && cgiRes.resumeParsing()) {
+            debugHttpMessage(cgiRes.rawData(), YELLOW);
+            cgiRes.parseLocationHeader();
+            cgiRes.parseStatusHeader();
+            cgi->setReadHandler(NULL);
+            cgi->setWriteHandler(handleCgiResponse);
+        }
+    } catch (int parsingErr) {
+        return 502;
     }
     return 0;
 }
 
-int waitCgiProcessEnd(Server &server, CgiPoll *cgi) {
-    if (cgi->clientStatus() == -1 || checkTimeout(cgi->scriptLaunchTime(), CGI_TIMEOUT)) {
-        debug("----------1----------", "", RED);
+int handleCgiResponse(CgiPoll *cgi) {
+    CgiResponse &cgiRes = cgi->cgiRes();
+    if (cgiRes.isComplete() == false) {
+        return 502;
+    }
+
+    const String &locationRedirect = cgiRes.getHeader("Location");
+    if (locationRedirect != "" && locationRedirect[0] == '/') {
+        debug("> internal redirect >>", "", YELLOW);
+
+        cgi->client().req().setUrl(locationRedirect);
+        cgi->client().setWriteHandler(executeClientRequest);
         return -1;
+    }
+
+    debug("> turning CGI response to http response", "", YELLOW);
+    cgiRes.setClientResponse();
+    cgi->client().setWriteHandler(sendResponseToClient);
+    return -1;
+}
+
+int waitCgiProcessEnd(CgiPoll *cgi) {
+    if (cgi->clientStatus() != 0 || checkTimeout(cgi->startTime(), CGI_TIMEOUT)) {
+        return 502;
     }
 
     int pid = cgi->cgiPid();
@@ -202,25 +212,28 @@ int waitCgiProcessEnd(Server &server, CgiPoll *cgi) {
 
     if (waitpid(pid, &exitStatus, WNOHANG) == -1) {
         if (WIFEXITED(exitStatus) && WEXITSTATUS(exitStatus) != 0) {
-            debug("cgi process has exit with an error", std::to_string(WEXITSTATUS(exitStatus)), RED);
-            return -1;
+            debug("CGI process has exit with an error", std::to_string(WEXITSTATUS(exitStatus)), RED);
+            return 502;
         }
-        debug("cgi process has exit", std::to_string(pid), WHITE);
-        return cgi->quitPollSuccess();
+
+        debug("CGI process has exit", std::to_string(pid), GRAY);
+        return handleCgiResponse(cgi);
     }
     return 0;
 }
 
-int sendCgiRequest(Server &server, CgiPoll *cgi) {
-    if (cgi->clientStatus() == -1) {
+int sendCgiRequest(CgiPoll *cgi) {
+    if (cgi->clientStatus() != 0) {
         return -1;
     }
 
-    debug("sending cgi request", std::to_string(cgi->getFd()), WHITE);
-    int sendStatus = cgi->client().req().sendBody(cgi->getFd());
+    int sendStatus = cgi->cgiReq().send(cgi->getFd());
     if (sendStatus == 0) {
         cgi->closeRequestSockets();
         cgi->switchToResponseReadableSocket();
+        cgi->setReadHandler(readCgiResponse);
+        cgi->setWriteHandler(waitCgiProcessEnd);
+        // cgi->resetStartTime();
     }
-    return (sendStatus == -1) ? -1 : 0;
+    return (sendStatus == -1) ? 500 : 0;
 }

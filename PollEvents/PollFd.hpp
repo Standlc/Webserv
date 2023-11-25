@@ -1,47 +1,70 @@
 #ifndef POLL_FD_HPP
 #define POLL_FD_HPP
 
-#include "../HttpRequest.hpp"
-#include "../HttpResponse.hpp"
 #include "../Server.hpp"
+#include "../ServerStreams/HttpRequest.hpp"
+#include "../ServerStreams/HttpResponse.hpp"
+#include "../ServerStreams/cgi/CgiRequest.hpp"
+#include "../ServerStreams/cgi/CgiResponse.hpp"
+#include "../ServerStreams/proxy/ProxyRequest.hpp"
+#include "../ServerStreams/proxy/ProxyResponse.hpp"
+#include "../blocks/Block.hpp"
 #include "../webserv.hpp"
 
-typedef int (*clientPollHandlerType)(Server &, ClientPoll *);
-typedef int (*pollFdHandlerType)(Server &, PollFd *);
-typedef int (*CgiPollHandlerType)(Server &, CgiPoll *);
+typedef int (*clientPollHandlerType)(ClientPoll *);
+typedef int (*pollFdHandlerType)(PollFd *);
+typedef int (*CgiPollHandlerType)(CgiPoll *);
+typedef int (*ProxyPollHandlerType)(ProxyPoll *);
 
-int handleNewConnection(Server &server, PollFd *listen);
+int handleNewConnection(PollFd *listen);
 int checkTimeout(time_t time, int seconds);
 
-// int setCgiResponse(Server &server, ClientPoll *client);
-int sendResponseToClient(Server &server, ClientPoll *client);
-int executeClientRequest(Server &server, ClientPoll *client);
-int readClientRequest(Server &server, ClientPoll *client);
-int timeoutClient(Server &server, ClientPoll *client);
+int checkProxyPoll(ClientPoll *client);
+int checkCgiPoll(ClientPoll *client);
+int sendResponseToClient(ClientPoll *client);
+int executeClientRequest(ClientPoll *client);
+int readClientRequest(ClientPoll *client);
+int timeoutClient(ClientPoll *client);
 
-int quitPollError(Server &server, CgiPoll *cgi);
-int checkCgiPoll(Server &server, ClientPoll *client);
-int waitCgiProcessEnd(Server &server, CgiPoll *cgi);
-int readCgiResponse(Server &server, CgiPoll *cgi);
-int sendCgiRequest(Server &server, CgiPoll *cgi);
+int quitPollError(CgiPoll *cgi);
+int waitCgiProcessEnd(CgiPoll *cgi);
+int readCgiResponse(CgiPoll *cgi);
+int sendCgiRequest(CgiPoll *cgi);
+int handleCgiResponse(CgiPoll *cgi);
+
+int timeoutProxy(ProxyPoll *proxy);
+int sendProxyRequest(ProxyPoll *proxy);
+int recvProxyResponse(ProxyPoll *proxy);
 
 class PollFd {
    protected:
     pollFdHandlerType _readHandler;
     pollFdHandlerType _writeHandler;
     std::shared_ptr<int> _status;
+    Server &_server;
+    time_t _startTime;
     int _fd;
+    bool _concurrentReadWrite;
+    bool _removeOnHungUp;
 
    public:
-    PollFd(int fd);
+    PollFd(int fd, Server &server);
+    void destroy(int socketStatus);
     virtual ~PollFd();
 
     std::shared_ptr<int> getStatus();
     int getFd();
+    bool removeOnHungUp();
+    bool isConcurrentReadWrite();
+    void setConcurrentReadWrite(bool value);
+    void setRemoveOnHungUp(bool value);
+    void resetStartTime();
+    Server &server();
+    time_t startTime();
     void setWriteHandler(pollFdHandlerType f);
     void setReadHandler(pollFdHandlerType f);
-    virtual int handleWrite(Server &server, PollFd *pollFd);
-    virtual int handleRead(Server &server, PollFd *pollFd);
+    virtual int handleWrite(PollFd *pollFd);
+    virtual int handleRead(PollFd *pollFd);
 };
 
 class ClientPoll : public PollFd {
@@ -50,26 +73,28 @@ class ClientPoll : public PollFd {
     clientPollHandlerType _readHandler;
     HttpRequest *_req;
     HttpResponse *_res;
-    time_t _acceptTime;
     std::shared_ptr<int> _cgiPollStatus;
+    std::shared_ptr<int> _proxyStatus;
+    LocationBlock *_location;
 
    public:
-    ClientPoll(int fd);
+    ClientPoll(int fd, Server &server);
     ~ClientPoll();
-
-    time_t getAcceptTime();
-    int cgiPollStatus();
-    void resetConnection();
 
     HttpResponse &res();
     HttpRequest &req();
 
+    int proxyPollStatus();
+    int cgiPollStatus();
+    void resetConnection();
+    void setProxyStatus(std::shared_ptr<int> proxyStatus);
     void setCgiPollStatus(std::shared_ptr<int> cgiStatus);
+
     void setWriteHandler(clientPollHandlerType f);
     void setReadHandler(clientPollHandlerType f);
-    int handleWrite(Server &server, PollFd *pollFd);
-    int handleRead(Server &server, PollFd *pollFd);
-    int sendInternalError(Server &server);
+    int handleWrite(PollFd *pollFd);
+    int handleRead(PollFd *pollFd);
+    int sendErrorPage(int statusCode);
 };
 
 typedef struct CgiSockets {
@@ -84,8 +109,8 @@ class CgiPoll : public PollFd {
     struct pollfd &_pollfd;
     ClientPoll &_client;
     std::shared_ptr<int> _clientStatus;
-    time_t _scriptLaunchTime;
-
+    CgiRequest *_cgiReq;
+    CgiResponse *_cgiRes;
     CgiSockets _cgiSockets;
     int _pid;
 
@@ -96,25 +121,46 @@ class CgiPoll : public PollFd {
     int cgiPid();
     int tryFork();
     void killCgiProcess();
-    time_t scriptLaunchTime();
     void closeRequestSockets();
 
+    CgiRequest &cgiReq();
+    CgiResponse &cgiRes();
     int clientStatus();
     ClientPoll &client();
-    void forkAndexecuteScript(Server &server, const String &cgiResourcePath, const String &cgiScriptCommand);
+    void forkAndexecuteScript(const String &cgiResourcePath, const String &cgiScriptCommand);
     void redirectCgiProcessInputOutput();
     void execveScript(const String &cgiScriptResourcePath, const String &cgiScriptCommand);
 
     void switchToResponseReadableSocket();
-    void switchToResponseWritableSocket();
-    void switchToRequestReadableSocket();
     void switchToRequestWritableSocket();
-    int quitPollSuccess();
 
     void setReadHandler(CgiPollHandlerType f);
     void setWriteHandler(CgiPollHandlerType f);
-    int handleRead(Server &server, PollFd *pollFd);
-    int handleWrite(Server &server, PollFd *pollFd);
+    int handleRead(PollFd *pollFd);
+    int handleWrite(PollFd *pollFd);
+};
+
+class ProxyPoll : public PollFd {
+   private:
+    ProxyPollHandlerType _readHandler;
+    ProxyPollHandlerType _writeHandler;
+    std::shared_ptr<int> _clientStatus;
+    ClientPoll &_client;
+    ProxyRequest _proxyReq;
+    ProxyResponse _proxyRes;
+
+   public:
+    ProxyPoll(int socket, ClientPoll &client, const String &remoteHostName);
+    ~ProxyPoll();
+
+    ProxyRequest &proxyReq();
+    ProxyResponse &proxyRes();
+    int clientStatus();
+    ClientPoll &client();
+    void setReadHandler(ProxyPollHandlerType f);
+    void setWriteHandler(ProxyPollHandlerType f);
+    int handleRead(PollFd *pollFd);
+    int handleWrite(PollFd *pollFd);
 };
 
 #endif

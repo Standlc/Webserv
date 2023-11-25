@@ -12,9 +12,8 @@ ServerBlock &ServerBlock::operator=(const ServerBlock &b) {
 }
 
 clientPollHandlerType ServerBlock::execute(Server &server, ClientPoll &client) {
-    LocationBlock *macthingLocation = this->findLocationBlockByPath(client.req().url().path);
-
     try {
+        LocationBlock *macthingLocation = this->findLocationBlockByPath(client.req().url().path);
         if (macthingLocation == NULL) {
             throw 404;
         }
@@ -39,7 +38,6 @@ LocationBlock *ServerBlock::findLocationBlockByPath(const String &reqPath) {
         }
 
         String locationPath = _locationBlocks[i].getPath();
-
         int pathSize = locationPath.size();
         if (pathSize > maxMatchLen && reqPath.compare(0, pathSize, locationPath) == 0) {
             if (reqPath[pathSize] == '/' || locationPath.back() == '/') {
@@ -71,24 +69,36 @@ LocationBlock &ServerBlock::getLocationBlock(int index) {
 }
 
 void ServerBlock::set(String ipAddress, String port, bool isDefault) {
-    _ipAddress = ipAddress;
+    if (ipAddress == "") {
+        _ipAddress = "0.0.0.0";
+    } else {
+        _ipAddress = ipAddress;
+        this->addHostName(ipAddress);
+    }
     _port = port;
     _isDefault = isDefault;
 }
 
-void ServerBlock::setHostName(String name) {
+void ServerBlock::addHostName(String name) {
     _hostNames.push_back(name);
 }
 
-bool ServerBlock::isHost(String hostName) {
-    return std::find(_hostNames.begin(), _hostNames.end(), hostName) != _hostNames.end();
+bool ServerBlock::isHost(const String &hostName) {
+    if (std::find(_hostNames.begin(), _hostNames.end(), hostName) != _hostNames.end()) {
+        return true;
+    }
+    return false;
 }
 
-String ServerBlock::getPort() {
+const std::vector<std::string> &ServerBlock::hostNames() {
+    return _hostNames;
+}
+
+const String &ServerBlock::port() {
     return _port;
 }
 
-String ServerBlock::getIpAddress() {
+const String &ServerBlock::ipAddress() {
     return _ipAddress;
 }
 

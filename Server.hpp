@@ -6,6 +6,7 @@
 #include "webserv.hpp"
 
 struct CgiSockets;
+int createSocket(struct addrinfo* addrInfo);
 
 class Server {
    private:
@@ -20,26 +21,25 @@ class Server {
     ~Server();
 
     int listen();
+    void startServers();
     int monitorClients();
     void scanForEventSockets(int eventsAmount);
-
-    // size_t findPollFd(int fd);
-    // CgiPoll& pushNewCgiPoll(int* cgiSockets, ClientPoll& client);
-    // void pushNewCgiResponsePoll(int* cgiSockets, ClientPoll& client);
-    // void pushNewCgiRequestPoll(int* cgiSockets, ClientPoll& client);
+    int handleSocketErrors(int* i, int socketStatus);
+    int checkReadableANDWritable(int i);
+    int checkReadableORWritable(int i);
 
     void loadDefaultErrPage(int statusCode, HttpResponse& res);
     String getDefaultErrorPagePath(int statusCode);
 
-    void removePollFd(int index);
+    void removePollFd(int index, int socketStatus);
     void pushNewClient(int clientSocket);
+    void pushNewProxy(int proxySocket, ClientPoll& client, const String& remoteHostName);
     void pushNewListeningSocket(int listeningSocket);
     CgiPoll& pushNewCgiPoll(CgiSockets& cgiSockets, ClientPoll& client);
     void pushStructPollfd(int fd);
 
-    ServerBlock& findServerBlock(String port, String host);
+    ServerBlock* findServerBlock(HttpRequest& req);
     void addBlocks(int size);
-    void addLocationBlocks(int serverIndex, int size);
     ServerBlock& getServerBlock(int index);
     LocationBlock& getLocationBlock(int serverIndex, int locationIndex);
 };

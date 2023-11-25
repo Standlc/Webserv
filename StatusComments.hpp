@@ -38,6 +38,7 @@ class StatusComments {
         _comments[500] = "Internal Server Error";
         _comments[501] = "Not Implemented";
         _comments[502] = "Bad Gateway";
+        _comments[504] = "Gateway Timeout";
     }
 
     static const String &get(int status) {

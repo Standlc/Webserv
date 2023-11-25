@@ -9,29 +9,42 @@ void closeOpenFd(int &fd) {
     }
 }
 
+size_t tryFind(const String &str, const String &find, size_t from) {
+    size_t pos = str.find(find, from);
+    if (pos == NPOS) {
+        throw 400;
+    }
+    return pos;
+}
+
 bool isReadable(struct pollfd &pollEl) {
-    return (pollEl.revents & POLLIN);
+    return (pollEl.revents & POLLIN) == POLLIN;
 }
 
 bool isWritable(struct pollfd &pollEl) {
-    return (pollEl.revents & POLLOUT);
+    return (pollEl.revents & POLLOUT) == POLLOUT;
 }
 
 int checkPollError(struct pollfd &pollEl, int error) {
-    if ((pollEl.revents & error)) {
-        debug("socket event", std::to_string(error) + ", on fd: " + std::to_string(pollEl.fd), RED);
+    if ((pollEl.revents & error) == error) {
+        debug("error", std::to_string(error) + ", on socket: " + std::to_string(pollEl.fd), RED);
         return error;
     }
     return 0;
 }
 
 int checkPollErrors(struct pollfd &pollEl) {
-    if (checkPollError(pollEl, POLLERR) ||
-        checkPollError(pollEl, POLLHUP) ||
-        checkPollError(pollEl, POLLNVAL)) {
-        return -1;
+    int error = 0;
+    if (!error) {
+        error = checkPollError(pollEl, POLLHUP);
     }
-    return 0;
+    if (!error) {
+        error = checkPollError(pollEl, POLLNVAL);
+    }
+    if (!error) {
+        error = checkPollError(pollEl, POLLERR);
+    }
+    return error;
 }
 
 void compressSlashes(String &str) {
@@ -105,17 +118,29 @@ String getFileExtension(const String &fileName) {
     return fileName.substr(dotPos);
 }
 
-int getFileContent(const String &path, String &buf) {
+void getFileContent(const String &path, String &buf) {
     std::ifstream file(path);
     if (!file) {
-        return 1;
+        throw 500;
     }
 
-    std::stringstream fileContent;
-    fileContent << file.rdbuf();
-    buf = fileContent.str();
+    file.seekg(0, file.end);
+    size_t len = file.tellg();
+    file.seekg(0, file.beg);
+    buf.resize(len, '\0');
+
+    file.read(&buf[0], len);
     file.close();
-    return 0;
+
+    // std::ifstream file(path);
+    // if (!file) {
+    //     debugErr("Error while reading", &path[0]);
+    //     throw 500;
+    // }
+    // std::stringstream fileContent;
+    // fileContent << file.rdbuf();
+    // buf = fileContent.str();
+    // file.close();
 }
 
 String parsePathFileName(const String &path) {
@@ -169,19 +194,39 @@ int checkPathAccess(const String &path) {
     return 200;
 }
 
-void exitProgram(Server *server, int exitCode) {
-    delete server;
-    debugErr("EXITING", "");
-    exit(exitCode);
-}
-
 bool isUnkownMethod(const String &method) {
     return method != "GET" && method != "POST" && method != "DELETE";
 }
 
 void debugErr(const String &title, const char *err) {
-    std::cerr << RED << title << ": " << err << "\n"
+    std::cerr << RED << title;
+    if (err) {
+        std::cerr << ": " << err;
+    }
+    std::cerr << "\n"
               << WHITE;
+}
+
+void debugMessageInfos(const String &title, int fd, size_t size, const String &color) {
+    if (!DEBUG) {
+        return;
+    }
+    debug("<< " + title, std::to_string(fd) + ", size: " + std::to_string(size) + " bytes", color);
+}
+
+void debugHttpMessage(const String &httpMessage, const String &color) {
+    if (!DEBUG) {
+        return;
+    }
+    size_t len = httpMessage.size();
+    std::cout << color << "[" << WHITE;
+    for (size_t i = 0; i < len; i++) {
+        if (startsWith(httpMessage, CRLF_CRLF, i) || startsWith(httpMessage, "\n\n", i)) {
+            break;
+        }
+        std::putchar(httpMessage[i]);
+    }
+    std::cout << color << "]" << WHITE << "\n\n";
 }
 
 void debug(const String &title, const String &arg, const String &color) {
@@ -192,21 +237,19 @@ void debug(const String &title, const String &arg, const String &color) {
     if (arg != "") {
         std::cout << ": " << arg;
     }
-    std::cout << "\n"
-              << WHITE;
+    std::cout << WHITE << "\n";
 }
 
-size_t countBackSpaces(const String &str, const String &sep, size_t end) {
+size_t countBackSpaces(const String &str, size_t end, const String &sep) {
     if (end == 0) {
         return 0;
     }
 
-    String spaces = " \t";
     end--;
     int nSpaces = 0;
     char c = str[end];
 
-    while (spaces.find(c) != NPOS && sep.find(c) == NPOS && c != '\"') {
+    while (std::isspace(c) && sep.find(c) == NPOS && c != '\"') {
         nSpaces++;
         if (end - nSpaces == 0) {
             break;
@@ -216,13 +259,12 @@ size_t countBackSpaces(const String &str, const String &sep, size_t end) {
     return nSpaces;
 }
 
-size_t countFrontSpaces(const String &str, const String &sep, size_t pos) {
-    String spaces = " \t";
+size_t countFrontSpaces(const String &str, size_t pos, const String &sep) {
     size_t strSize = str.size();
     int nSpaces = 0;
     char c = str[pos];
 
-    while (spaces.find(c) != NPOS && sep.find(c) == NPOS && c != '\"') {
+    while (std::isspace(c) && sep.find(c) == NPOS && c != '\"') {
         nSpaces++;
         if (pos + nSpaces == strSize) {
             break;
@@ -249,22 +291,24 @@ size_t findEnd(const String &str, const String &sep, size_t pos) {
     }
 }
 
-std::vector<String> split(const String &str, const String &sep) {
+std::vector<String> split(const String &str, const String &sep, size_t maxSize) {
     std::vector<String> split;
     size_t strLen = str.length();
     size_t start = 0;
     size_t end = -1;
+    size_t splitSize = 0;
 
-    while (end < strLen || end == NPOS) {
+    while ((end < strLen || end == NPOS) && splitSize < maxSize) {
         start = end + 1;
         end = findEnd(str, sep, start);
         end = (end != NPOS) ? end : strLen;
 
-        start += countFrontSpaces(str, sep, start);
-        size_t backSpaces = countBackSpaces(str, sep, end);
+        start += countFrontSpaces(str, start, sep);
+        size_t backSpaces = countBackSpaces(str, end, sep);
 
         size_t size = (end - backSpaces < start) ? 0 : (end - backSpaces - start);
         split.push_back(str.substr(start, size));
+        splitSize++;
     }
     return split;
 }

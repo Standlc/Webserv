@@ -17,7 +17,6 @@ Block &Block::operator=(const Block &b) {
     _index = b._index;
     _errorFiles = b._errorFiles;
     _cgiCommands = b._cgiCommands;
-    _redirection = b._redirection;
     _reqBodyMaxSize = b._reqBodyMaxSize;
     _autoIndex = b._autoIndex;
     _headers = b._headers;
@@ -63,11 +62,6 @@ void Block::addErrorPage(int statusCode, String pagePath) {
     _errorFiles[statusCode] = pagePath;
 }
 
-void Block::setRedirection(int statusCode, String redirectionUrl) {
-    _redirection.statusCode = statusCode;
-    _redirection.url = redirectionUrl;
-}
-
 void Block::addCgiCommand(String extension, String absoluteCommandPath) {
     _cgiCommands[extension] = absoluteCommandPath;
 }
@@ -104,7 +98,7 @@ void Block::setAutoIndex(bool isOn) {
 }
 
 void Block::addHeader(String key, String value) {
-    _headers.insert(std::make_pair(key, value));
+    _headers.add(key, value);
 }
 
 void Block::setSessionCookie(String name) {

@@ -1,16 +1,11 @@
 #ifndef BLOCK_HPP
 #define BLOCK_HPP
 
-#include "../HttpRequest.hpp"
-#include "../HttpResponse.hpp"
 #include "../PollEvents/PollFd.hpp"
 #include "../Server.hpp"
+#include "../ServerStreams/HttpRequest.hpp"
+#include "../ServerStreams/HttpResponse.hpp"
 #include "../webserv.hpp"
-
-typedef struct Redirection {
-    String url;
-    int statusCode;
-} Redirection;
 
 class Block {
    protected:
@@ -19,9 +14,8 @@ class Block {
     String _root;
     String _uploadRoot;
     size_t _reqBodyMaxSize;
-    Redirection _redirection;
 
-    std::unordered_multimap<String, String> _headers;
+    Headers _headers;
     std::unordered_map<int, std::string> _errorFiles;
     std::unordered_map<std::string, std::string> _cgiCommands;
     std::string _sessionCookieName;
@@ -38,7 +32,6 @@ class Block {
     bool hasErrorPage(int statusCode);
     void addErrorPage(int statusCode, String pagePath);
 
-    void setRedirection(int statusCode, String redirectionUrl);
     void addCgiCommand(String extension, String absoluteCommandPath);
     void setRoot(String root);
     void setUploadRoot(String dir);
@@ -64,53 +57,71 @@ class ServerBlock : public Block {
 
     clientPollHandlerType execute(Server &server, ClientPoll &client);
     LocationBlock *findLocationBlockByPath(const String &reqPath);
-
-    void setHostName(String name);
-    bool isHost(String hostName);
-    String getPort();
-    String getIpAddress();
+    bool isHost(const String &hostName);
+    const String &port();
+    const String &ipAddress();
+    const std::vector<std::string> &hostNames();
     bool isDefault();
 
+    void addHostName(String name);
     void set(String ipAddress, String port, bool isDefault);
     LocationBlock &getLocationBlock(int index);
     void addLocationBlocks(int size);
 };
 
-typedef void (*pathHandlerType)(LocationBlock &block, HttpRequest &req, HttpResponse &res);
+typedef void (LocationBlock::*serverMethodHandler)(HttpRequest &req, HttpResponse &res);
+typedef clientPollHandlerType (LocationBlock::*requestHandlerType)(ClientPoll &client);
+
+typedef struct Redirection {
+    String url;
+    int statusCode;
+} Redirection;
 
 class LocationBlock : public Block {
    private:
+    std::map<String, serverMethodHandler> _serverMethodshandlers;
+    requestHandlerType _requestHandler;
+    std::vector<String> _allowedMethods;
     String _path;
     bool _isExact;
-    std::map<String, pathHandlerType> _handlers;
+    String _proxyPass;
+    ServerBlock &_serverBlock;
+    Redirection _redirection;
 
    public:
-    LocationBlock(const Block &b);
+    LocationBlock(ServerBlock &serverBlock);
     LocationBlock &operator=(const LocationBlock &b);
 
+    ServerBlock &serverBlock();
     void throwReqErrors(HttpRequest &req);
-    bool handlesHttpMethod(String httpMethod);
+    bool handlesHttpMethod(const String &httpMethod);
+    bool isMethodAllowed(const String &httpMethod);
     String assembleRedirectionUrl(HttpRequest &req);
     bool exceedsReqMaxSize(size_t size);
     String generateSessionCookie();
+    void handleMethod(const String &httpMethod, HttpRequest &req, HttpResponse &res);
 
+    void getMethod(HttpRequest &req, HttpResponse &res);
+    void postMethod(HttpRequest &req, HttpResponse &res);
+    void deleteMethod(HttpRequest &req, HttpResponse &res);
+    clientPollHandlerType serverMethodHandler(ClientPoll &client);
+    clientPollHandlerType redirectionHandler(ClientPoll &client);
+    clientPollHandlerType proxyHandler(ClientPoll &client);
+
+    clientPollHandlerType reverseProxy(Server &server, ClientPoll &client);
     clientPollHandlerType execute(Server &server, ClientPoll &client);
-    clientPollHandlerType handleCgi(Server &server, ClientPoll &client, const String &cgiScriptPath);
+    clientPollHandlerType handleCgi(ClientPoll &client, const String &cgiScriptPath);
     void checkCgiScriptAccess(const String &cgiScriptPath);
     String isCgiScriptRequest(HttpRequest &req);
     void setenvCgi(HttpRequest &req, const String &cgiScriptPath);
 
-    // void proxyPass(Server &server, ClientPoll &client) {
-    //     // Change host name
-    //     // change connection to close
-    //     // Send 502 if request fails or res status is error
-    // }
-
+    void setRedirection(int statusCode, String redirectionUrl);
+    void setProxyPass(const String &proxyPass);
     const String &getPath();
     const String &getIndex();
     bool isExactPath();
     bool isAutoIndex();
-    void setHandlers(pathHandlerType getMethod, pathHandlerType postMethod, pathHandlerType deleteMethod);
+    void setAllowedMethods(String methods[]);
     void setPath(const String &path, bool isExact = false);
 };
 
