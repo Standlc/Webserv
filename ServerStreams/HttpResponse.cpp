@@ -13,12 +13,18 @@ void HttpResponse::setHead(int statusCode) {
 
 void HttpResponse::assembleHeaders() {
     _outputData = _head;
+    this->addDefaultHeader("Server", WEBSERV_V);
+    this->setConnectionType(_statusCode);
+
     _defaultHeaders.putIn(_outputData);
-    _headers.putIn(_outputData);
+    if (_statusCode < 400) {
+        _headers.putIn(_outputData);
+    }
 }
 
 void HttpResponse::assembleResponse() {
     this->assembleHeaders();
+
     _outputData += CRLF;
     _outputData += _body;
     _outputDataSize = _outputData.size();
@@ -33,7 +39,11 @@ HttpResponse::HttpResponse(HttpRequest &req) : _req(req) {
 HttpResponse::~HttpResponse() {
 }
 
-void HttpResponse::clearHeaders() {
+void HttpResponse::clearDefaultHeaders() {
+    _defaultHeaders.clear();
+}
+
+void HttpResponse::clearConfigHeaders() {
     _headers.clear();
 }
 
@@ -41,22 +51,20 @@ void HttpResponse::addDefaultHeader(const String &field, const String &value) {
     _defaultHeaders.add(field, value);
 }
 
-void HttpResponse::addHeader(const String &property, const String &value) {
+void HttpResponse::addDefaultHeaders(Headers &headers) {
+    _defaultHeaders.add(headers);
+}
+
+void HttpResponse::addConfigHeader(const String &property, const String &value) {
     _headers.add(property, value);
 }
 
-void HttpResponse::addHeaders(Headers &headers) {
+void HttpResponse::addConfigHeaders(Headers &headers) {
     _headers.add(headers);
 }
 
 void HttpResponse::set(int statusCode) {
     this->setHead(statusCode);
-    _defaultHeaders.clear();
-    if (statusCode >= 400) {
-        this->clearHeaders();
-    }
-    this->addDefaultHeader("Server", WEBSERV_V);
-    this->setConnectionType(statusCode);
     this->assembleResponse();
 }
 
@@ -64,13 +72,8 @@ void HttpResponse::set(int statusCode, const String &path, const String &body) {
     this->setHead(statusCode);
 
     _defaultHeaders.clear();
-    if (statusCode >= 400) {
-        this->clearHeaders();
-    }
-    this->addDefaultHeader("Server", WEBSERV_V);
     this->addDefaultHeader("Content-Type", MediaTypes::getType(path));
     this->addDefaultHeader("Content-Length", std::to_string(body.size()));
-    this->setConnectionType(statusCode);
 
     this->setBody(body);
     this->assembleResponse();
@@ -107,13 +110,12 @@ void HttpResponse::listDirectory(const String &dir, const String &reqUrl) {
 }
 
 int HttpResponse::sendResponse(int fd) {
-    debugMessageInfos("sending client response to", fd, _outputDataSize, CYAN);
-    debugHttpMessage(_outputData, CYAN);
+    debugSending("sending client response", *this, fd, CYAN);
     return this->sendAll(fd, &_outputData[0], _outputDataSize);
 }
 
 void HttpResponse::setConnectionType(int statusCode) {
-    if (statusCode >= 400 || _req.getHeader("Connection") == "close") {
+    if (statusCode == 400 || statusCode >= 500 || _req.getHeader("Connection") == "close") {
         this->addDefaultHeader("Connection", "close");
         _keepAlive = false;
         return;
@@ -122,7 +124,7 @@ void HttpResponse::setConnectionType(int statusCode) {
     const String &connection = _headers.find("Connection");
     if (connection == "close") {
         _keepAlive = false;
-    } else if (connection == "") {
+    } else {
         this->addDefaultHeader("Connection", "keep-alive");
         _keepAlive = true;
     }

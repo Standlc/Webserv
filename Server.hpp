@@ -3,6 +3,7 @@
 
 #include "PollEvents/PollFd.hpp"
 #include "blocks/Block.hpp"
+#include "blocks/LocationBlock/utils.hpp"
 #include "webserv.hpp"
 
 struct CgiSockets;
@@ -21,7 +22,7 @@ class Server {
     ~Server();
 
     int listen();
-    void startServers();
+    int startServers();
     int monitorClients();
     void scanForEventSockets(int eventsAmount);
     int handleSocketErrors(int* i, int socketStatus);
@@ -33,7 +34,7 @@ class Server {
 
     void removePollFd(int index, int socketStatus);
     void pushNewClient(int clientSocket);
-    void pushNewProxy(int proxySocket, ClientPoll& client, const String& remoteHostName);
+    void pushNewProxy(int proxySocket, ClientPoll& client, ProxyUrl& proxyPass);
     void pushNewListeningSocket(int listeningSocket);
     CgiPoll& pushNewCgiPoll(CgiSockets& cgiSockets, ClientPoll& client);
     void pushStructPollfd(int fd);

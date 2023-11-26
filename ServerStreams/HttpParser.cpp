@@ -6,27 +6,42 @@ bool HttpParser::resumeParsing(bool copyBody) {
             debug("parsing headers", "", GRAY);
             _parsingPos = this->parseHeaders();
         }
-        if (_parsingPos >= _endOfHeadersPos) {
+        if (_parsingPos >= _endOfHeadersPos && _endOfHeadersPos != NPOS) {
             debug("parsing body", "", GRAY);
             _isComplete = this->handleBodyParsing(copyBody);
         }
     } catch (int parsingErr) {
-        debug("http syntax error", "", DIM_RED);
         _isComplete = true;
         throw parsingErr;
     }
     return _isComplete;
 }
 
-size_t HttpParser::parseRequestHead() {
+bool HttpParser::discardEmptyLine(int *sizeCRLF) {
+    _headerLineEndPos = findCRLF(sizeCRLF, _parsingPos);
+    if (_headerLineEndPos == NPOS) {
+        return true;
+    }
+    if (_headerLineEndPos == _parsingPos) {
+        _parsingPos += *sizeCRLF;
+        _headerLineEndPos = NPOS;
+        return true;
+    }
+    return false;
+}
+
+bool HttpParser::parseRequestHead() {
+    if (_headerLineEndPos != NPOS) {
+        return true;
+    }
     int sizeCRLF = 0;
-    size_t endOfHead = 0;
-    if (_parsingPos > 0 || (endOfHead = findCRLF(&sizeCRLF)) == NPOS) {
-        return _parsingPos;
+    if (discardEmptyLine(&sizeCRLF)) {
+        return false;
     }
     debug("parsing request head", "", GRAY);
 
-    const std::vector<String> &headElements = split(_rawData.substr(0, endOfHead), " \t");
+    String headLine = _rawData.substr(0, _headerLineEndPos);
+    const std::vector<String> &headElements = split(headLine, " \t");
     if (headElements.size() != 3 ||
         (headElements[2] != "HTTP/1.0" && headElements[2] != "HTTP/1.1")) {
         throw 1;
@@ -36,19 +51,22 @@ size_t HttpParser::parseRequestHead() {
     _rawUrl = headElements[1];
     this->processUrl(headElements[1]);
     _httpProtocol = headElements[2];
-    _parsingPos = endOfHead + sizeCRLF;
-    return endOfHead + sizeCRLF;
+    _parsingPos = _headerLineEndPos + sizeCRLF;
+    return true;
 }
 
-size_t HttpParser::parseResponseHead() {
+bool HttpParser::parseResponseHead() {
+    if (_headerLineEndPos != NPOS) {
+        return true;
+    }
     int sizeCRLF = 0;
-    size_t endOfHead = 0;
-    if (_parsingPos > 0 || (endOfHead = findCRLF(&sizeCRLF)) == NPOS) {
-        return _parsingPos;
+    if (discardEmptyLine(&sizeCRLF)) {
+        return false;
     }
     debug("parsing response head", "", GRAY);
 
-    const std::vector<String> &headElements = split(_rawData.substr(0, endOfHead), " \t", 2);
+    String headLine = _rawData.substr(0, _headerLineEndPos);
+    const std::vector<String> &headElements = split(headLine, " \t", 2);
     if (headElements.size() != 2 ||
         (headElements[0] != "HTTP/1.0" && headElements[0] != "HTTP/1.1")) {
         throw 1;
@@ -61,16 +79,15 @@ size_t HttpParser::parseResponseHead() {
         std::cerr << e.what() << '\n';
         throw 1;
     }
-    _parsingPos = endOfHead + sizeCRLF;
-    return endOfHead + sizeCRLF;
+    _parsingPos = _headerLineEndPos + sizeCRLF;
+    return true;
 }
 
 void HttpParser::processUrl(const String &url) {
-    if (url[0] != '/' || url.find("../") != NPOS) {
-        throw 400;
-    }
+    throwIf(url.find("../") != NPOS || url[0] != '/', 400);
 
     size_t paramPos = url.find('?');
+
     _url.path = url.substr(0, paramPos);
     compressSlashes(_url.path);
     percentDecode(_url.path);
@@ -127,10 +144,12 @@ void HttpParser::parseHeaderLine(const String &line) {
 
     size_t valueStart = endOfKey + countFrontSpaces(line, endOfKey);
     size_t valueEnd = headerLen - countBackSpaces(line, headerLen);
-    size_t size = (valueEnd < valueStart) ? 0 : (valueEnd - valueStart);
+    size_t size = (valueEnd <= valueStart) ? 0 : (valueEnd - valueStart);
 
-    String value = line.substr(valueStart, size);
-    _headers.add(key, value);
+    if (size > 0) {
+        String value = line.substr(valueStart, size);
+        _headers.add(key, value);
+    }
 }
 
 bool HttpParser::handleBodyParsing(bool copyBody) {

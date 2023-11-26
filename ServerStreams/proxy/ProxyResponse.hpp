@@ -13,14 +13,16 @@ class ProxyResponse : public HttpParser {
     }
 
     bool resumeParsing() {
-        this->parseResponseHead();
-        return HttpParser::resumeParsing(false);
+        if (this->parseResponseHead() == true) {
+            return HttpParser::resumeParsing(true);
+        }
+        return false;
     }
 
     void setClientRes() {
         _headers.erase("Server");
         _headers.erase("Connection");
-        _clientRes.addHeaders(_headers);
+        _clientRes.addDefaultHeaders(_headers);
         _clientRes.setBody(_rawData.substr(_endOfHeadersPos, _totalRead - _endOfHeadersPos));
         _clientRes.set(_responseStatus);
     }

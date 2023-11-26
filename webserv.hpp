@@ -34,14 +34,14 @@
 #define CRLF_CRLF "\r\n\r\n"
 #define NPOS String::npos
 
-#define GRAY "\033[1;30m"
+#define GRAY "\033[0;90m"
 #define DIM_RED "\033[0;31m"
-#define RED "\033[1;91m"
-#define GREEN "\033[1;32m"
-#define YELLOW "\033[1;93m"
-#define BLUE "\033[1;34m"
-#define PURPLE "\033[1;35m"
-#define CYAN "\033[1;36m"
+#define RED "\033[0;91m"
+#define GREEN "\033[0;92m"
+#define YELLOW "\033[0;93m"
+#define BLUE "\033[0;94m"
+#define PURPLE "\033[0;95m"
+#define CYAN "\033[0;96m"
 #define BOLD "\033[1m"
 #define WHITE "\033[0m"
 
@@ -74,15 +74,18 @@ class SigintError : public std::exception {
     }
 };
 
+void debugSending(const String &title, ServerStream &s, int socket, const String &color);
+void debugParsingErr(ServerStream &s, int socket, const String &color);
+void debugParsingSuccesss(ServerStream &s, int socket, const String &color);
+void debugHttpMessage(const String &httpMessage, const String &color = WHITE);
+void debug(const String &title, const String &arg = "", const String &color = WHITE);
+void debugErr(const String &title, const char *err = NULL);
+
 void throwIf(bool condition, int status);
 size_t tryFind(const String &str, const String &find, size_t from = 0);
 struct addrinfo *getServerAddressInfo(String serverIpAddress, String port);
 void handleSigint(int sig);
 void closeOpenFd(int &fd);
-void debugMessageInfos(const String &title, int fd, size_t size, const String &color);
-void debugHttpMessage(const String &httpMessage, const String &color = WHITE);
-void debug(const String &title, const String &arg = "", const String &color = WHITE);
-void debugErr(const String &title, const char *err = NULL);
 String parsePathFileName(const String &path);
 String parseFileDirectory(const String &filePath);
 void trySetenv(const String &name, const String &value);

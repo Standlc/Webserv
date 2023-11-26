@@ -9,6 +9,15 @@ class Headers {
     String null;
 
    public:
+    Headers(){};
+    Headers(const Headers &h) {
+        *this = h;
+    }
+    Headers &operator=(const Headers &h) {
+        _headers = h._headers;
+        return *this;
+    }
+
     void add(const String &field, const String &value) {
         _headers.push_back((header){field, value});
     }
@@ -34,11 +43,11 @@ class Headers {
         return null;
     }
 
-    void putIn(String &buf, char *headersToDiscard[] = NULL) {
+    void putIn(String &buf, String headersToDiscard[] = NULL) {
         for (size_t i = 0; i < _headers.size(); i++) {
             if (headersToDiscard) {
                 bool discard = false;
-                for (size_t j = 0; headersToDiscard[j]; j++) {
+                for (size_t j = 0; headersToDiscard[j] != ""; j++) {
                     if ((discard = _headers[i].field == headersToDiscard[j])) {
                         break;
                     }

@@ -1,12 +1,14 @@
 #include "HttpRequest.hpp"
 
 HttpRequest::HttpRequest(int clientSocket) {
-    _clientSocket = clientSocket;
+    _socket = clientSocket;
 };
 
 bool HttpRequest::resumeParsing() {
-    this->parseRequestHead();
-    return HttpParser::resumeParsing(true);
+    if (this->parseRequestHead() == true) {
+        return HttpParser::resumeParsing(true);
+    }
+    return false;
 }
 
 String HttpRequest::findBodyHeader(String key, size_t from, size_t to) {
@@ -27,22 +29,6 @@ String HttpRequest::findBodyHeader(String key, size_t from, size_t to) {
     return _body.substr(start, end - start);
 }
 
-String HttpRequest::findCookie(String cookieName) {
-    cookieName += "=";
-    String cookieField = this->getHeader("Cookie");
-    if (cookieField == "") {
-        return "";
-    }
-
-    std::vector<String> cookies = split(cookieField, ";");
-    for (size_t i = 0; i < cookies.size(); i++) {
-        if (cookies[i].compare(0, cookieName.length(), cookieName) == 0) {
-            return cookies[i].substr(cookieName.length());
-        }
-    }
-    return "";
-}
-
 size_t HttpRequest::searchBody(const String &find, size_t from, size_t upto) {
     size_t pos = _body.find(find, from);
     if (upto != NPOS && pos != NPOS) {
@@ -55,7 +41,7 @@ String HttpRequest::getClientHostName() {
     struct sockaddr_in addr;
     socklen_t addr_len = sizeof(addr);
 
-    if (getpeername(_clientSocket, (struct sockaddr *)&addr, &addr_len) == -1) {
+    if (getpeername(_socket, (struct sockaddr *)&addr, &addr_len) == -1) {
         debugErr("getpeername", strerror(errno));
         throw 500;
     }
@@ -72,7 +58,7 @@ String HttpRequest::getClientIpAddress() {
     struct sockaddr_in addr;
     socklen_t addr_len = sizeof(addr);
 
-    if (getpeername(_clientSocket, (struct sockaddr *)&addr, &addr_len) == -1) {
+    if (getpeername(_socket, (struct sockaddr *)&addr, &addr_len) == -1) {
         debugErr("getpeername", strerror(errno));
         throw 500;
     }
@@ -86,7 +72,7 @@ String HttpRequest::getSocketIpAddress() {
     struct sockaddr_in sin;
     socklen_t len = sizeof(sin);
 
-    if (getsockname(_clientSocket, (struct sockaddr *)&sin, &len) == -1) {
+    if (getsockname(_socket, (struct sockaddr *)&sin, &len) == -1) {
         debugErr("getsockname", strerror(errno));
         throw 500;
     }
@@ -100,7 +86,7 @@ String HttpRequest::getSocketPort() {
     struct sockaddr_in sin;
     socklen_t len = sizeof(sin);
 
-    if (getsockname(_clientSocket, (struct sockaddr *)&sin, &len) == -1) {
+    if (getsockname(_socket, (struct sockaddr *)&sin, &len) == -1) {
         debugErr("getsockname", strerror(errno));
         throw 500;
     }
@@ -112,10 +98,16 @@ void HttpRequest::setUrl(const String &url) {
     this->processUrl(url);
 }
 
-void HttpRequest::putHeaders(String &buf, char *headersToDiscard[]) {
+void HttpRequest::putHeaders(String &buf, String headersToDiscard[]) {
     _headers.putIn(buf, headersToDiscard);
 }
 
 void HttpRequest::putHead(String &buf) {
-    buf = _httpMethod + " " + _rawUrl + " " + _httpProtocol + CRLF;
+    buf = _httpMethod + " ";
+    buf += _rawUrl + " ";
+    buf += _httpProtocol + CRLF;
+}
+
+int HttpRequest::socket() {
+    return _socket;
 }

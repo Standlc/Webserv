@@ -116,11 +116,12 @@ int readClientRequest(ClientPoll* client) {
 
     try {
         if (!req.isComplete() && req.resumeParsing() == true) {
-            debugHttpMessage(req.rawData(), CYAN);
+            debugParsingSuccesss(req, req.socket(), CYAN);
             client->setReadHandler(NULL);
             client->setWriteHandler(executeClientRequest);
         }
     } catch (int parsingErr) {
+        debugParsingErr(req, req.socket(), DIM_RED);
         client->setReadHandler(NULL);
         client->server().loadDefaultErrPage(400, client->res());
         client->setWriteHandler(sendResponseToClient);

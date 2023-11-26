@@ -1,17 +1,20 @@
 #include "ProxyRequest.hpp"
 
-ProxyRequest::ProxyRequest(HttpRequest &req, const String &remoteHostName) {
-    req.putHead(_outputData);
-    _outputData += "Host: " + remoteHostName + CRLF;
+ProxyRequest::ProxyRequest(HttpRequest &req, ProxyUrl &proxyPass) {
+    _outputData = req.getHttpMethod() + " ";
+    _outputData += proxyPass.path() + &req.rawUrl()[1] + " ";
+    _outputData += req.getProtocol() + CRLF;
+
+    _outputData += "Host: " + proxyPass.host() + CRLF;
     _outputData += "Connection: close" + String(CRLF);
-    req.putHeaders(_outputData, (char *[]){(char *)"Host", (char *)"Connection", NULL});
+    req.putHeaders(_outputData, (String[]){"Host", "Connection", ""});
     _outputData += CRLF;
     _outputData += req.getBody();
+
     _outputDataSize = _outputData.size();
 }
 
 int ProxyRequest::send(int fd) {
-    debugMessageInfos("sending proxy request", fd, _outputDataSize, BLUE);
-    debugHttpMessage(_outputData, BLUE);
+    debugSending("sending proxy request", *this, fd, BLUE);
     return this->sendAll(fd, &_outputData[0], _outputDataSize);
 }

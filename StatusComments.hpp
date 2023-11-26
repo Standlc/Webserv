@@ -6,20 +6,15 @@
 class StatusComments {
    private:
     static std::unordered_map<int, String> _comments;
-    static bool _isInit;
 
    public:
     StatusComments() {
     }
 
     static void init() {
-        if (_isInit) {
-            return;
-        }
-
-        _isInit = true;
-        _comments[0] = "undefined";
+        _comments[0] = "";
         _comments[200] = "OK";
+        _comments[201] = "Created";
         _comments[301] = "Moved Permanently";
         _comments[302] = "Found";
         _comments[303] = "See Other";
@@ -30,6 +25,7 @@ class StatusComments {
         _comments[403] = "Forbidden Resource";
         _comments[404] = "Resource Not Found";
         _comments[405] = "Method Not Allowed";
+        // _comments[408] = "Request Timeout";
         _comments[409] = "Conflict";
         _comments[411] = "Length Required";
         _comments[413] = "Payload Too Large";
@@ -42,9 +38,9 @@ class StatusComments {
     }
 
     static const String &get(int status) {
-        init();
-        if (_comments.find(status) == _comments.end())
+        if (_comments.find(status) == _comments.end()) {
             return _comments[0];
+        }
         return _comments[status];
     }
 };

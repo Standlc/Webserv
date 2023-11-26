@@ -20,6 +20,7 @@ class HttpParser : public ServerStream {
     String _body;
 
     size_t _parsingPos;
+    size_t _headerLineEndPos;
     size_t _endOfHeadersPos;
     long _contentLengthHeader;
     bool _isEncodingChunked;
@@ -29,8 +30,9 @@ class HttpParser : public ServerStream {
     long _encodedBytesLeftToRead;
 
     bool resumeParsing(bool decodeBody = false);
-    size_t parseRequestHead();
-    size_t parseResponseHead();
+    bool discardEmptyLine(int *sizeCRLF);
+    bool parseRequestHead();
+    bool parseResponseHead();
     void processUrl(const String &url);
     size_t parseHeaders();
     void getBodyInfos();
@@ -45,6 +47,7 @@ class HttpParser : public ServerStream {
    public:
     HttpParser() {
         _endOfHeadersPos = -1;
+        _headerLineEndPos = -1;
         _contentLengthHeader = -1;
         _isEncodingChunked = false;
         _bodySize = 0;

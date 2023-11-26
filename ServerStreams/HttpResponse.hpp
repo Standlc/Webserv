@@ -16,9 +16,6 @@ class HttpResponse : public ServerStream {
     Headers _headers;
     String _body;
     HttpRequest &_req;
-
-    String _outputData;
-    size_t _outputDataSize;
     bool _keepAlive;
 
     unorderedStringMap _cgiHeaders;
@@ -32,10 +29,12 @@ class HttpResponse : public ServerStream {
     HttpResponse(HttpRequest &req);
     ~HttpResponse();
 
-    void clearHeaders();
-    void addHeader(const String &field, const String &value);
+    void clearConfigHeaders();
+    void clearDefaultHeaders();
     void addDefaultHeader(const String &field, const String &value);
-    void addHeaders(Headers &headers);
+    void addDefaultHeaders(Headers &headers);
+    void addConfigHeader(const String &field, const String &value);
+    void addConfigHeaders(Headers &headers);
     void set(int statusCode);
     void set(int statusCode, const String &path, const String &body);
     void setBody(const String &body);

@@ -31,11 +31,17 @@ void CgiResponse::parseLocationHeader() {
 }
 
 void CgiResponse::setClientResponse() {
-    _clientRes.addHeaders(_headers);
+    _headers.erase("Server");
+    _clientRes.addDefaultHeaders(_headers);
     _clientRes.setBody(&_rawData[_endOfHeadersPos]);
     _clientRes.set(_statusHeaderCode);
 }
 
 bool CgiResponse::resumeParsing() {
-    return HttpParser::resumeParsing(false);
+    if (HttpParser::resumeParsing(false) == true) {
+        this->parseLocationHeader();
+        this->parseStatusHeader();
+        return true;
+    }
+    return false;
 }

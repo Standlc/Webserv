@@ -132,17 +132,21 @@ typedef struct header {
 #include <unordered_map>
 
 int main(int argc, char **argv, char **env) {
-    for (int i = 0; i < 20000; i++) {
-        std::cout << i << '\n';
-        int pid = fork();
-        if (pid == -1) {
-            std::cerr << "fork: " << strerror(errno) << '\n';
-            return 1;
-        }
-        if (kill(pid, SIGKILL) == -1) {
-            std::cerr << "kill: " << strerror(errno) << '\n';
-            return 1;
-        }
-    }
+        // for (int i = 0; i < 2000; i++) {
+    //     std::cout << i << '\n';
+    //     int pid = fork();
+    //     if (pid == -1) {
+    //         std::cerr << "fork: " << strerror(errno) << '\n';
+    //         return 1;
+    //     }
+    //     if (pid == 0) {
+    //         return 1;
+    //     }
+    //     if (kill(pid, SIGTERM) == -1) {
+    //         std::cerr << "kill: " << strerror(errno) << '\n';
+    //         return 1;
+    //     }
+    //     waitpid(pid, NULL, 0);
+    // }
     return 0;
 }

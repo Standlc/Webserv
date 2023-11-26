@@ -33,7 +33,7 @@ bool isWritable(struct pollfd &pollEl) {
 
 int checkPollError(struct pollfd &pollEl, int error) {
     if ((pollEl.revents & error) == error) {
-        debug("error", std::to_string(error) + ", on socket: " + std::to_string(pollEl.fd), RED);
+        debug("error", std::to_string(error) + ", on socket: " + std::to_string(pollEl.fd), DIM_RED);
         return error;
     }
     return 0;
@@ -213,11 +213,34 @@ void debugErr(const String &title, const char *err) {
               << WHITE;
 }
 
-void debugMessageInfos(const String &title, int fd, size_t size, const String &color) {
+void debugParsingErr(ServerStream &s, int socket, const String &color) {
     if (!DEBUG) {
         return;
     }
-    debug("<< " + title, std::to_string(fd) + ", size: " + std::to_string(size) + " bytes", color);
+    std::cout << color << "> caught syntax error, socket: " << socket
+              << ", size: " << s.totalRead() << " bytes\n"
+              << WHITE;
+    debugHttpMessage(s.rawData(), color);
+}
+
+void debugParsingSuccesss(ServerStream &s, int socket, const String &color) {
+    if (!DEBUG) {
+        return;
+    }
+    std::cout << color << "> successfully parsed, socket: " << socket
+              << ", size: " << s.totalRead() << " bytes\n"
+              << color;
+    debugHttpMessage(s.rawData(), color);
+}
+
+void debugSending(const String &title, ServerStream &s, int socket, const String &color) {
+    if (!DEBUG) {
+        return;
+    }
+    std::cout << color << "<< " << title << ", socket: " << socket
+              << ", size: " << s.outputDataSize() << " bytes\n"
+              << color;
+    debugHttpMessage(s.outputData(), color);
 }
 
 void debugHttpMessage(const String &httpMessage, const String &color) {
@@ -281,7 +304,7 @@ size_t countFrontSpaces(const String &str, size_t pos, const String &sep) {
 }
 
 size_t findEnd(const String &str, const String &sep, size_t pos) {
-    pos = str.find_first_of(sep + "'", pos);
+    pos = str.find_first_of(sep + "\"", pos);
     if (pos == NPOS) {
         return pos;
     }
@@ -299,22 +322,45 @@ size_t findEnd(const String &str, const String &sep, size_t pos) {
 
 std::vector<String> split(const String &str, const String &sep, size_t maxSize) {
     std::vector<String> split;
-    size_t strLen = str.length();
     size_t start = 0;
-    size_t end = -1;
+    size_t end = 0;
+    size_t size = 0;
     size_t splitSize = 0;
+    int strlen = str.length();
 
-    while ((end < strLen || end == NPOS) && splitSize < maxSize) {
-        start = end + 1;
-        end = findEnd(str, sep, start);
-        end = (end != NPOS) ? end : strLen;
+    int i = 0;
+    while (i < strlen && splitSize < maxSize) {
+        if (sep.find(str[i]) == NPOS) {
+            start = i;
+            start += countFrontSpaces(str, start);
+            // std::cout << start << '\n';
+            while (i < strlen && (sep.find(str[i]) == NPOS || str[i] == '\"')) {
+                while (str[i] == '\"') {
+                    i++;
+                    while (i < strlen && sep.find(str[i]) == NPOS && str[i] != '\"') {
+                        i++;
+                    }
+                    if (sep.find(str[i]) == NPOS) {
+                        break;
+                    }
+                }
+                i++;
+            }
 
-        start += countFrontSpaces(str, start, sep);
-        size_t backSpaces = countBackSpaces(str, end, sep);
-
-        size_t size = (end - backSpaces < start) ? 0 : (end - backSpaces - start);
-        split.push_back(str.substr(start, size));
-        splitSize++;
+            if (i >= strlen) {
+                size = -1;
+            } else {
+                end = i - countBackSpaces(str, i);
+                size = (end <= start) ? 0 : (end - start);
+            }
+            if (size > 0) {
+                String item = str.substr(start, size);
+                // std::cout << "-" << item << '-' << '\n';
+                split.push_back(item);
+                splitSize++;
+            }
+        }
+        i++;
     }
     return split;
 }

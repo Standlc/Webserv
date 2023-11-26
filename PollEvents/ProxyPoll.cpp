@@ -1,9 +1,9 @@
 #include "PollFd.hpp"
 
-ProxyPoll::ProxyPoll(int socket, ClientPoll &client, const String &remoteHostName) : PollFd(socket, client.server()),
-                                                                                     _client(client),
-                                                                                     _proxyReq(client.req(), remoteHostName),
-                                                                                     _proxyRes(client.res()) {
+ProxyPoll::ProxyPoll(int socket, ClientPoll &client, ProxyUrl &proxyPass) : PollFd(socket, client.server()),
+                                                                            _client(client),
+                                                                            _proxyReq(client.req(), proxyPass),
+                                                                            _proxyRes(client.res()) {
     client.setProxyStatus(_status);
     _clientStatus = client.getStatus();
 }
@@ -66,12 +66,13 @@ int recvProxyResponse(ProxyPoll *proxy) {
 
     try {
         if (!proxyRes.isComplete() && proxyRes.resumeParsing()) {
-            debugHttpMessage(proxyRes.rawData(), BLUE);
+            debugParsingSuccesss(proxyRes, proxy->getFd(), BLUE);
             proxyRes.setClientRes();
             proxy->client().setWriteHandler(sendResponseToClient);
             return -1;
         }
     } catch (int parsingErr) {
+        debugParsingErr(proxyRes, proxy->getFd(), DIM_RED);
         return 502;
     }
     return 0;
@@ -79,7 +80,7 @@ int recvProxyResponse(ProxyPoll *proxy) {
 
 int timeoutProxy(ProxyPoll *proxy) {
     if (proxy->clientStatus() != 0 || checkTimeout(proxy->startTime(), 15)) {
-        return 502;
+        return 504;
     }
     return 0;
 }

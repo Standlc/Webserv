@@ -20,7 +20,7 @@ Block &Block::operator=(const Block &b) {
     _reqBodyMaxSize = b._reqBodyMaxSize;
     _autoIndex = b._autoIndex;
     _headers = b._headers;
-    _sessionCookieName = b._sessionCookieName;
+    _sessionCookies = b._sessionCookies;
     return *this;
 }
 
@@ -40,7 +40,6 @@ String Block::getResourcePath(const String &reqUrl, const String &file) {
     if (file == "") {
         return _root + reqUrl;
     }
-
     if (file[0] == '/') {
         return _root + file;
     }
@@ -101,6 +100,11 @@ void Block::addHeader(String key, String value) {
     _headers.add(key, value);
 }
 
-void Block::setSessionCookie(String name) {
-    _sessionCookieName = name;
+void Block::addSessionCookie(String name) {
+    if (name == "") {
+        return;
+    }
+    if (std::find(_sessionCookies.begin(), _sessionCookies.end(), name) == _sessionCookies.end()) {
+        _sessionCookies.push_back(name);
+    }
 }

@@ -4,10 +4,7 @@
 #include "blocks/Block.hpp"
 #include "webserv.hpp"
 
-bool StatusComments::_isInit = false;
 std::unordered_map<int, String> StatusComments::_comments;
-
-bool MediaTypes::_isInit = false;
 std::unordered_map<String, String> MediaTypes::_types;
 
 String generateDirectoryListingPage(const String &dir, String reqUrl, struct dirent *entry, DIR *dirStream) {
@@ -54,8 +51,7 @@ String generateDirectoryListingPage(const String &dir, String reqUrl, struct dir
 //// protect Content-Length overflows ✅
 //// decode transfer encoded cgi output ✅
 
-//// get SIGINT to exit nice and clean
-//// make less data copies
+//// get SIGINT to exit nice and clean ✅
 //// check cookies
 //// Range?
 //// Expect: 100-continue
@@ -71,7 +67,8 @@ String getRealtivePathToFile(String path) {
 
 void handleSigint(int sig) {
     (void)sig;
-    throw SigintError();
+    // throw SigintError();
+    throw "\nSee ya!";
 }
 
 int main(int argc, char *argv[]) {
@@ -81,26 +78,29 @@ int main(int argc, char *argv[]) {
     }
 
     Server *server = new Server();
+    StatusComments::init();
+    MediaTypes::init();
 
-    // signal(SIGINT, handleSigint);
+    signal(SIGINT, handleSigint);
     std::srand(std::time(0));
     g_conf_path = getRealtivePathToFile(argv[1]);
     server->addBlocks(2);
 
     ///////////////////////////////////////////////////////////////
 
-    server->getServerBlock(0).set("", "3000", true);
+    server->getServerBlock(0).set("0.0.0.0", "3000", true);
     server->getServerBlock(0).setIndex("index.html");
     server->getServerBlock(0).setRoot("www");
     server->getServerBlock(0).addErrorPage(404, "/404.html");
-    server->getServerBlock(0).setSessionCookie("sessionId");
+    server->getServerBlock(0).addSessionCookie("sessionId");
     server->getServerBlock(0).addLocationBlocks(4);
 
     server->getLocationBlock(0, 0).setPath("/", false);
     server->getLocationBlock(0, 0).setAutoIndex(true);
     server->getLocationBlock(0, 0).setAllowedMethods((String[]){"GET", "POST", "delee", ""});
-    server->getLocationBlock(0, 0).addCgiCommand(".sh", "/bin/sh");
+    server->getLocationBlock(0, 0).addCgiCommand(".php", "/opt/homebrew/bin/php-cgi");
     server->getLocationBlock(0, 0).addCgiCommand(".py", "/usr/bin/python3");
+    // server->getLocationBlock(0, 0).setProxyPass("http://0.0.0.0:5000");
 
     server->getLocationBlock(0, 1).setPath("////folder////");
     server->getLocationBlock(0, 1).setAllowedMethods((String[]){"GET", "POST", "", ""});
@@ -121,20 +121,23 @@ int main(int argc, char *argv[]) {
 
     //
 
-    server->getServerBlock(1).set("192.168.0.176", "3000", true);
+    // server->getServerBlock(1).set("192.168.0.176", "3000", true);
+    server->getServerBlock(1).set("127.0.0.87", "5000", true);
     server->getServerBlock(1).setRoot("www/folder");
     server->getServerBlock(1).addLocationBlocks(1);
     server->getServerBlock(1).addHostName("virtual.org");
 
     server->getLocationBlock(1, 0).setPath("/", false);
+    server->getLocationBlock(1, 0).setAutoIndex(true);
     server->getLocationBlock(1, 0).setAllowedMethods((String[]){"GET", "POST", "DELETE", ""});
-    server->getLocationBlock(1, 0).setProxyPass("http://localhost:8080");
-    // server->getLocationBlock(1, 0).setProxyPass("http://example.com");
+    // server->getLocationBlock(1, 0).setProxyPass("http://0.0.0.0:3000");
+    // server->getLocationBlock(1, 0).setProxyPass("http://localhost:8080");
+    server->getLocationBlock(1, 0).setProxyPass("http://example.com/");
 
     try {
         server->listen();
-    } catch (const std::exception &e) {
-        std::cerr << e.what() << '\n';
+    } catch (char const *str) {
+        std::cout << str << '\n';
     }
 
     delete server;

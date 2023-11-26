@@ -5,8 +5,7 @@ clientPollHandlerType LocationBlock::serverMethodHandler(ClientPoll &client) {
     HttpRequest &req = client.req();
     const String &reqHttpMethod = req.getHttpMethod();
 
-    throwIf(isUnkownMethod(reqHttpMethod), 501);
-    throwIf(!handlesHttpMethod(reqHttpMethod), 405);
+    throwIf(!handlesHttpMethod(reqHttpMethod), 501);
 
     String cgiScriptPath = this->isCgiScriptRequest(req);
     if (cgiScriptPath != "") {
@@ -64,7 +63,7 @@ clientPollHandlerType LocationBlock::handleCgi(ClientPoll &client, const String 
     String cgiResourcePath = this->getResourcePath(cgiScriptPath);
     // debug("cgi script path", cgiScriptPath, YELLOW);
     // debug("cgi resource path", cgiResourcePath, YELLOW);
-    this->checkCgiScriptAccess(cgiScriptPath);
+    this->checkCgiScriptAccess(cgiResourcePath);
     this->setenvCgi(client.req(), cgiScriptPath);
 
     String cgiExtension = getFileExtension(cgiScriptPath);
@@ -80,11 +79,10 @@ clientPollHandlerType LocationBlock::handleCgi(ClientPoll &client, const String 
     return checkCgiPoll;
 }
 
-void LocationBlock::checkCgiScriptAccess(const String &cgiScriptPath) {
-    String resourcePath = this->getResourcePath(cgiScriptPath);
-    int fileAccessStatus = checkPathAccess(resourcePath);
+void LocationBlock::checkCgiScriptAccess(const String &cgiResourcePath) {
+    int fileAccessStatus = checkPathAccess(cgiResourcePath);
     throwIf(fileAccessStatus != 200, fileAccessStatus);
-    throwIf(isDirectory(resourcePath), 400);
+    throwIf(isDirectory(cgiResourcePath), 403);
 }
 
 String parseCgiPathInfo(HttpRequest &req, const String &cgiScriptPath) {
@@ -95,7 +93,12 @@ String parseCgiPathInfo(HttpRequest &req, const String &cgiScriptPath) {
 void LocationBlock::setenvCgi(HttpRequest &req, const String &cgiScriptPath) {
     trySetenv("GATEWAY_INTERFACE", "CGI/1.1");
     trySetenv("SERVER_SOFTWARE", WEBSERV_V);
-    trySetenv("SERVER_NAME", &(split(req.getHeader("Host"), ":")[0])[0]);
+    String host = req.getHeader("Host");
+    if (host != "") {
+        trySetenv("SERVER_NAME", &(split(host, ":")[0])[0]);
+    } else {
+        tryUnsetenv("SERVER_NAME");
+    }
     trySetenv("SERVER_PORT", req.getSocketPort());
     trySetenv("SERVER_PROTOCOL", req.getProtocol());
     trySetenv("REMOTE_ADDR", &req.getClientIpAddress()[0]);
@@ -120,7 +123,7 @@ void LocationBlock::setenvCgi(HttpRequest &req, const String &cgiScriptPath) {
         tryUnsetenv("CONTENT_LENGTH");
     }
 
-    // trySetenv("REDIRECT_STATUS", "200"); //Security needed to execute php-cgi
+    trySetenv("REDIRECT_STATUS", "200");  // Security needed to execute php-cgi
     // trySetenv("HTTP_ACCEPT", req.getHeader("Accept"));
     // trySetenv("HTTP_USER_AGENT", req.getHeader("User-Agent"));
     // trySetenv("HTTP_ACCEPT_LANGUAGE", req.getHeader("Accept-Language"));

@@ -52,59 +52,75 @@ void bindSocket(int socketFd, struct addrinfo* addrInfo) {
     }
 }
 
-void listenToSocket(int socketFd, ServerBlock& serverBlock) {
-    if (listen(socketFd, 64) == -1) {
-        debugErr("listen", strerror(errno));
-        closeOpenFd(socketFd);
-        throw errno;
-    }
-
+void printServerListeningMessage(ServerBlock& serverBlock) {
     String host;
     if (serverBlock.hostNames().size() > 0) {
         host = serverBlock.hostNames()[0];
     } else {
         host = serverBlock.ipAddress();
     }
-    std::cout << host << " is listening on port " << serverBlock.port() << "...\n";
+    std::cout << "\033[0;92m> " << host << " is listening on port " << serverBlock.port() << "...\n"
+              << WHITE;
+}
+
+void printServerStartFail(ServerBlock& serverBlock) {
+    String host;
+    if (serverBlock.hostNames().size() > 0) {
+        host = serverBlock.hostNames()[0];
+    } else {
+        host = serverBlock.ipAddress();
+    }
+    std::cerr << RED << " ↳ " << host << " could not be started on port " << serverBlock.port() << WHITE << "\n";
+}
+
+void listenToSocket(int socketFd, ServerBlock& serverBlock) {
+    if (listen(socketFd, 64) == -1) {
+        debugErr("listen", strerror(errno));
+        closeOpenFd(socketFd);
+        throw errno;
+    }
+    printServerListeningMessage(serverBlock);
 }
 
 int Server::listen() {
-    try {
-        this->startServers();
-    } catch (int err) {
-        return err;
+    if (this->startServers() == 0) {
+        return errno;
     }
-
     return this->monitorClients();
 }
 
-void Server::startServers() {
+int Server::startServers() {
     std::vector<String> usedPorts;
     struct addrinfo* serverInfo;
 
     for (int i = 0; i < _serverBlockSize; i++) {
-        if (std::find(usedPorts.begin(), usedPorts.end(), _blocks[i].port()) != usedPorts.end()) {
-            continue;
+        try {
+            if (std::find(usedPorts.begin(), usedPorts.end(), _blocks[i].port()) != usedPorts.end()) {
+                printServerListeningMessage(_blocks[i]);
+                continue;
+            }
+
+            serverInfo = getServerAddressInfo(_blocks[i].ipAddress(), _blocks[i].port());
+            int socket = createSocket(serverInfo);
+            bindSocket(socket, serverInfo);
+            freeaddrinfo(serverInfo);
+            listenToSocket(socket, _blocks[i]);
+
+            this->pushNewListeningSocket(socket);
+            usedPorts.push_back(_blocks[i].port());
+        } catch (int err) {
+            printServerStartFail(_blocks[i]);
         }
-
-        serverInfo = getServerAddressInfo(_blocks[i].ipAddress(), _blocks[i].port());
-        int socket = createSocket(serverInfo);
-        bindSocket(socket, serverInfo);
-        freeaddrinfo(serverInfo);
-        listenToSocket(socket, _blocks[i]);
-
-        this->pushNewListeningSocket(socket);
-        usedPorts.push_back(_blocks[i].port());
     }
+    return usedPorts.size();
 }
 
 int Server::monitorClients() {
     while (true) {
-        // std::cout << "waiting for connections..." << '\n';
         int nEvents = poll(&_fds[0], _fds.size(), -1);
         if (nEvents == -1) {
             debugErr("poll", strerror(errno));
-            return -1;
+            return errno;
         }
         this->scanForEventSockets(nEvents);
     }
@@ -175,10 +191,10 @@ void Server::removePollFd(int index, int socketStatus) {
     _fdsSize--;
 }
 
-void Server::pushNewProxy(int proxySocket, ClientPoll& client, const String& remoteHostName) {
+void Server::pushNewProxy(int proxySocket, ClientPoll& client, ProxyUrl& proxyPass) {
     this->pushStructPollfd(proxySocket);
 
-    ProxyPoll* newProxy = new ProxyPoll(proxySocket, client, remoteHostName);
+    ProxyPoll* newProxy = new ProxyPoll(proxySocket, client, proxyPass);
     newProxy->setWriteHandler(sendProxyRequest);
     newProxy->setReadHandler(NULL);
     _pollFds.push_back(newProxy);
@@ -238,6 +254,9 @@ ServerBlock* Server::findServerBlock(HttpRequest& req) {
     String port = req.getSocketPort();
     String host = req.getHeader("Host");
     String hostName = host.substr(0, host.find_first_of(':'));
+    if (hostName == "") {
+        hostName = req.getSocketIpAddress();
+    }
 
     for (int i = 0; i < _serverBlockSize; i++) {
         if (_blocks[i].port() == port) {

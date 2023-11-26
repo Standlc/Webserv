@@ -9,13 +9,23 @@ LocationBlock::LocationBlock(ServerBlock &serverBlock) : Block(serverBlock),
     _serverMethodshandlers["POST"] = &LocationBlock::postMethod;
     _serverMethodshandlers["DELETE"] = &LocationBlock::deleteMethod;
     _requestHandler = &LocationBlock::serverMethodHandler;
+    _proxyPass = NULL;
 };
+
+LocationBlock::~LocationBlock() {
+    delete _proxyPass;
+}
 
 LocationBlock &LocationBlock::operator=(const LocationBlock &b) {
     Block::operator=(b);
+    _serverMethodshandlers = b._serverMethodshandlers;
+    _requestHandler = b._requestHandler;
+    _allowedMethods = b._allowedMethods;
     _path = b._path;
     _isExact = b._isExact;
-    _serverMethodshandlers = b._serverMethodshandlers;
+    _proxyPass = b._proxyPass;
+    _serverBlock = b._serverBlock;
+    _redirection = b._redirection;
     return *this;
 }
 
@@ -27,15 +37,45 @@ clientPollHandlerType LocationBlock::execute(ClientPoll &client) {
         throwIf(!isMethodAllowed(req.getHttpMethod()), 405);
         throwIf(exceedsReqMaxSize(req.getBodySize()), 413);
 
-        res.addHeaders(_headers);
-        if (_sessionCookieName != "" && req.findCookie(_sessionCookieName) == "") {
-            res.addHeader("Set-Cookie", _sessionCookieName + "=" + this->generateSessionCookie());
-        }
+        res.addConfigHeaders(_headers);
+        this->handleSessionCookies(client);
 
         return (this->*_requestHandler)(client);
     } catch (int status) {
         this->loadErrPage(status, res, req);
         return sendResponseToClient;
+    }
+}
+
+bool isEmpty(const String &str) {
+    return str != "" && str != "\"\"";
+}
+
+bool isCookieSet(std::vector<String> &cookies, const String &cookie) {
+    for (size_t i = 0; i < cookies.size(); i++) {
+        std::vector<String> cookieSplit = split(cookies[i], "=");
+        if (cookieSplit.size() != 2) {
+            continue;
+        }
+        if (cookieSplit[0] == cookie) {
+            return isEmpty(cookieSplit[1]);
+        }
+    }
+    return false;
+}
+
+void LocationBlock::handleSessionCookies(ClientPoll &client) {
+    HttpResponse &res = client.res();
+    HttpRequest &req = client.req();
+    const String &cookiesHeader = req.getHeader("Cookie");
+    std::vector<String> cookiesSplit = split(cookiesHeader, ";");
+
+    for (size_t i = 0; i < _sessionCookies.size(); i++) {
+        const String &cookie = _sessionCookies[i];
+        if (cookiesHeader == "" || !isCookieSet(cookiesSplit, cookie)) {
+            String cookieValue = cookie + "=" + this->generateSessionCookie();
+            res.addConfigHeader("Set-Cookie", cookieValue);
+        }
     }
 }
 

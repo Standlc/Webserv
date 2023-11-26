@@ -22,7 +22,7 @@ DEPENDENCIES = 	Makefile Server.hpp	blocks/Block.hpp PollEvents/PollFd.hpp \
 				webserv.hpp StatusComments.hpp MediaTypes.hpp ServerStreams/ServerStream.hpp \
 				ServerStreams/cgi/CgiRequest.hpp ServerStreams/cgi/CgiResponse.hpp  \
 				ServerStreams/proxy/ProxyRequest.hpp ServerStreams/proxy/ProxyResponse.hpp \
-				ServerStreams/HttpParser.hpp \
+				ServerStreams/HttpParser.hpp blocks/LocationBlock/utils.hpp \
 
 FLAGS = -Wextra -Wall -std=c++98 #-Werror
 

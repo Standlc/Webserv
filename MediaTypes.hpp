@@ -6,18 +6,12 @@
 class MediaTypes {
    private:
     static std::unordered_map<String, String> _types;
-    static bool _isInit;
 
    public:
     MediaTypes() {
     }
 
     static void init() {
-        if (_isInit) {
-            return;
-        }
-
-        _isInit = true;
         _types["undefined"] = "application/octet-stream";
         _types[".txt"] = "text/plain";
         _types[".html"] = "text/html";
@@ -55,10 +49,10 @@ class MediaTypes {
     }
 
     static const String &getType(String filePath) {
-        init();
         String fileExtension = getFileExtension(filePath);
-        if (_types.find(fileExtension) == _types.end())
+        if (_types.find(fileExtension) == _types.end()) {
             return _types["undefined"];
+        }
         return _types[fileExtension];
     }
 };

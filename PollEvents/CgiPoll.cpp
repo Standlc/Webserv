@@ -7,7 +7,7 @@ CgiPoll::CgiPoll(CgiSockets &cgiSockets, ClientPoll &client, struct pollfd &stru
     _pid = -1;
     _clientStatus = client.getStatus();
     client.setCgiPollStatus(_status);
-    _concurrentReadWrite = false;
+    // _concurrentReadWrite = false;
     _cgiReq = new CgiRequest(client.req());
     _cgiRes = new CgiResponse(client.res());
 }
@@ -83,13 +83,14 @@ int CgiPoll::tryFork() {
     int pid = fork();
     if (pid == -1) {
         debugErr("fork", strerror(errno));
-        this->setWriteHandler(quitPollError);
+        this->setWriteHandler(cgiQuitPoll);
         throw 500;
     }
     return pid;
 }
 
 void CgiPoll::forkAndexecuteScript(const String &cgiResourcePath, const String &cgiScriptCommand) {
+    debug("> forking and executing CGI script, socket", std::to_string(_fd), PURPLE);
     _pid = tryFork();
 
     if (_pid == 0) {
@@ -132,6 +133,8 @@ void CgiPoll::execveScript(const String &cgiScriptResourcePath, const String &cg
     }
 
     char *args[] = {(char *)&cgiScriptCommand[0], (char *)&scriptName[0], NULL};
+    // debug("arg 0", String(args[0]));
+    // debug("arg 1", String(args[1]));
     if (execve(args[0], &args[0], environ) == -1) {
         debugErr("execve", strerror(errno));
         throw 1;
@@ -150,78 +153,91 @@ int CgiPoll::cgiPid() {
     return _pid;
 }
 
-int quitPollError(CgiPoll *cgi) {
-    return -1;
+int cgiQuitPoll(CgiPoll *cgi) {
+    if (cgi->cgiPid() != -1 && waitpid(cgi->cgiPid(), NULL, WNOHANG) == -1) {
+        return -1;
+    }
+    return 0;
+}
+
+int handleCgiQuit(CgiPoll *cgi, int status) {
+    cgi->setStatus(status);
+    cgi->setReadHandler(NULL);
+    cgi->setWriteHandler(cgiQuitPoll);
+    return cgiQuitPoll(cgi);
 }
 
 int readCgiResponse(CgiPoll *cgi) {
     if (cgi->clientStatus() != 0) {
-        return -1;
+        return handleCgiQuit(cgi, -1);
     }
 
+    debug(">> reading CGI response", std::to_string(cgi->getFd()), PURPLE);
     CgiResponse &cgiRes = cgi->cgiRes();
-    debug(">> reading CGI response", std::to_string(cgi->getFd()), YELLOW);
     if (cgiRes.recvAll(cgi->getFd()) <= 0) {
-        return 500;
+        return handleCgiQuit(cgi, 500);
     }
 
     try {
         if (!cgiRes.isComplete() && cgiRes.resumeParsing()) {
-            cgiRes.parseLocationHeader();
-            cgiRes.parseStatusHeader();
+            debugParsingSuccesss(cgiRes, cgi->getFd(), PURPLE);
             return handleCgiResponse(cgi);
         }
+        cgi->setWriteHandler(waitCgiProcessEnd);
     } catch (int parsingErr) {
-        return 502;
+        debugParsingErr(cgiRes, cgi->getFd(), DIM_RED);
+        return handleCgiQuit(cgi, 502);
     }
     return 0;
 }
 
 int handleCgiResponse(CgiPoll *cgi) {
     CgiResponse &cgiRes = cgi->cgiRes();
-    debugHttpMessage(cgiRes.rawData(), YELLOW);
-    if (!cgiRes.isComplete()) {
-        return 502;
+    if (cgi->clientStatus() != 0 || !cgiRes.isComplete()) {
+        return handleCgiQuit(cgi, 502);
     }
 
     const String &locationRedirect = cgiRes.getHeader("Location");
     if (locationRedirect != "" && locationRedirect[0] == '/') {
-        debug("> internal redirect >>", "", YELLOW);
-
+        debug("> internal redirect >>", "", PURPLE);
         cgi->client().req().setUrl(locationRedirect);
         cgi->client().setWriteHandler(executeClientRequest);
-        return -1;
+    } else {
+        debug("> setting client response, socket", std::to_string(cgi->client().getFd()), PURPLE);
+        cgiRes.setClientResponse();
+        cgi->client().setWriteHandler(sendResponseToClient);
     }
-
-    debug("> turning CGI response to http response", "", YELLOW);
-    cgiRes.setClientResponse();
-    cgi->client().setWriteHandler(sendResponseToClient);
-    return -1;
+    return handleCgiQuit(cgi, -1);
 }
 
 int waitCgiProcessEnd(CgiPoll *cgi) {
+    if (cgi->cgiPid() == -1) {
+        cgi->setWriteHandler(handleCgiResponse);
+        return 0;
+    }
+
     if (cgi->clientStatus() != 0 || checkTimeout(cgi->startTime(), CGI_TIMEOUT)) {
-        return 502;
+        return handleCgiQuit(cgi, 504);
     }
 
     int pid = cgi->cgiPid();
     int exitStatus = 0;
-
     if (waitpid(pid, &exitStatus, WNOHANG) == -1) {
         if (WIFEXITED(exitStatus) && WEXITSTATUS(exitStatus) != 0) {
             debug("CGI process has exit with an error", std::to_string(WEXITSTATUS(exitStatus)), RED);
-            return 502;
+            return handleCgiQuit(cgi, 502);
         }
 
         debug("CGI process has exit", std::to_string(pid), GRAY);
-        return handleCgiResponse(cgi);
+        cgi->setCgiPid(-1);
+        cgi->setWriteHandler(handleCgiResponse);
     }
     return 0;
 }
 
 int sendCgiRequest(CgiPoll *cgi) {
     if (cgi->clientStatus() != 0) {
-        return -1;
+        return handleCgiQuit(cgi, -1);
     }
 
     int sendStatus = cgi->cgiReq().send(cgi->getFd());
@@ -230,7 +246,9 @@ int sendCgiRequest(CgiPoll *cgi) {
         cgi->switchToResponseReadableSocket();
         cgi->setReadHandler(readCgiResponse);
         cgi->setWriteHandler(waitCgiProcessEnd);
-        // cgi->resetStartTime();
     }
-    return (sendStatus == -1) ? 500 : 0;
+    if (sendStatus == -1) {
+        return handleCgiQuit(cgi, 500);
+    }
+    return 0;
 }

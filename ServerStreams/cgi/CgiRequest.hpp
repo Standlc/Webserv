@@ -7,16 +7,15 @@
 class CgiRequest : public ServerStream {
    private:
     const String &_body;
-    size_t _bodySize;
 
    public:
     CgiRequest(HttpRequest &req) : _body(req.getBody()) {
-        _bodySize = req.getBodySize();
+        _outputDataSize = req.getBodySize();
     }
 
     int send(int fd) {
-        debugMessageInfos("sending cgi request to", fd, _bodySize, YELLOW);
-        return this->sendAll(fd, (char *)&_body[0], _bodySize);
+        debugSending("sending CGI request", *this, fd, PURPLE);
+        return this->sendAll(fd, (char *)&_body[0], _outputDataSize);
     }
 };
 

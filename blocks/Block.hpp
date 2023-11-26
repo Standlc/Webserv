@@ -6,6 +6,7 @@
 #include "../ServerStreams/HttpRequest.hpp"
 #include "../ServerStreams/HttpResponse.hpp"
 #include "../webserv.hpp"
+#include "LocationBlock/utils.hpp"
 
 class Block {
    protected:
@@ -16,9 +17,9 @@ class Block {
     size_t _reqBodyMaxSize;
 
     Headers _headers;
-    std::unordered_map<int, std::string> _errorFiles;
-    std::unordered_map<std::string, std::string> _cgiCommands;
-    std::string _sessionCookieName;
+    std::unordered_map<int, String> _errorFiles;
+    std::unordered_map<String, String> _cgiCommands;
+    std::vector<String> _sessionCookies;
 
    public:
     Block();
@@ -39,7 +40,7 @@ class Block {
     void setMaxBodySize(size_t size);
     void setAutoIndex(bool isOn);
     void addHeader(String key, String value);
-    void setSessionCookie(String name);
+    void addSessionCookie(String name);
 };
 
 class ServerBlock : public Block {
@@ -60,7 +61,7 @@ class ServerBlock : public Block {
     bool isHost(const String &hostName);
     const String &port();
     const String &ipAddress();
-    const std::vector<std::string> &hostNames();
+    const std::vector<String> &hostNames();
     bool isDefault();
 
     void addHostName(String name);
@@ -84,12 +85,13 @@ class LocationBlock : public Block {
     std::vector<String> _allowedMethods;
     String _path;
     bool _isExact;
-    String _proxyPass;
+    ProxyUrl *_proxyPass;
     ServerBlock &_serverBlock;
     Redirection _redirection;
 
    public:
     LocationBlock(ServerBlock &serverBlock);
+    ~LocationBlock();
     LocationBlock &operator=(const LocationBlock &b);
 
     ServerBlock &serverBlock();
@@ -99,6 +101,7 @@ class LocationBlock : public Block {
     bool exceedsReqMaxSize(size_t size);
     String generateSessionCookie();
     void handleMethod(const String &httpMethod, HttpRequest &req, HttpResponse &res);
+    void handleSessionCookies(ClientPoll &client);
 
     void getMethod(HttpRequest &req, HttpResponse &res);
     void postMethod(HttpRequest &req, HttpResponse &res);

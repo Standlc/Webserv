@@ -26,7 +26,7 @@ int executeClientRequest(ClientPoll *client);
 int readClientRequest(ClientPoll *client);
 int timeoutClient(ClientPoll *client);
 
-int quitPollError(CgiPoll *cgi);
+int cgiQuitPoll(CgiPoll *cgi);
 int waitCgiProcessEnd(CgiPoll *cgi);
 int readCgiResponse(CgiPoll *cgi);
 int sendCgiRequest(CgiPoll *cgi);
@@ -53,6 +53,9 @@ class PollFd {
     virtual ~PollFd();
 
     std::shared_ptr<int> getStatus();
+    void setStatus(int value) {
+        *_status = value;
+    }
     int getFd();
     bool removeOnHungUp();
     bool isConcurrentReadWrite();
@@ -134,6 +137,9 @@ class CgiPoll : public PollFd {
     void switchToResponseReadableSocket();
     void switchToRequestWritableSocket();
 
+    void setCgiPid(int value) {
+        _pid = value;
+    }
     void setReadHandler(CgiPollHandlerType f);
     void setWriteHandler(CgiPollHandlerType f);
     int handleRead(PollFd *pollFd);
@@ -150,7 +156,7 @@ class ProxyPoll : public PollFd {
     ProxyResponse _proxyRes;
 
    public:
-    ProxyPoll(int socket, ClientPoll &client, const String &remoteHostName);
+    ProxyPoll(int socket, ClientPoll &client, ProxyUrl &proxyPass);
     ~ProxyPoll();
 
     ProxyRequest &proxyReq();
