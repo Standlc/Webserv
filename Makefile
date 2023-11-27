@@ -1,28 +1,52 @@
 NAME = webserv
 
-SOURCES = 	main.cpp utils/utils.cpp  Server.cpp \
-			blocks/Block.cpp blocks/ServerBlock.cpp \
+SOURCES = 	srcs/main.cpp \
+			srcs/utils/utils.cpp \
+			srcs/Server.cpp \
 			\
-			blocks/LocationBlock/LocationBlock.cpp blocks/LocationBlock/utils.cpp \
-			blocks/LocationBlock/serverRequests/get.cpp blocks/LocationBlock/serverRequests/post.cpp \
-			blocks/LocationBlock/serverRequests/delete.cpp blocks/LocationBlock/serverRequests/serverRequests.cpp\
-			blocks/LocationBlock/reverseProxy.cpp  \
-			blocks/LocationBlock/redirections.cpp  \
+			srcs/blocks/Block.cpp \
+			srcs/blocks/ServerBlock.cpp \
+			srcs/blocks/LocationBlock/LocationBlock.cpp \
+			srcs/blocks/LocationBlock/utils.cpp \
+			srcs/blocks/LocationBlock/serverRequests/get.cpp \
+			srcs/blocks/LocationBlock/serverRequests/post.cpp \
+			srcs/blocks/LocationBlock/serverRequests/delete.cpp \
+			srcs/blocks/LocationBlock/serverRequests/serverRequests.cpp \
+			srcs/blocks/LocationBlock/reverseProxy.cpp \
+			srcs/blocks/LocationBlock/redirections.cpp \
 			\
-			PollEvents/PollFd.cpp PollEvents/ClientPoll.cpp PollEvents/CgiPoll.cpp PollEvents/ProxyPoll.cpp  \
-			ServerStreams/HttpRequest.cpp ServerStreams/HttpResponse.cpp  \
-			ServerStreams/cgi/CgiRequest.cpp ServerStreams/cgi/CgiResponse.cpp  \
-			ServerStreams/proxy/ProxyRequest.cpp ServerStreams/proxy/ProxyResponse.cpp \
-			ServerStreams/HttpParser.cpp  \
+			srcs/PollEvents/PollFd.cpp \
+			srcs/PollEvents/ClientPoll.cpp \
+			srcs/PollEvents/CgiPoll.cpp \
+			srcs/PollEvents/ProxyPoll.cpp \
+			\
+			srcs/ServerStreams/HttpRequest.cpp \
+			srcs/ServerStreams/HttpResponse.cpp \
+			srcs/ServerStreams/cgi/CgiRequest.cpp \
+			srcs/ServerStreams/cgi/CgiResponse.cpp \
+			srcs/ServerStreams/proxy/ProxyRequest.cpp \
+			srcs/ServerStreams/proxy/ProxyResponse.cpp \
+			srcs/ServerStreams/HttpParser.cpp \
 
 OBJECTS = $(SOURCES:.cpp=.o)
 
-DEPENDENCIES = 	Makefile Server.hpp	blocks/Block.hpp PollEvents/PollFd.hpp \
-				ServerStreams/HttpResponse.hpp ServerStreams/HttpRequest.hpp MediaTypes.hpp \
-				webserv.hpp StatusComments.hpp MediaTypes.hpp ServerStreams/ServerStream.hpp \
-				ServerStreams/cgi/CgiRequest.hpp ServerStreams/cgi/CgiResponse.hpp  \
-				ServerStreams/proxy/ProxyRequest.hpp ServerStreams/proxy/ProxyResponse.hpp \
-				ServerStreams/HttpParser.hpp blocks/LocationBlock/utils.hpp \
+DEPENDENCIES = 	Makefile \
+				srcs/Server.hpp \
+				srcs/blocks/Block.hpp \
+				srcs/PollEvents/PollFd.hpp \
+				srcs/ServerStreams/HttpResponse.hpp \
+				srcs/ServerStreams/HttpRequest.hpp \
+				srcs/StaticClasses/MediaTypes.hpp \
+				srcs/webserv.hpp \
+				srcs/StaticClasses/StatusComments.hpp \
+				srcs/StaticClasses/MediaTypes.hpp \
+				srcs/ServerStreams/ServerStream.hpp \
+				srcs/ServerStreams/cgi/CgiRequest.hpp \
+				srcs/ServerStreams/cgi/CgiResponse.hpp \
+				srcs/ServerStreams/proxy/ProxyRequest.hpp \
+				srcs/ServerStreams/proxy/ProxyResponse.hpp \
+				srcs/ServerStreams/HttpParser.hpp \
+				srcs/blocks/LocationBlock/utils.hpp \
 
 FLAGS = -Wextra -Wall -std=c++98 #-Werror
 

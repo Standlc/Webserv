@@ -1,7 +1,7 @@
 #ifndef MEDIA_TYPES_HPP
 #define MEDIA_TYPES_HPP
 
-#include "webserv.hpp"
+#include "../webserv.hpp"
 
 class MediaTypes {
    private:

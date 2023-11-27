@@ -9,6 +9,8 @@ parse_str($postData, $parsedData);
 
 // Set the Content-Type header to text/plain
 header('Content-Type: text/plain');
+// header("Transfer-Encoding: chunked");
+// header('Content-Length: text/plain');
 
 // Output the parsed data
 echo "Received POST data:\n";

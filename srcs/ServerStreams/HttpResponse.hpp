@@ -1,8 +1,8 @@
 #ifndef HTTP_RESPONSE_HPP
 #define HTTP_RESPONSE_HPP
 
-#include "../MediaTypes.hpp"
-#include "../StatusComments.hpp"
+#include "../StaticClasses/MediaTypes.hpp"
+#include "../StaticClasses/StatusComments.hpp"
 #include "../webserv.hpp"
 #include "Headers.hpp"
 #include "HttpRequest.hpp"

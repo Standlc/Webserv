@@ -124,9 +124,14 @@ void LocationBlock::setenvCgi(HttpRequest &req, const String &cgiScriptPath) {
     }
 
     trySetenv("REDIRECT_STATUS", "200");  // Security needed to execute php-cgi
+
+    // trySetenv("DOCUMENT_ROOT", _root);
+    trySetenv("REQUEST_URI", req.rawUrl());
+    trySetenv("SCRIPT_FILENAME", parsePathFileName(cgiScriptPath));
+
+    trySetenv("HTTP_COOKIE", req.getHeader("Cookie"));
     // trySetenv("HTTP_ACCEPT", req.getHeader("Accept"));
     // trySetenv("HTTP_USER_AGENT", req.getHeader("User-Agent"));
     // trySetenv("HTTP_ACCEPT_LANGUAGE", req.getHeader("Accept-Language"));
-    // trySetenv("HTTP_COOKIE", req.getHeader("Cookie"));
     // trySetenv("HTTP_REFERER", req.getHeader("Referer"));
 }

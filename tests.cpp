@@ -130,9 +130,20 @@ typedef struct header {
 #include <iostream>
 #include <map>
 #include <unordered_map>
+extern char **environ;
 
 int main(int argc, char **argv, char **env) {
-        // for (int i = 0; i < 2000; i++) {
+    int pid = fork();
+    if (pid == 0) {
+        chdir("www/");
+        char *args[] = {(char *)"/opt/homebrew/bin/php-cgi", (char *)"./php.php", NULL};
+        if (execve(args[0], args, environ) == -1) {
+            std::cout << strerror(errno);
+        }
+    }
+    waitpid(pid, NULL, 0);
+
+    // for (int i = 0; i < 2000; i++) {
     //     std::cout << i << '\n';
     //     int pid = fork();
     //     if (pid == -1) {

@@ -1,7 +1,7 @@
 #ifndef STATUS_COMMENTS_HPP
 #define STATUS_COMMENTS_HPP
 
-#include "webserv.hpp"
+#include "../webserv.hpp"
 
 class StatusComments {
    private:
