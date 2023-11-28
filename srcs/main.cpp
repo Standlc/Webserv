@@ -50,8 +50,9 @@ String generateDirectoryListingPage(const String &dir, String reqUrl, struct dir
 //// cgi local redirects ✅
 //// protect Content-Length overflows ✅
 //// decode transfer encoded cgi output ✅
-
 //// get SIGINT to exit nice and clean ✅
+
+//// stream gateway responses
 //// check cookies
 //// Range?
 //// Expect: 100-continue
@@ -68,7 +69,7 @@ String getRealtivePathToFile(String path) {
 void handleSigint(int sig) {
     (void)sig;
     // throw SigintError();
-    throw "\nSee ya!";
+    throw "\nGracefully shutting down...";
 }
 
 int main(int argc, char *argv[]) {
@@ -84,19 +85,22 @@ int main(int argc, char *argv[]) {
     signal(SIGINT, handleSigint);
     std::srand(std::time(0));
     g_conf_path = getRealtivePathToFile(argv[1]);
-    server->addBlocks(1);
 
-    server->getServerBlock(0).set("0.0.0.0", "80", true);
-    server->getServerBlock(0).setRoot("/Users/stan/Desktop/fsh/client/build");
-    server->getServerBlock(0).addLocationBlocks(2);
+    ServerBlock &block1 = server->addBlock();
+    block1.set("0.0.0.0", "80", true);
+    // block1.setRoot("/Users/stan/42/vu/client/build");
+    block1.setRoot("www");
+    block1.setMaxBodySize(5000000);
 
-    server->getLocationBlock(0, 0).setPath("/", false);
-    server->getLocationBlock(0, 0).setIndex("index.html");
-    server->getLocationBlock(0, 0).setAllowedMethods((String[]){"GET", "POST", "DELETE", ""});
+    LocationBlock &location1 = block1.addLocation();
+    location1.setPath("/", false);
+    location1.setIndex("index.html");
+    location1.setAllowedMethods((String[]){"GET", "POST", "DELETE", ""});
 
-    server->getLocationBlock(0, 1).setPath("/api", false);
-    server->getLocationBlock(0, 1).setAllowedMethods((String[]){"GET", "POST", "DELETE", "PUT"});
-    server->getLocationBlock(0, 1).setProxyPass("http://0.0.0.0:5000");
+    LocationBlock &location2 = block1.addLocation();
+    location2.setPath("/api", false);
+    location2.setAllowedMethods((String[]){"GET", "POST", "DELETE", "PUT"});
+    location2.setProxyPass("http://0.0.0.0:5000");
 
     try {
         server->listen();

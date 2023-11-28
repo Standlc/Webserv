@@ -9,6 +9,10 @@ void LocationBlock::setPath(const String &path, bool isExact) {
     _isExact = isExact;
 }
 
+LocationBlock &LocationBlock::addLocation() {
+    return _serverBlock.addLocation(*this);
+}
+
 void LocationBlock::setRedirection(int statusCode, String redirectionUrl) {
     _redirection.statusCode = statusCode;
     _redirection.url = redirectionUrl;

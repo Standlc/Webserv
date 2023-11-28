@@ -272,17 +272,15 @@ ServerBlock* Server::findServerBlock(HttpRequest& req) {
     return defaultBlock;
 }
 
-void Server::addBlocks(int size) {
-    _blocks.resize(_serverBlockSize + size);
-    _serverBlockSize += size;
+ServerBlock& Server::addBlock() {
+    _serverBlockSize++;
+    ServerBlock block;
+    _blocks.push_back(block);
+    return _blocks[_blocks.size() - 1];
 }
 
 ServerBlock& Server::getServerBlock(int index) {
     return _blocks[index];
-}
-
-LocationBlock& Server::getLocationBlock(int serverIndex, int locationIndex) {
-    return _blocks[serverIndex].getLocationBlock(locationIndex);
 }
 
 int handleNewConnection(PollFd* listen) {

@@ -49,8 +49,7 @@ class ServerBlock : public Block {
     String _port;
     bool _isDefault;
     std::vector<String> _hostNames;
-    std::vector<LocationBlock> _locationBlocks;
-    int _locationBlockSize;
+    std::vector<LocationBlock> _locations;
 
    public:
     ServerBlock();
@@ -67,7 +66,8 @@ class ServerBlock : public Block {
     void addHostName(String name);
     void set(String ipAddress, String port, bool isDefault);
     LocationBlock &getLocationBlock(int index);
-    void addLocationBlocks(int size);
+    LocationBlock &addLocation();
+    LocationBlock &addLocation(LocationBlock &location);
 };
 
 typedef void (LocationBlock::*serverMethodHandler)(HttpRequest &req, HttpResponse &res);
@@ -117,6 +117,7 @@ class LocationBlock : public Block {
     String isCgiScriptRequest(HttpRequest &req);
     void setenvCgi(HttpRequest &req, const String &cgiScriptPath);
 
+    LocationBlock &addLocation();
     void setRedirection(int statusCode, String redirectionUrl);
     void setProxyPass(const String &proxyPass);
     const String &getPath();

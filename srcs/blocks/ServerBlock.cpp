@@ -1,13 +1,12 @@
 #include "Block.hpp"
 
-ServerBlock::ServerBlock() : Block(), _isDefault(false), _locationBlockSize(0){};
+ServerBlock::ServerBlock() : Block(), _isDefault(false){};
 
 ServerBlock &ServerBlock::operator=(const ServerBlock &b) {
     Block::operator=(b);
     _port = b._port;
     _isDefault = b._isDefault;
     _hostNames = b._hostNames;
-    _locationBlockSize = b._locationBlockSize;
     return *this;
 }
 
@@ -28,15 +27,15 @@ LocationBlock *ServerBlock::findLocationBlockByPath(const String &reqPath) {
     int matchIndex = -1;
     int reqSize = reqPath.size();
 
-    for (int i = 0; i < _locationBlockSize; i++) {
-        if (_locationBlocks[i].getPath() == reqPath) {
-            return &_locationBlocks[i];
+    for (size_t i = 0; i < _locations.size(); i++) {
+        if (_locations[i].getPath() == reqPath) {
+            return &_locations[i];
         }
-        if (_locationBlocks[i].isExactPath()) {
+        if (_locations[i].isExactPath()) {
             continue;
         }
 
-        String locationPath = _locationBlocks[i].getPath();
+        String locationPath = _locations[i].getPath();
         int pathSize = locationPath.size();
         if (pathSize > maxMatchLen && reqPath.compare(0, pathSize, locationPath) == 0) {
             if (reqPath[pathSize] == '/' || locationPath.back() == '/') {
@@ -52,19 +51,23 @@ LocationBlock *ServerBlock::findLocationBlockByPath(const String &reqPath) {
             }
         }
     }
-    return (matchIndex == -1) ? NULL : &_locationBlocks[matchIndex];
+    return (matchIndex == -1) ? NULL : &_locations[matchIndex];
 }
 
-void ServerBlock::addLocationBlocks(int size) {
-    _locationBlockSize += size;
-    LocationBlock location(*this);
-    for (int i = 0; i < size; i++) {
-        _locationBlocks.push_back(location);
-    }
+LocationBlock &ServerBlock::addLocation() {
+    LocationBlock newLocation(*this);
+    _locations.push_back(newLocation);
+    return _locations[_locations.size() - 1];
+}
+
+LocationBlock &ServerBlock::addLocation(LocationBlock &location) {
+    LocationBlock newLocation(location);
+    _locations.push_back(newLocation);
+    return _locations[_locations.size() - 1];
 }
 
 LocationBlock &ServerBlock::getLocationBlock(int index) {
-    return _locationBlocks[index];
+    return _locations[index];
 }
 
 void ServerBlock::set(String ipAddress, String port, bool isDefault) {

@@ -58,7 +58,7 @@ bool findFormBoundaries(HttpRequest &req, const String &boundary, size_t &currFo
         throw 400;
     }
     currFormPos += boundary.size();
-    if (!startsWith(req.getBody(), "--", currFormPos)) {
+    if (startsWith(req.getBody(), "--", currFormPos)) {
         return true;
     }
 
@@ -85,10 +85,10 @@ void LocationBlock::postMethod(HttpRequest &req, HttpResponse &res) {
     String filePath;
 
     while (true) {
-        debug("BEGIN FORM", "", YELLOW);
+        debug("> begin form", "", YELLOW);
         bool isEnd = findFormBoundaries(req, boundary, currFormPos, formHeadersEndPos, formBodyEndPos);
         if (isEnd) {
-            debug("END OF FORM", "", YELLOW);
+            debug("> end of form", "", YELLOW);
             break;
         }
 

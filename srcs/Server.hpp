@@ -40,7 +40,7 @@ class Server {
     void pushStructPollfd(int fd);
 
     ServerBlock* findServerBlock(HttpRequest& req);
-    void addBlocks(int size);
+    ServerBlock& addBlock();
     ServerBlock& getServerBlock(int index);
     LocationBlock& getLocationBlock(int serverIndex, int locationIndex);
 };
