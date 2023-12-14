@@ -70,7 +70,7 @@ class ServerBlock : public Block {
     LocationBlock &addLocation(LocationBlock &location);
 };
 
-typedef void (LocationBlock::*serverMethodHandler)(HttpRequest &req, HttpResponse &res);
+typedef void (LocationBlock::*serverMethodHandlerType)(HttpRequest &req, HttpResponse &res);
 typedef clientPollHandlerType (LocationBlock::*requestHandlerType)(ClientPoll &client);
 
 typedef struct Redirection {
@@ -80,7 +80,7 @@ typedef struct Redirection {
 
 class LocationBlock : public Block {
    private:
-    std::map<String, serverMethodHandler> _serverMethodshandlers;
+    std::map<String, serverMethodHandlerType> _serverMethodshandlers;
     requestHandlerType _requestHandler;
     std::vector<String> _allowedMethods;
     String _path;

@@ -86,9 +86,6 @@ void Block::setIndex(String index) {
 }
 
 void Block::setMaxBodySize(size_t size) {
-    if (size < 0) {
-        return;
-    }
     _reqBodyMaxSize = size;
 }
 

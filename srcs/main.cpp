@@ -3,6 +3,7 @@
 #include "StaticClasses/StatusComments.hpp"
 #include "blocks/Block.hpp"
 #include "webserv.hpp"
+#include "../parsing.hpp"
 
 std::unordered_map<int, String> StatusComments::_comments;
 std::unordered_map<String, String> MediaTypes::_types;
@@ -73,34 +74,36 @@ void handleSigint(int sig) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        debugErr("A configuration file is required as first argument");
-        return 1;
-    }
 
     Server *server = new Server();
+
     StatusComments::init();
     MediaTypes::init();
-
     signal(SIGINT, handleSigint);
     std::srand(std::time(0));
-    g_conf_path = getRealtivePathToFile(argv[1]);
 
-    ServerBlock &block1 = server->addBlock();
-    block1.set("0.0.0.0", "80", true);
-    // block1.setRoot("/Users/stan/42/vu/client/build");
-    block1.setRoot("www");
-    block1.setMaxBodySize(5000000);
+    if (parsing(argc, argv, server) == ERR)
+		return (1);
 
-    LocationBlock &location1 = block1.addLocation();
-    location1.setPath("/", false);
-    location1.setIndex("index.html");
-    location1.setAllowedMethods((String[]){"GET", "POST", "DELETE", ""});
+    // g_conf_path = getRealtivePathToFile(argv[1]);
 
-    LocationBlock &location2 = block1.addLocation();
-    location2.setPath("/api", false);
-    location2.setAllowedMethods((String[]){"GET", "POST", "DELETE", "PUT"});
-    location2.setProxyPass("http://0.0.0.0:5000");
+    // ServerBlock &block1 = server->addBlock();
+    // block1.set("0.0.0.0", "3000", true);
+    // // block1.setRoot("/Users/stan/42/vu/client/build");
+    // block1.setRoot("www");
+    // block1.setMaxBodySize(5000000);
+
+    // LocationBlock &location1 = block1.addLocation();
+    // location1.setPath("/", false);
+    // location1.setIndex("index.html");
+    // String test1[] = {"GET", "POST", "DELETE", ""};
+    // String test2[] = {"GET", "POST", "DELETE", "PUT", ""};
+    // location1.setAllowedMethods(test1);
+
+    // LocationBlock &location2 = block1.addLocation();
+    // location2.setPath("/api", false);
+    // location2.setAllowedMethods(test2);
+    // location2.setProxyPass("http://0.0.0.0:5000");
 
     try {
         server->listen();

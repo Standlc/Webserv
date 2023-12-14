@@ -7,7 +7,8 @@ ProxyRequest::ProxyRequest(HttpRequest &req, ProxyUrl &proxyPass) {
 
     _outputData += "Host: " + proxyPass.host() + CRLF;
     _outputData += "Connection: close" + String(CRLF);
-    req.putHeaders(_outputData, (String[]){"Host", "Connection", ""});
+    String headersToDiscard[] = {"Host", "Connection", ""};
+    req.putHeaders(_outputData, headersToDiscard);
     _outputData += CRLF;
     _outputData += req.getBody();
 

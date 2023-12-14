@@ -27,6 +27,7 @@ SOURCES = 	srcs/main.cpp \
 			srcs/ServerStreams/proxy/ProxyRequest.cpp \
 			srcs/ServerStreams/proxy/ProxyResponse.cpp \
 			srcs/ServerStreams/HttpParser.cpp \
+			parsing.cpp fill.cpp
 
 OBJECTS = $(SOURCES:.cpp=.o)
 
@@ -48,7 +49,7 @@ DEPENDENCIES = 	Makefile \
 				srcs/ServerStreams/HttpParser.hpp \
 				srcs/blocks/LocationBlock/utils.hpp \
 
-FLAGS = -Wextra -Wall -std=c++98 #-Werror
+FLAGS = #-Wextra -Wall #-std=c++98 #-Werror
 
 RM = rm -rf
 

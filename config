@@ -1,0 +1,40 @@
+server {
+    listen: 3000;
+    host_name: localhost;
+    root: www;
+    index_file: index.html;
+    error_pages: {
+        404: /404.html;
+    }
+    location: / {
+        methods: GET, POST, DELETE;
+        index_file: index.html;
+        auto_index: on;
+        cgi_extensions: {
+        .sh:/bin/sh;
+        .sh:popo;
+        .py:/bin/python;
+        }
+        body_max_size: 20MB;
+        redirect: 303, http://apple.com;
+        force: /path/file.txt;
+    }
+}
+
+#localhost:3000/folder
+
+#server {
+#    listen: 80
+#    host_name: www.facebook.com facebook.com
+#    root: facebook
+#    error_page {
+#         404: /404.html
+#         500: /500.html
+#         507: /err507.html
+#     }
+    
+# }
+
+#server.blocks[0]._locationBlocks[0].handlers["GET"] = getMethod;
+#server.blocks[0]._locationBlocks[0].handlers["POST"] = postMethod;
+#server.blocks[0]._locationBlocks[0].handlers["DELETE"] = deleteMethod;

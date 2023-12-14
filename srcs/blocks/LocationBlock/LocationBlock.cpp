@@ -8,7 +8,7 @@ LocationBlock::LocationBlock(ServerBlock &serverBlock) : Block(serverBlock),
     _serverMethodshandlers["GET"] = &LocationBlock::getMethod;
     _serverMethodshandlers["POST"] = &LocationBlock::postMethod;
     _serverMethodshandlers["DELETE"] = &LocationBlock::deleteMethod;
-    _requestHandler = &LocationBlock::serverMethodHandler;
+    _requestHandler = &LocationBlock::serverMethodHandler; ///
     _proxyPass = NULL;
 };
 
