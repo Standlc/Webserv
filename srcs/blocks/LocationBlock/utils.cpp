@@ -16,7 +16,7 @@ LocationBlock &LocationBlock::addLocation() {
 void LocationBlock::setRedirection(int statusCode, String redirectionUrl) {
     _redirection.statusCode = statusCode;
     _redirection.url = redirectionUrl;
-    _requestHandler = &LocationBlock::proxyHandler;
+    _requestHandler = &LocationBlock::redirectionHandler;
 }
 
 void LocationBlock::setProxyPass(const String &proxyPass) {
