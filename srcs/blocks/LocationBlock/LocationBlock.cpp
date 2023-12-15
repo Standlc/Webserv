@@ -8,7 +8,7 @@ LocationBlock::LocationBlock(ServerBlock &serverBlock) : Block(serverBlock),
     _serverMethodshandlers["GET"] = &LocationBlock::getMethod;
     _serverMethodshandlers["POST"] = &LocationBlock::postMethod;
     _serverMethodshandlers["DELETE"] = &LocationBlock::deleteMethod;
-    _requestHandler = &LocationBlock::serverMethodHandler; ///
+    _requestHandler = &LocationBlock::serverMethodHandler;
     _proxyPass = NULL;
 };
 
@@ -26,6 +26,7 @@ LocationBlock &LocationBlock::operator=(const LocationBlock &b) {
     _proxyPass = b._proxyPass;
     _serverBlock = b._serverBlock;
     _redirection = b._redirection;
+    _forceFile = b._forceFile;
     return *this;
 }
 

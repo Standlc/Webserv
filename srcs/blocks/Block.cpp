@@ -85,6 +85,10 @@ void Block::setIndex(String index) {
     _index = index;
 }
 
+void Block::setForceFile(String file) {
+    _forceFile = file;
+}
+
 void Block::setMaxBodySize(size_t size) {
     _reqBodyMaxSize = size;
 }
