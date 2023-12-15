@@ -13,9 +13,9 @@ server {
         index_file: index.html;
         auto_index: on;
         cgi_extensions: {
-        .sh:/bin/sh;
+        .sh:/usr/bin/sh;
         .sh:popo;
-        .py:/bin/python;
+        .py:/usr/bin/python3;
         }
         body_max_size: 20MB;
         #redirect: 303, http://apple.com;

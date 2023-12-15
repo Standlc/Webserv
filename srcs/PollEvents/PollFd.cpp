@@ -14,7 +14,7 @@ PollFd::~PollFd() {
 };
 
 void PollFd::destroy(int socketStatus) {
-    *_status = socketStatus;
+    _status = socketStatus;
 }
 
 void PollFd::setConcurrentReadWrite(bool value) {
@@ -37,7 +37,7 @@ Server &PollFd::server() {
     return _server;
 }
 
-std::shared_ptr<int> PollFd::getStatus() {
+SharedPtr &PollFd::getStatus() {
     return _status;
 }
 
