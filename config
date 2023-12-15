@@ -1,8 +1,10 @@
 server {
     listen: 3000;
-    host_name: localhost;
+    #host_name: localhost;
     root: www;
     index_file: index.html;
+    upload_root: ./;
+    cookie: blabla;
     error_pages: {
         404: /404.html;
     }
@@ -16,8 +18,10 @@ server {
         .py:/bin/python;
         }
         body_max_size: 20MB;
-        redirect: 303, http://apple.com;
+        #redirect: 303, http://apple.com;
         force: /path/file.txt;
+        proxy_pass: http://example.com;
+        cookie:wowo;
     }
 }
 

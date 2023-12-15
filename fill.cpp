@@ -1,11 +1,5 @@
 #include "parsing.hpp"
 
-int fill_location_root(const string &file, LocationBlock &location)
-{
-	location.setRoot(file.substr(0, file.find(';')));
-	return (file.find(';') + 1);
-}
-
 int fill_location_auto_index(const string &file, LocationBlock &location)
 {
 	int AutoIndex = false;
@@ -67,7 +61,7 @@ int fill_methods(const string &file, LocationBlock &location)
 	return (i + 1);
 }
 
-int fill_body_max_size(const string &file, LocationBlock &location)
+int fill_body_max_size(const string &file, Block &location)
 {
 	int i = 0;
 
@@ -80,10 +74,86 @@ int fill_body_max_size(const string &file, LocationBlock &location)
 	return (i + 1);
 }
 
+
+
+int fill_cookie(const string &file, Block &server)
+{
+	server.addSessionCookie(file.substr(0, file.find(';')));
+	return (file.find(';') + 1);
+}
+
+int fill_port(const string &file, ServerBlock &server)
+{
+	server.set("", file.substr(0, file.find(';')), true); // a ajouter
+	return (file.find(';') + 1);
+}
+
+int fill_host_name(const string &file, ServerBlock &server)
+{
+	int end = 0;
+	int start = 0;
+
+	while (file[start] != ';')
+	{
+		if (file[start] == ',')
+			start++;
+		server.addHostName(file.substr(start, file.find_first_of(",;", start) - start));
+		start = file.find_first_of(",;", start);
+	}
+	return (file.find(';') + 1);
+}
+
+int fill_index_file(const string &file, Block &server)
+{
+	server.setIndex(file.substr(0, file.find(';')));
+	return (file.find(';') + 1);
+}
+
+int fill_upload_root(const string &file, Block &server)
+{
+	server.setUploadRoot(file.substr(0, file.find(';')));
+	return (file.find(';') + 1);
+}
+
+int fill_root(const string &file, Block &server)
+{
+	server.setRoot(file.substr(0, file.find(';')));
+	return (file.find(';') + 1);
+}
+
+int fill_proxy_pass(const string &file, LocationBlock &server)
+{
+	server.setProxyPass(file.substr(0, file.find(';')));
+	return (file.find(';') + 1);
+}
+
+int fill_error_pages(const string &file, Block &server)
+{
+	int i = 1;
+
+	while (file[i] != '}')
+	{
+		int number = atoi(&file[i]);
+		while (file[i] != ':')
+			i++;
+		i++;
+		String file_error = file.substr(i, file.find(';', i) - i);
+		server.addErrorPage(number, file_error);
+		while (file[i] != ';')
+			i++;
+		i++;
+	}
+	return (i + 1);
+}
+
 int	found_location_data(const string &file, LocationBlock &location)
 {
 	if (!strncmp(file.c_str(), "root:", strlen("root:")))
-		return (fill_location_root(file.substr(5), location) + 5);
+		return (fill_root(file.substr(5), location) + 5);
+	if (!strncmp(file.c_str(), "index_file:", strlen("index_file:")))
+		return (fill_index_file(file.substr(11), location) + 11);
+	if (!strncmp(file.c_str(), "error_pages:", strlen("error_pages:")))
+		return (fill_error_pages(file.substr(12), location) + 12);
 	if (!strncmp(file.c_str(), "cgi_extensions:", strlen("cgi_extensions:")))
 		return (fill_cgi_extensions(file.substr(15), location) + 15);
 	if (!strncmp(file.c_str(), "auto_index:", strlen("auto_index:")))
@@ -94,6 +164,12 @@ int	found_location_data(const string &file, LocationBlock &location)
 		return (fill_methods(file.substr(8), location) + 8);
 	if (!strncmp(file.c_str(), "body_max_size:", strlen("body_max_size:")))
 		return (fill_body_max_size(file.substr(14), location) + 14);
+	if (!strncmp(file.c_str(), "proxy_pass:", strlen("proxy_pass:")))
+		return (fill_proxy_pass(file.substr(11), location) + 11);
+	if (!strncmp(file.c_str(), "cookie:", strlen("cookie:")))
+		return (fill_cookie(file.substr(7), location) + 7);
+	if (!strncmp(file.c_str(), "upload_root:", strlen("upload_root:")))
+		return (fill_upload_root(file.substr(12), location) + 12);
 	return (1);
 }
 
@@ -117,62 +193,6 @@ int fill_location(const string &file, ServerBlock &server)
 	return (i);
 }
 
-
-
-
-
-int fill_port(const string &file, ServerBlock &server)
-{
-	server.set("127.0.0.1", file.substr(0, file.find(';')), true);
-	return (file.find(';') + 1);
-}
-
-int fill_host_name(const string &file, ServerBlock &server)
-{
-	int end = 0;
-	int start = 0;
-
-	while (file[start] != ';')
-	{
-		if (file[start] == ',')
-			start++;
-		server.addHostName(file.substr(start, file.find_first_of(",;", start) - start));
-		start = file.find_first_of(",;", start);
-	}
-	return (file.find(';') + 1);
-}
-
-int fill_index_file(const string &file, ServerBlock &server)
-{
-	server.setIndex(file.substr(0, file.find(';')));
-	return (file.find(';') + 1);
-}
-
-int fill_root(const string &file, ServerBlock &server)
-{
-	server.setRoot(file.substr(0, file.find(';')));
-	return (file.find(';') + 1);
-}
-
-int fill_error_pages(const string &file, ServerBlock &server)
-{
-	int i = 1;
-
-	while (file[i] != '}')
-	{
-		int number = atoi(&file[i]);
-		while (file[i] != ':')
-			i++;
-		i++;
-		String file_error = file.substr(i, file.find(';', i) - i);
-		server.addErrorPage(number, file_error);
-		while (file[i] != ';')
-			i++;
-		i++;
-	}
-	return (i + 1);
-}
-
 int found_data(string const &file, ServerBlock &server)
 {
 	if (!strncmp(file.c_str(), "listen:", strlen("listen:")))
@@ -187,6 +207,12 @@ int found_data(string const &file, ServerBlock &server)
 		return (fill_error_pages(file.substr(12), server) + 12);
 	if (!strncmp(file.c_str(), "location:", strlen("location:")))
 		return (fill_location(file.substr(9), server) + 9);
+	if (!strncmp(file.c_str(), "body_max_size:", strlen("body_max_size:")))
+		return (fill_body_max_size(file.substr(14), server) + 14);
+	if (!strncmp(file.c_str(), "cookie:", strlen("cookie:")))
+		return (fill_cookie(file.substr(7), server) + 7);
+	if (!strncmp(file.c_str(), "upload_root:", strlen("upload_root:")))
+		return (fill_upload_root(file.substr(12), server) + 12);
 	return (1);
 }
 

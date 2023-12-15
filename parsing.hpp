@@ -32,6 +32,9 @@ using namespace std;
 #define MFORCE "File location for force not found"
 #define MREDIRECT "Redirect not valid"
 #define MBODYSIZE "Size of body not valid"
+#define MPROXY "Proxy pass not valid"
+#define MCOOKIE "Cookie syntaxes not valid"
+#define MUPLOAD "Upload root not found"
 
 #define NOEX ""
 
@@ -44,6 +47,9 @@ using namespace std;
 #define EXAUTIND "auto_index: on;"
 #define EXREDIRECT "redirect: 303, http://apple.com;"
 #define EXBODYSIZE "body_max_size: 20MB;"
+#define EXPROXY "proxy_pass: http://apple.com;"
+#define EXCOOKIE "cookie:blabla;"
+#define EXUPLOAD "upload_root:download/"
 
 #define NOLINE 0
 

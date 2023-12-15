@@ -79,6 +79,16 @@ int next_bracket(string line)
 	return (i);
 }
 
+int	check_proxy_pass(const string &content)
+{
+	int i = 11;
+
+	string url = content.substr(i, content.find(';') - i);
+	if (strncmp(url.c_str(), "http://", strlen("http://")))
+		return (error_message(line_tracker(content.substr(i)), MPROXY, EXPROXY));
+	return (url.size() + i + 1);
+}
+
 int check_error_page(const string &content)
 {
 	int i = 12;
@@ -150,6 +160,16 @@ int check_index_file(const string &content)
 	string root = content.substr(i, next_coma(&content[i]));
 	if (root == "")
 		return (error_message(line_tracker(content.substr(i)), MINDEX, EXINDEX));
+	i += endline(&content[i]);
+	return (i + 1);
+}
+
+int check_upload_root(const string &content)
+{
+	int i = 12;
+	string root = content.substr(i, next_coma(&content[i]));
+	if (root == "")
+		return (error_message(line_tracker(content.substr(i)), MUPLOAD, EXUPLOAD));
 	i += endline(&content[i]);
 	return (i + 1);
 }
@@ -292,6 +312,21 @@ int check_methods(const string &content)
 	return (i + 1);
 }
 
+int check_cookie(const string &content)
+{
+	int i = 7;
+
+	string cookie = content.substr(i, content.find(';') - i);
+	int index_cookie = 0;
+	while (cookie[index_cookie])
+	{
+		if (cookie[index_cookie] == ' ' || cookie[index_cookie] == '\t' || cookie[index_cookie] == '\n')
+			return (error_message(line_tracker(content.substr(i)), MCOOKIE, EXCOOKIE));
+		index_cookie++;
+	}
+	return (index_cookie + i + 1);
+}
+
 int check_body_max_size(const string &content)
 {
 	int i = 14;
@@ -360,6 +395,14 @@ int check_block(const string &content)
 		return (check_redirect(content));
 	if (!strncmp(content.c_str(), "force:", strlen("force:")))
 		return (check_force(content));
+	if (!strncmp(content.c_str(), "proxy_pass:", strlen("proxy_pass:")))
+		return (check_proxy_pass(content));
+	if (!strncmp(content.c_str(), "error_pages:", strlen("error_pages:")))
+		return (check_error_page(content));
+	if (!strncmp(content.c_str(), "cookie:", strlen("cookie:")))
+		return (check_cookie(content));
+	if (!strncmp(content.c_str(), "upload_root:", strlen("upload_root:")))
+		return (check_upload_root(content));
 	return (error_message(line_tracker(content), MDATA, NOEX));
 }
 
@@ -403,6 +446,20 @@ int check_content(const string &content)
 		return (check_error_page(content));
 	if (!strncmp(content.c_str(), "location:", strlen("location:")))
 		return (check_location(content));
+	if (!strncmp(content.c_str(), "auto_index:", strlen("auto_index:")))
+		return (check_auto_index(content));
+	if (!strncmp(content.c_str(), "cgi_extensions:", strlen("cgi_extensions")))
+		return (check_cgi_extensions(content));
+	if (!strncmp(content.c_str(), "body_max_size:", strlen("body_max_size:")))
+		return (check_body_max_size(content));
+	if (!strncmp(content.c_str(), "auto_index:", strlen("auto_index:")))
+		return (check_auto_index(content));
+	if (!strncmp(content.c_str(), "add_header:", strlen("add_header")))
+		return (check_add_header(content));
+	if (!strncmp(content.c_str(), "cookie:", strlen("cookie:")))
+		return (check_cookie(content));
+	if (!strncmp(content.c_str(), "upload_root:", strlen("upload_root:")))
+		return (check_upload_root(content));
 	return (error_message(line_tracker(content), MDATA, NOEX));
 }
 
