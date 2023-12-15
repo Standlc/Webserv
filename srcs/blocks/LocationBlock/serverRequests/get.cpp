@@ -1,9 +1,14 @@
 #include "../../Block.hpp"
 
 void LocationBlock::getMethod(HttpRequest &req, HttpResponse &res) {
-    String resourcePath = this->getResourcePath(req.url().path, _forceFile);
-
+    String resourcePath = this->getResourcePath(req.url().path);
     int accessStatus = checkPathAccess(resourcePath);
+
+    if (accessStatus != 200 && _fallBack != "") {
+        resourcePath = this->getResourcePath(req.url().path, _fallBack);
+        accessStatus = checkPathAccess(resourcePath);
+    }
+
     throwIf(accessStatus != 200, accessStatus);
 
     if (!isDirectory(resourcePath)) {

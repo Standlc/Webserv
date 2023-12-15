@@ -26,7 +26,7 @@ LocationBlock &LocationBlock::operator=(const LocationBlock &b) {
     _proxyPass = b._proxyPass;
     _serverBlock = b._serverBlock;
     _redirection = b._redirection;
-    _forceFile = b._forceFile;
+    _fallBack = b._fallBack;
     return *this;
 }
 
