@@ -4,7 +4,7 @@ clientPollHandlerType LocationBlock::redirectionHandler(ClientPoll &client) {
     HttpResponse &res = client.res();
     HttpRequest &req = client.req();
 
-    res.addDefaultHeader("Location", this->assembleRedirectionUrl(req));
+    res.addConfigHeader("Location", this->assembleRedirectionUrl(req));
     throw _redirection.statusCode;
 }
 

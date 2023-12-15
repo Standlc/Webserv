@@ -13,7 +13,7 @@ int	line_tracker(const string &error, string initializer = "")
 		int sub_string = file.find(error);
 		int	line = 1;
 		int	index = 0;
-		while (file[index] != std::string::npos && index != sub_string)
+		while (file[index] && index != sub_string)
 		{
 			if (file[index] == '\n')
 				line++;
@@ -124,10 +124,37 @@ int check_error_page(const string &content)
 int check_listen(const string &content)
 {
 	int i = 7;
+
+	if (!(content[i] >= '0' && content[i] <= '9'))
+		return (error_message(line_tracker(content.substr(i)), MPORT, EXPORT));
+	while (content[i] >= '0' && content[i] <= '9')
+		i++;
+	if (content[i] != '.' && content[i] != ';')
+		return (error_message(line_tracker(content.substr(i)), MPORT, EXPORT));
+	if (content[i] == '.')
+	{
+		i = 7;
+		int count_bytes = 0;
+		int	number;
+		while (content[i] != ':' && (content[i] == '.' || i == 7))
+		{
+			if (content[i] == '.')
+				i++;
+			number = atoi(content.substr(i, content.find('.', i) - i).c_str());
+			if (!(number >= 0 && number <= 255))
+				return (error_message(line_tracker(content.substr(i)), MPORT, EXPORT));
+			count_bytes++;
+			i = content.find_first_not_of("0123456789", i);
+		}
+		if (content[i] != ':' || count_bytes != 4)
+			return (error_message(line_tracker(content.substr(i)), MPORT, EXPORT));
+		i++;
+	}
+	i = 7;
 	int port = atoi(&content[i]);
 	if (port <= 0 || port > 65535)
 		return (error_message(line_tracker(content.substr(i)), MPORT, EXPORT));
-	i += endline(&content[i]);
+	i = content.find(';');
 	return (i + 1);
 }
 
@@ -271,6 +298,25 @@ int check_add_header(const string &content)
 			return (1);
 	}
 	return (i + 1);
+}
+
+int check_quotes(const string &content)
+{
+	int i = 0;
+	int count_simple_quotes = 0;
+	int count_double_quotes = 0;
+
+	while (content[i])
+	{
+		if (content[i] == '"')
+			count_double_quotes++;
+		if (content[i] == '\'')
+			count_simple_quotes++;
+		i++;
+	}
+	if (count_simple_quotes % 2 != 0 || count_double_quotes % 2 != 0)
+		return (error_message(line_tracker(content.substr(i)), MQUOTES, NOEX));
+	return (0);
 }
 
 int check_brackets(const string &content)
@@ -428,12 +474,23 @@ int check_location(const string &content)
 	return (i + 1);
 }
 
+int check_server(const string &content)
+{
+	int i = 6;
+
+	while (content[i] == '\n' && content[i])
+		i++;
+	if (content[i] != '{')
+		return (error_message(line_tracker(content.substr(i)), MBRACK, NOEX));
+	return (i + 1);
+}
+
 int check_content(const string &content)
 {
 	if (content[0] == '\n' || content[0] == '}')
 		return (1);
-	if (!strncmp(content.c_str(), "server{", strlen("server{")))
-		return (7);
+	if (!strncmp(content.c_str(), "server", strlen("server")))
+		return (check_server(content));
 	if (!strncmp(content.c_str(), "listen:", strlen("listen:")))
 		return (check_listen(content));
 	if (!strncmp(content.c_str(), "root:", strlen("root:")))
@@ -469,11 +526,20 @@ int check_error(string &file)
 	error_parsing = 0;
 
 	check_brackets(file);
+	check_quotes(file);
 	while (file[index_check])
 	{
-		if (error_parsing == ERR)
-			return (ERR);
-		index_check += check_content(file.substr(index_check));
+		if (!strncmp(file.substr(index_check).c_str(), "server", strlen("server")))
+		{
+			while (file[index_check] != '}' && file[index_check])
+			{
+				if (error_parsing == ERR)
+					return (ERR);
+				index_check += check_content(file.substr(index_check));
+			}
+		}
+		if (file[index_check])
+			index_check++;
 	}
 	return (0);
 }

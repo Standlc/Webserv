@@ -36,11 +36,58 @@ int timeoutProxy(ProxyPoll *proxy);
 int sendProxyRequest(ProxyPoll *proxy);
 int recvProxyResponse(ProxyPoll *proxy);
 
+class SharedPtr {
+   public:
+    int *value;
+    std::vector<int *> ptrs;
+
+    SharedPtr() {
+        value = NULL;
+    }
+
+    SharedPtr(SharedPtr &other) {
+        this->operator=(other);
+    }
+
+    SharedPtr(int *ptr) {
+        value = ptr;
+    }
+
+    ~SharedPtr() {
+        delete value;
+    }
+
+    SharedPtr &operator=(SharedPtr &other) {
+        value = new int(*other.value);
+        other.ptrs.push_back(value);
+        return *this;
+    }
+
+    int &operator*() {
+        return *value;
+    }
+
+    SharedPtr &operator=(int newValue) {
+        for (int i = 0; i < ptrs.size(); i++) {
+            *ptrs[i] = newValue;
+        }
+        *value = newValue;
+        return *this;
+    }
+
+    SharedPtr &operator=(void *null) {
+        ptrs.clear();
+        delete value;
+        value = NULL;
+        return *this;
+    }
+};
+
 class PollFd {
    protected:
     pollFdHandlerType _readHandler;
     pollFdHandlerType _writeHandler;
-    std::shared_ptr<int> _status;
+    SharedPtr _status;
     Server &_server;
     time_t _startTime;
     int _fd;
@@ -52,7 +99,7 @@ class PollFd {
     void destroy(int socketStatus);
     virtual ~PollFd();
 
-    std::shared_ptr<int> getStatus();
+    SharedPtr &getStatus();
     void setStatus(int value) {
         *_status = value;
     }
@@ -76,8 +123,8 @@ class ClientPoll : public PollFd {
     clientPollHandlerType _readHandler;
     HttpRequest *_req;
     HttpResponse *_res;
-    std::shared_ptr<int> _cgiPollStatus;
-    std::shared_ptr<int> _proxyStatus;
+    SharedPtr _cgiPollStatus;
+    SharedPtr _proxyStatus;
     LocationBlock *_location;
 
    public:
@@ -90,8 +137,8 @@ class ClientPoll : public PollFd {
     int proxyPollStatus();
     int cgiPollStatus();
     void resetConnection();
-    void setProxyStatus(std::shared_ptr<int> proxyStatus);
-    void setCgiPollStatus(std::shared_ptr<int> cgiStatus);
+    void setProxyStatus(SharedPtr &proxyStatus);
+    void setCgiPollStatus(SharedPtr &cgiStatus);
 
     void setWriteHandler(clientPollHandlerType f);
     void setReadHandler(clientPollHandlerType f);
@@ -111,7 +158,7 @@ class CgiPoll : public PollFd {
     CgiPollHandlerType _writeHandler;
     struct pollfd &_pollfd;
     ClientPoll &_client;
-    std::shared_ptr<int> _clientStatus;
+    SharedPtr _clientStatus;
     CgiRequest *_cgiReq;
     CgiResponse *_cgiRes;
     CgiSockets _cgiSockets;
@@ -150,7 +197,7 @@ class ProxyPoll : public PollFd {
    private:
     ProxyPollHandlerType _readHandler;
     ProxyPollHandlerType _writeHandler;
-    std::shared_ptr<int> _clientStatus;
+    SharedPtr _clientStatus;
     ClientPoll &_client;
     ProxyRequest _proxyReq;
     ProxyResponse _proxyRes;

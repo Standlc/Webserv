@@ -1,5 +1,5 @@
 server {
-    listen: 3000;
+    listen: 127.0.0.1:3000;
     #host_name: localhost;
     root: www;
     index_file: index.html;
@@ -13,14 +13,14 @@ server {
         index_file: index.html;
         auto_index: on;
         cgi_extensions: {
-        .sh:/bin/sh;
+        .sh:/usr/bin/sh;
         .sh:popo;
-        .py:/bin/python;
+        .py:/usr/bin/python3;
         }
         body_max_size: 20MB;
-        #redirect: 303, http://apple.com;
-        force: /path/file.txt;
-        proxy_pass: http://example.com;
+        force: /index.html;
+        proxy_pass: http://amazon.com;
+        # redirect: 303, http://apple.com;
         cookie:wowo;
     }
 }

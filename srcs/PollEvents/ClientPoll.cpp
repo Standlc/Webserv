@@ -3,8 +3,8 @@
 ClientPoll::ClientPoll(int fd, Server& server) : PollFd(fd, server) {
     _req = new HttpRequest(fd);
     _res = new HttpResponse(*_req);
-    _cgiPollStatus = NULL;
-    _proxyStatus = NULL;
+    _cgiPollStatus = (void*)NULL;
+    _proxyStatus = (void*)NULL;
 }
 
 ClientPoll::~ClientPoll() {
@@ -17,31 +17,25 @@ void ClientPoll::resetConnection() {
     delete _req;
     _req = new HttpRequest(_fd);
     _res = new HttpResponse(*_req);
-    _cgiPollStatus = NULL;
-    _proxyStatus = NULL;
+    _cgiPollStatus = (void*)NULL;
+    _proxyStatus = (void*)NULL;
     this->resetStartTime();
 }
 
-void ClientPoll::setCgiPollStatus(std::shared_ptr<int> cgiStatus) {
+void ClientPoll::setCgiPollStatus(SharedPtr& cgiStatus) {
     _cgiPollStatus = cgiStatus;
 }
 
-void ClientPoll::setProxyStatus(std::shared_ptr<int> proxyStatus) {
+void ClientPoll::setProxyStatus(SharedPtr& proxyStatus) {
     _proxyStatus = proxyStatus;
 }
 
 int ClientPoll::proxyPollStatus() {
-    if (_proxyStatus != NULL) {
-        return *_proxyStatus;
-    }
     return *_proxyStatus;
 }
 
 int ClientPoll::cgiPollStatus() {
-    if (_cgiPollStatus != NULL) {
-        return *_cgiPollStatus;
-    }
-    return 0;
+    return *_cgiPollStatus;
 }
 
 HttpResponse& ClientPoll::res() {

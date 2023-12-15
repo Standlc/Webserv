@@ -30,10 +30,7 @@ void CgiPoll::killCgiProcess() {
 }
 
 int CgiPoll::clientStatus() {
-    if (_clientStatus != NULL) {
-        return *_clientStatus;
-    }
-    return 0;
+    return *_clientStatus;
 }
 
 void CgiPoll::closeRequestSockets() {
