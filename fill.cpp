@@ -5,7 +5,7 @@ int redirect_priority;
 int fill_redirect(const string &file, LocationBlock &location) {
     int i = 0;
 
-	redirect_priority = 1;
+    redirect_priority = 1;
     int number = atoi(file.c_str());
     i = file.find(',');
     i++;
@@ -81,7 +81,7 @@ int fill_body_max_size(const string &file, Block &location) {
 }
 
 int fill_force(const string &file, Block &server) {
-    server.setForceFile(file.substr(0, file.find(';')));
+    server.setFallBack(file.substr(0, file.find(';')));
     return (file.find(';') + 1);
 }
 
@@ -132,8 +132,8 @@ int fill_root(const string &file, Block &server) {
 }
 
 int fill_proxy_pass(const string &file, LocationBlock &server) {
-	if (redirect_priority == 1)
-		return (file.find(';') + 1);
+    if (redirect_priority == 1)
+        return (file.find(';') + 1);
     server.setProxyPass(file.substr(0, file.find(';')));
     return (file.find(';') + 1);
 }
@@ -229,7 +229,7 @@ int found_data(string const &file, ServerBlock &server) {
     if (!strncmp(file.c_str(), "add_headers:", strlen("add_headers:")))
         return (fill_add_header(file.substr(12), server) + 12);
     if (!strncmp(file.c_str(), "force:", strlen("force:")))
-        return (fill_force(file.substr(6),  server) + 6);
+        return (fill_force(file.substr(6), server) + 6);
     return (1);
 }
 
@@ -260,7 +260,7 @@ void fill_data(string file, Server *server) {
     int start = 0;
 
     file.erase(std::remove_if(file.begin(), file.end(), delete_for_fill), file.end());
-	redirect_priority = 0;
+    redirect_priority = 0;
     while (file[i]) {
         int index = file.find("server{", start);
         if (index == string::npos)
