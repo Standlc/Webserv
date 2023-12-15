@@ -41,8 +41,8 @@ void createFile(const String &name, const char *data, size_t size) {
         throw 500;
     }
 
-    debug("filename", name, CYAN);
-    debug("file size", std::to_string(size), CYAN);
+    debug("> creating file", name, CYAN);
+    debug("> size", std::to_string(size), CYAN);
 
     file.write(data, size);
     file.close();

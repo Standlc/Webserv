@@ -18,8 +18,8 @@ server {
         .py:/usr/bin/python3;
         }
         body_max_size: 20MB;
-        #redirect: 303, http://apple.com;
-        force: /path/file.txt;
+        redirect: 303, http://apple.com;
+        # force: /path/file.txt;
         # proxy_pass: http://example.com;
         cookie:wowo;
     }

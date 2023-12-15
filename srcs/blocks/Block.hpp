@@ -15,7 +15,7 @@ class Block {
     String _root;
     String _uploadRoot;
     size_t _reqBodyMaxSize;
-    String _forceFile;
+    String _fallBack;
 
     Headers _headers;
     std::unordered_map<int, String> _errorFiles;
@@ -38,7 +38,7 @@ class Block {
     void setRoot(String root);
     void setUploadRoot(String dir);
     void setIndex(String index);
-    void setForceFile(String file);
+    void setFallBack(String file);
     void setMaxBodySize(size_t size);
     void setAutoIndex(bool isOn);
     void addHeader(String key, String value);
