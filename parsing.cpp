@@ -407,13 +407,13 @@ int check_redirect(const string &content)
 	return (i + 1);
 }
 
-int check_force(const string &content)
+int check_fallback(const string &content)
 {
-	int i = 6;
+	int i = 9;
 
 	string root = content.substr(i, next_semicolon(&content[i]));
 	if (root == "")
-		return (error_message(line_tracker(content.substr(i)), MFORCE, NOEX));
+		return (error_message(line_tracker(content.substr(i)), MFALLBACK, NOEX));
 	i += root.size();
 	return (i + 1);
 }
@@ -439,8 +439,8 @@ int check_block(const string &content)
 		return (check_body_max_size(content));
 	if (!strncmp(content.c_str(), "redirect:", strlen("redirect:")))
 		return (check_redirect(content));
-	if (!strncmp(content.c_str(), "force:", strlen("force:")))
-		return (check_force(content));
+	if (!strncmp(content.c_str(), "fallback:", strlen("fallback:")))
+		return (check_fallback(content));
 	if (!strncmp(content.c_str(), "proxy_pass:", strlen("proxy_pass:")))
 		return (check_proxy_pass(content));
 	if (!strncmp(content.c_str(), "error_pages:", strlen("error_pages:")))
@@ -517,6 +517,8 @@ int check_content(const string &content)
 		return (check_cookie(content));
 	if (!strncmp(content.c_str(), "upload_root:", strlen("upload_root:")))
 		return (check_upload_root(content));
+	if (!strncmp(content.c_str(), "fallback:", strlen("fallback:")))
+		return (check_fallback(content));
 	return (error_message(line_tracker(content), MDATA, NOEX));
 }
 

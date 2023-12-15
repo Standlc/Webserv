@@ -80,7 +80,7 @@ int fill_body_max_size(const string &file, Block &location) {
     return (i + 1);
 }
 
-int fill_force(const string &file, Block &server) {
+int fill_fallback(const string &file, Block &server) {
     server.setFallBack(file.substr(0, file.find(';')));
     return (file.find(';') + 1);
 }
@@ -180,8 +180,8 @@ int found_location_data(const string &file, LocationBlock &location) {
         return (fill_upload_root(file.substr(12), location) + 12);
     if (!strncmp(file.c_str(), "redirect:", strlen("redirect:")))
         return (fill_redirect(file.substr(9), location) + 9);
-    if (!strncmp(file.c_str(), "force:", strlen("force:")))
-        return (fill_force(file.substr(6), location) + 6);
+    if (!strncmp(file.c_str(), "fallback:", strlen("fallback:")))
+        return (fill_fallback(file.substr(9), location) + 9);
     return (1);
 }
 
@@ -228,8 +228,8 @@ int found_data(string const &file, ServerBlock &server) {
         return (fill_cgi_extensions(file.substr(15), server) + 15);
     if (!strncmp(file.c_str(), "add_headers:", strlen("add_headers:")))
         return (fill_add_header(file.substr(12), server) + 12);
-    if (!strncmp(file.c_str(), "force:", strlen("force:")))
-        return (fill_force(file.substr(6), server) + 6);
+    if (!strncmp(file.c_str(), "fallback:", strlen("fallback:")))
+        return (fill_fallback(file.substr(6), server) + 6);
     return (1);
 }
 

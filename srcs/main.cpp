@@ -83,7 +83,10 @@ int main(int argc, char *argv[]) {
     std::srand(std::time(0));
 
     if (parsing(argc, argv, server) == ERR)
+    {
+        delete server;
 		return (1);
+    }
 
     // g_conf_path = getRealtivePathToFile(argv[1]);
 

@@ -18,7 +18,7 @@ server {
         .py:/usr/bin/python3;
         }
         body_max_size: 20MB;
-        force: /index.html;
+        # fallback: /index.html;
         # proxy_pass: http://amazon.com;
         # redirect: 303, http://apple.com;
         cookie:wowo;

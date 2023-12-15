@@ -29,7 +29,7 @@ using namespace std;
 #define MAUTIND "Error on the instruction for auto_index"
 #define MEXT "Extention not found"
 #define MHEAD "Invalid header"
-#define MFORCE "File location for force not found"
+#define MFALLBACK "File location for force not found"
 #define MREDIRECT "Redirect not valid"
 #define MBODYSIZE "Size of body not valid"
 #define MPROXY "Proxy pass not valid"
