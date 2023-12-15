@@ -35,6 +35,7 @@ using namespace std;
 #define MPROXY "Proxy pass not valid"
 #define MCOOKIE "Cookie syntaxes not valid"
 #define MUPLOAD "Upload root not found"
+#define MQUOTES "Opening of quotes not closed"
 
 #define NOEX ""
 
