@@ -1,6 +1,7 @@
 #include "parsing.hpp"
 
-int error_parsing;
+map<string, int>	required;
+int					error_parsing;
 
 int	line_tracker(const string &error, string initializer = "")
 {
@@ -125,6 +126,7 @@ int check_listen(const string &content)
 {
 	int i = 7;
 
+	required["listen"] = 1;
 	if (!(content[i] >= '0' && content[i] <= '9'))
 		return (error_message(line_tracker(content.substr(i)), MPORT, EXPORT));
 	while (content[i] >= '0' && content[i] <= '9')
@@ -161,6 +163,8 @@ int check_listen(const string &content)
 int check_root(const string &content)
 {
 	int i = 5;
+
+	required["root"] = 1;
 	string root = content.substr(i + 1, endline(&content[i]));
 	i += endline(&content[i]);
 	return (i + 1);
@@ -181,9 +185,9 @@ int check_host_name(const string &content)
 	return (i + 1);
 }
 
-int check_index_file(const string &content)
+int check_index(const string &content)
 {
-	int i = 11;
+	int i = 6;
 	string root = content.substr(i, next_coma(&content[i]));
 	if (root == "")
 		return (error_message(line_tracker(content.substr(i)), MINDEX, EXINDEX));
@@ -427,8 +431,8 @@ int check_block(const string &content)
 		return (check_root(content));
 	if (!strncmp(content.c_str(), "methods:", strlen("methods:")))
 		return (check_methods(content));
-	if (!strncmp(content.c_str(), "index_file:", strlen("index_file:")))
-		return (check_index_file(content));
+	if (!strncmp(content.c_str(), "index:", strlen("index:")))
+		return (check_index(content));
 	if (!strncmp(content.c_str(), "auto_index:", strlen("auto_index:")))
 		return (check_auto_index(content));
 	if (!strncmp(content.c_str(), "cgi_extensions:", strlen("cgi_extensions")))
@@ -456,6 +460,7 @@ int check_location(const string &content)
 {
 	int i = 9;
 
+	required["location"] = 1;
 	string root = content.substr(i, content.find('{') - i);
 	if (root == "")
 		return (error_message(line_tracker(content.substr(i)), MLOCFOL, NOEX));
@@ -478,6 +483,7 @@ int check_server(const string &content)
 {
 	int i = 6;
 
+	required["server"] = 1;
 	while (content[i] == '\n' && content[i])
 		i++;
 	if (content[i] != '{')
@@ -497,8 +503,8 @@ int check_content(const string &content)
 		return (check_root(content));
 	if (!strncmp(content.c_str(), "host_name:", strlen("host_name:")))
 		return (check_host_name(content));
-	if (!strncmp(content.c_str(), "index_file:", strlen("index_file:")))
-		return (check_index_file(content));
+	if (!strncmp(content.c_str(), "index:", strlen("index:")))
+		return (check_index(content));
 	if (!strncmp(content.c_str(), "error_pages:", strlen("error_pages:")))
 		return (check_error_page(content));
 	if (!strncmp(content.c_str(), "location:", strlen("location:")))
@@ -522,10 +528,27 @@ int check_content(const string &content)
 	return (error_message(line_tracker(content), MDATA, NOEX));
 }
 
+void	set_required()
+{
+	required["listen"] = 0;
+	required["root"] = 0;
+	required["location"] = 0;
+}
+
+int	check_required()
+{
+	if (required["listen"] == 0)
+		return (error_message(NOLINE, MNOLISTEN, NOEX));
+	if (required["root"] == 0)
+		return (error_message(NOLINE, MNOROOT, NOEX));
+	return (1);
+}
+
 int check_error(string &file)
 {
 	int index_check = 0;
 	error_parsing = 0;
+	required["server"] = 0;
 
 	check_brackets(file);
 	check_quotes(file);
@@ -533,16 +556,23 @@ int check_error(string &file)
 	{
 		if (!strncmp(file.substr(index_check).c_str(), "server", strlen("server")))
 		{
+			set_required();
 			while (file[index_check] != '}' && file[index_check])
 			{
 				if (error_parsing == ERR)
 					return (ERR);
 				index_check += check_content(file.substr(index_check));
 			}
+			if (!check_required())
+				return (ERR);
+			if (required["location"] == 0)
+				file = file.substr(0, index_check - 1) + "location:/{methods:GET;}" + file.substr(index_check);
 		}
 		if (file[index_check])
 			index_check++;
 	}
+	if (required["server"] == 0)
+		return (error_message(NOLINE, MNOSERV, NOEX));
 	return (0);
 }
 

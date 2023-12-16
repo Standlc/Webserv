@@ -116,7 +116,7 @@ int fill_host_name(const string &file, ServerBlock &server) {
     return (file.find(';') + 1);
 }
 
-int fill_index_file(const string &file, Block &server) {
+int fill_index(const string &file, Block &server) {
     server.setIndex(file.substr(0, file.find(';')));
     return (file.find(';') + 1);
 }
@@ -158,8 +158,8 @@ int fill_error_pages(const string &file, Block &server) {
 int found_location_data(const string &file, LocationBlock &location) {
     if (!strncmp(file.c_str(), "root:", strlen("root:")))
         return (fill_root(file.substr(5), location) + 5);
-    if (!strncmp(file.c_str(), "index_file:", strlen("index_file:")))
-        return (fill_index_file(file.substr(11), location) + 11);
+    if (!strncmp(file.c_str(), "index:", strlen("index:")))
+        return (fill_index(file.substr(6), location) + 6);
     if (!strncmp(file.c_str(), "error_pages:", strlen("error_pages:")))
         return (fill_error_pages(file.substr(12), location) + 12);
     if (!strncmp(file.c_str(), "cgi_extensions:", strlen("cgi_extensions:")))
@@ -212,8 +212,8 @@ int found_data(string const &file, ServerBlock &server) {
         return (fill_auto_index(file.substr(11), server) + 11);
     if (!strncmp(file.c_str(), "root:", strlen("root:")))
         return (fill_root(file.substr(5), server) + 5);
-    if (!strncmp(file.c_str(), "index_file:", strlen("index_file:")))
-        return (fill_index_file(file.substr(11), server) + 11);
+    if (!strncmp(file.c_str(), "index:", strlen("index:")))
+        return (fill_index(file.substr(6), server) + 6);
     if (!strncmp(file.c_str(), "error_pages:", strlen("error_pages:")))
         return (fill_error_pages(file.substr(12), server) + 12);
     if (!strncmp(file.c_str(), "location:", strlen("location:")))

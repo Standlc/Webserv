@@ -1,16 +1,16 @@
 server {
-    listen: 127.0.0.1:3000;
-    #host_name: localhost;
-    root: www;
-    index_file: index.html;
+    listen: 127.0.0.1:3000; #o ->port
+    host_name: localhost;
+    root: www; #o
+    index: index.html;
     upload_root: ./;
     cookie: blabla;
     error_pages: {
         404: /404.html;
     }
-    location: / {
+    location: / { #o ->sinon cree -> location / {}
         methods: GET, POST, DELETE;
-        index_file: index.html;
+        index: index.html;
         auto_index: on;
         cgi_extensions: {
         .sh:/usr/bin/sh;
@@ -23,6 +23,7 @@ server {
         # redirect: 303, http://apple.com;
         cookie:wowo;
     }
+#location:/{}
 }
 
 #localhost:3000/folder

@@ -36,6 +36,9 @@ using namespace std;
 #define MCOOKIE "Cookie syntaxes not valid"
 #define MUPLOAD "Upload root not found"
 #define MQUOTES "Opening of quotes not closed"
+#define MNOSERV "None server"
+#define MNOLISTEN "None listen"
+#define MNOROOT "None root"
 
 #define NOEX ""
 
