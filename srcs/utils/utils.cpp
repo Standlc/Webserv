@@ -214,7 +214,7 @@ void debugErr(const String &title, const char *err) {
 }
 
 void debugParsingErr(ServerStream &s, int socket, const String &color) {
-    if (!DEBUG) {
+    if (!isDebug) {
         return;
     }
     std::cout << color << "> caught syntax error, socket: " << socket
@@ -224,7 +224,7 @@ void debugParsingErr(ServerStream &s, int socket, const String &color) {
 }
 
 void debugParsingSuccesss(ServerStream &s, int socket, const String &color) {
-    if (!DEBUG) {
+    if (!isDebug) {
         return;
     }
     std::cout << color << "> successfully parsed, socket: " << socket
@@ -234,7 +234,7 @@ void debugParsingSuccesss(ServerStream &s, int socket, const String &color) {
 }
 
 void debugSending(const String &title, ServerStream &s, int socket, const String &color) {
-    if (!DEBUG) {
+    if (!isDebug) {
         return;
     }
     std::cout << color << "<< " << title << ", socket: " << socket
@@ -244,7 +244,7 @@ void debugSending(const String &title, ServerStream &s, int socket, const String
 }
 
 void debugHttpMessage(const String &httpMessage, const String &color) {
-    if (!DEBUG) {
+    if (!isDebug) {
         return;
     }
     size_t len = httpMessage.size();
@@ -259,7 +259,7 @@ void debugHttpMessage(const String &httpMessage, const String &color) {
 }
 
 void debug(const String &title, const String &arg, const String &color) {
-    if (!DEBUG) {
+    if (!isDebug) {
         return;
     }
     std::cout << color << title;

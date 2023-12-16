@@ -26,7 +26,6 @@
 #include <unordered_map>
 #include <vector>
 
-#define DEBUG true
 #define WEBSERV_V "webserv/1.0"
 #define HTTP_VERSION "HTTP/1.1"
 #define BUF_SIZE 8000
@@ -120,5 +119,6 @@ typedef int (*CgiPollHandlerType)(CgiPoll *);
 
 extern String g_conf_path;
 extern char **environ;
+extern int  isDebug;
 
 #endif

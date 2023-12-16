@@ -57,5 +57,7 @@ using namespace std;
 
 #define NOLINE 0
 
+extern int			isDebug;
+
 void    fill_data(std::string file, Server *server);
 int     parsing(int argc, char **argv, Server *server);

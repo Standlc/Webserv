@@ -1,5 +1,7 @@
 #include "parsing.hpp"
 
+int isDebug;
+
 map<string, int>	required;
 int					error_parsing;
 
@@ -554,6 +556,8 @@ int check_error(string &file)
 	check_quotes(file);
 	while (file[index_check])
 	{
+		if (!strncmp(file.substr(index_check).c_str(), "debug=on", strlen("debug=on")))
+			isDebug = 1;
 		if (!strncmp(file.substr(index_check).c_str(), "server", strlen("server")))
 		{
 			set_required();

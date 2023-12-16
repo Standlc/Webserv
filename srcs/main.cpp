@@ -81,6 +81,7 @@ int main(int argc, char *argv[]) {
     MediaTypes::init();
     signal(SIGINT, handleSigint);
     std::srand(std::time(0));
+    isDebug = 0;
 
     if (parsing(argc, argv, server) == ERR)
     {
