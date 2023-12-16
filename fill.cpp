@@ -2,7 +2,7 @@
 
 int redirect_priority;
 
-int fill_redirect(const string &file, LocationBlock &location) {
+int fill_redirect(const string &file, LocationBlock *location) {
     int i = 0;
 
     redirect_priority = 1;
@@ -10,19 +10,19 @@ int fill_redirect(const string &file, LocationBlock &location) {
     i = file.find(',');
     i++;
     string url = file.substr(i, file.find(';') - i);
-    location.setRedirection(number, url);
+    location->setRedirection(number, url);
     return (file.find(';') + 1);
 }
 
-int fill_auto_index(const string &file, Block &location) {
+int fill_auto_index(const string &file, Block *location) {
     int AutoIndex = false;
     if (!strncmp(file.c_str(), "on", strlen("on")))
         AutoIndex = true;
-    location.setAutoIndex(AutoIndex);
+    location->setAutoIndex(AutoIndex);
     return (file.find(';') + 1);
 }
 
-int fill_cgi_extensions(const string &file, Block &location) {
+int fill_cgi_extensions(const string &file, Block *location) {
     int i = 1;
 
     while (file[i] != '}') {
@@ -30,7 +30,7 @@ int fill_cgi_extensions(const string &file, Block &location) {
         i = file.find(':', i);
         i++;
         String binarie = file.substr(i, file.find(';', i) - i);
-        location.addCgiCommand(extention, binarie);
+        location->addCgiCommand(extention, binarie);
         while (file[i] != ';')
             i++;
         i++;
@@ -38,7 +38,7 @@ int fill_cgi_extensions(const string &file, Block &location) {
     return (i + 1);
 }
 
-int fill_add_header(const string &file, Block &location) {
+int fill_add_header(const string &file, Block *location) {
     int i = 1;
 
     while (file[i] != '}') {
@@ -46,7 +46,7 @@ int fill_add_header(const string &file, Block &location) {
         i = file.find(':', i);
         i++;
         String value = file.substr(i, file.find(';', i) - i);
-        location.addHeader(key, value);
+        location->addHeader(key, value);
         while (file[i] != ';')
             i++;
         i++;
@@ -54,7 +54,7 @@ int fill_add_header(const string &file, Block &location) {
     return (i + 1);
 }
 
-int fill_methods(const string &file, LocationBlock &location) {
+int fill_methods(const string &file, LocationBlock *location) {
     int i = 0;
 
     String methods = file.substr(0, file.find(';'));
@@ -62,35 +62,37 @@ int fill_methods(const string &file, LocationBlock &location) {
         if (methods[i] == ',')
             i++;
         String method[] = {methods.substr(i, methods.find(',', i) - i), ""};
-        location.setAllowedMethods(method);
+        location->setAllowedMethods(method);
         i += method[0].size();
     }
     return (i + 1);
 }
 
-int fill_body_max_size(const string &file, Block &location) {
+int fill_body_max_size(const string &file, Block *location) {
     int i = 0;
 
     size_t number = atoi(file.c_str());
     while (isdigit(file[i]))
         i++;
-    if (!strncmp(file.substr(i, file.find(';') - i).c_str(), "MB", strlen("MB")))
+    if (!strncmp(file.substr(i, file.find(';') - i).c_str(), "MB", strlen("MB"))) {
         number *= 1000000;
-    location.setMaxBodySize(number);
+        i += 2;
+    }
+    location->setMaxBodySize(number);
     return (i + 1);
 }
 
-int fill_fallback(const string &file, Block &server) {
-    server.setFallBack(file.substr(0, file.find(';')));
+int fill_fallback(const string &file, Block *server) {
+    server->setFallBack(file.substr(0, file.find(';')));
     return (file.find(';') + 1);
 }
 
-int fill_cookie(const string &file, Block &server) {
-    server.addSessionCookie(file.substr(0, file.find(';')));
+int fill_cookie(const string &file, Block *server) {
+    server->addSessionCookie(file.substr(0, file.find(';')));
     return (file.find(';') + 1);
 }
 
-int fill_port(const string &file, ServerBlock &server) {
+int fill_port(const string &file, ServerBlock *server) {
     string listen = file.substr(0, file.find(';'));
     string ipAddress;
 
@@ -99,55 +101,57 @@ int fill_port(const string &file, ServerBlock &server) {
         listen = listen.substr(listen.find(':') + 1);
     } else
         ipAddress = "";
-    server.set(ipAddress, listen, true);
+    server->set(ipAddress, listen, true);
+    // std::cout << "port parsing :  " << server->port() << "\n";
     return (file.find(';') + 1);
 }
 
-int fill_host_name(const string &file, ServerBlock &server) {
+int fill_host_name(const string &file, ServerBlock *server) {
     int end = 0;
     int start = 0;
 
     while (file[start] != ';') {
         if (file[start] == ',')
             start++;
-        server.addHostName(file.substr(start, file.find_first_of(",;", start) - start));
+        server->addHostName(file.substr(start, file.find_first_of(",;", start) - start));
         start = file.find_first_of(",;", start);
     }
     return (file.find(';') + 1);
 }
 
-int fill_index(const string &file, Block &server) {
-    server.setIndex(file.substr(0, file.find(';')));
+int fill_index(const string &file, Block *server) {
+    server->setIndex(file.substr(0, file.find(';')));
     return (file.find(';') + 1);
 }
 
-int fill_upload_root(const string &file, Block &server) {
-    server.setUploadRoot(file.substr(0, file.find(';')));
+int fill_upload_root(const string &file, Block *server) {
+    server->setUploadRoot(file.substr(0, file.find(';')));
     return (file.find(';') + 1);
 }
 
-int fill_root(const string &file, Block &server) {
-    server.setRoot(file.substr(0, file.find(';')));
+int fill_root(const string &file, Block *server) {
+    server->setRoot(file.substr(0, file.find(';')));
     return (file.find(';') + 1);
 }
 
-int fill_proxy_pass(const string &file, LocationBlock &server) {
+int fill_proxy_pass(const string &file, LocationBlock *server) {
     if (redirect_priority == 1)
         return (file.find(';') + 1);
-    server.setProxyPass(file.substr(0, file.find(';')));
+    server->setProxyPass(file.substr(0, file.find(';')));
     return (file.find(';') + 1);
 }
 
-int fill_error_pages(const string &file, Block &server) {
+int fill_error_pages(const string &file, Block *server) {
     int i = 1;
+    int number = 0;
 
     while (file[i] != '}') {
-        int number = atoi(&file[i]);
+        number = atoi(&file[i]);
         while (file[i] != ':')
             i++;
         i++;
         String file_error = file.substr(i, file.find(';', i) - i);
-        server.addErrorPage(number, file_error);
+        server->addErrorPage(number, file_error);
         while (file[i] != ';')
             i++;
         i++;
@@ -155,7 +159,7 @@ int fill_error_pages(const string &file, Block &server) {
     return (i + 1);
 }
 
-int found_location_data(const string &file, LocationBlock &location) {
+int found_location_data(const string &file, LocationBlock *location) {
     if (!strncmp(file.c_str(), "root:", strlen("root:")))
         return (fill_root(file.substr(5), location) + 5);
     if (!strncmp(file.c_str(), "index:", strlen("index:")))
@@ -185,25 +189,29 @@ int found_location_data(const string &file, LocationBlock &location) {
     return (1);
 }
 
-int fill_location(const string &file, ServerBlock &server) {
+int fill_location(const string &file, ServerBlock *server) {
     int i = 0;
+    LocationBlock *location;
 
-    LocationBlock &location = server.addLocation();
+    location = server->addLocation();
     bool exact = false;
     if (file[i] == '=') {
         exact = true;
         i++;
     }
-    location.setPath(file.substr(i, file.find('{') - i), exact);
+    location->setPath(file.substr(i, file.find('{') - i), exact);
     while (file[i] != '{')
         i++;
     i++;
     while (file[i] != '}')
         i += found_location_data(&file[i], location);
-    return (i);
+    location = NULL;
+    // cout << "end loc\n";
+    return (i + 1);
 }
 
-int found_data(string const &file, ServerBlock &server) {
+int found_data(string const &file, ServerBlock *server) {
+    // cout << "sortie 3!\n";
     if (!strncmp(file.c_str(), "listen:", strlen("listen:")))
         return (fill_port(file.substr(7), server) + 7);
     if (!strncmp(file.c_str(), "host_name:", strlen("host_name:")))
@@ -216,8 +224,10 @@ int found_data(string const &file, ServerBlock &server) {
         return (fill_index(file.substr(6), server) + 6);
     if (!strncmp(file.c_str(), "error_pages:", strlen("error_pages:")))
         return (fill_error_pages(file.substr(12), server) + 12);
-    if (!strncmp(file.c_str(), "location:", strlen("location:")))
-        return (fill_location(file.substr(9), server) + 9);
+    if (!strncmp(file.c_str(), "location:", strlen("location:"))) {
+        int n = fill_location(file.substr(9), server) + 9;
+        return (n);
+    }
     if (!strncmp(file.c_str(), "body_max_size:", strlen("body_max_size:")))
         return (fill_body_max_size(file.substr(14), server) + 14);
     if (!strncmp(file.c_str(), "cookie:", strlen("cookie:")))
@@ -234,79 +244,28 @@ int found_data(string const &file, ServerBlock &server) {
 }
 
 bool delete_for_fill(char c) {
-    static int simple_quotes = 0;
-    static int double_quotes = 0;
-
-    if (c == '\'') {
-        if (!simple_quotes)
-            simple_quotes++;
-        else
-            simple_quotes--;
-    }
-    if (c == '"') {
-        if (!double_quotes)
-            double_quotes++;
-        else
-            double_quotes--;
-    }
-    if (!simple_quotes && !double_quotes)
-        return (c == '\n');
-    else
-        return (false);
+    return (c == '\n');
 }
 
 void fill_data(string file, Server *server) {
-    int i = 0;
     int start = 0;
+    int index = 0;
+    // ServerBlock *block;
 
     file.erase(std::remove_if(file.begin(), file.end(), delete_for_fill), file.end());
     redirect_priority = 0;
-    while (file[i]) {
-        int index = file.find("server{", start);
+    while (file[index]) {
+        index = file.find("server{", start);
         if (index == string::npos)
             return;
-        ServerBlock &block = server->addBlock();
+        ServerBlock *block = server->addBlock();
         index += 7;
         start = index;
-        while (file[index] && file[index] != '}')
+        while (file[index] && file[index] != '}') {
             index += found_data(file.substr(index), block);
+            // cout << "sortie !\n";
+        }
+        // cout << "sortie 2!\n";
+        cout << index << "end server\n";
     }
-
-    // server->getServerBlock(0).setHostName("localhost");
-    // server->getServerBlock(0).setIndex("index.html");
-
-    // server->getServerBlock(0).setSessionCookie("sessionId");
-
-    // // server->getServerBlock(1).set("3000", false);
-    // // server->getServerBlock(1).setHostName("virtual.org");
-    // // server->getServerBlock(1).setIndex("index.html");
-    // // server->getServerBlock(1).setRoot("www");
-
-    // server->getLocationBlock(0, 0).setPath("/");
-    // server->getLocationBlock(0, 0).setAutoIndex(true);
-    // server->getLocationBlock(0, 0).setHandlers(getMethod, postMethod, NULL);
-    // server->getLocationBlock(0, 0).addCgiExtension(".sh", "/bin/sh");
-    // server->getLocationBlock(0, 0).addCgiExtension(".py", "/usr/bin/python3");
-    // // server->getLocationBlock(0, 0).setHeader("Set-Cookie", "cookie=123; Path=/folder");
-
-    // server->getLocationBlock(0, 1).setPath("////folder////");
-    // server->getLocationBlock(0, 1).setHandlers(getMethod, postMethod, NULL);
-    // server->getLocationBlock(0, 1).setAutoIndex(true);
-    // server->getLocationBlock(0, 1).addHeader("Set-Cookie", "cookie=123; Path=/folder");
-    // server->getLocationBlock(0, 1).addErrorPage(404, "404.html");
-    // // server->getLocationBlock(0, 1).setRedirection(303, "/");
-
-    // server->getLocationBlock(0, 2).setPath("/upload", false);
-    // server->getLocationBlock(0, 2).setHandlers(getMethod, postMethod, deleteMethod);
-    // server->getLocationBlock(0, 2).setUploadRoot("www/upload");
-    // server->getLocationBlock(0, 2).setAutoIndex(true);
-    // server->getLocationBlock(0, 2).addCgiExtension(".py", "/usr/bin/python3");
-    // server->getLocationBlock(0, 2).setMaxBodySize(2000000000);
-
-    // server->getLocationBlock(0, 3).setPath("/download", false);
-    // server->getLocationBlock(0, 3).addHeader("Content-Disposition", "attachement");
-    // server->getLocationBlock(0, 3).setHandlers(getMethod, NULL, NULL);
-
-    // server->getLocationBlock(0, 4).setPath("/folder/dir", false);
-    // server->getLocationBlock(0, 4).setHandlers(getMethod, NULL, NULL);
 }

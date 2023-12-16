@@ -68,8 +68,8 @@ class ServerBlock : public Block {
     void addHostName(String name);
     void set(String ipAddress, String port, bool isDefault);
     LocationBlock &getLocationBlock(int index);
-    LocationBlock &addLocation();
-    LocationBlock &addLocation(LocationBlock &location);
+    LocationBlock *addLocation();
+    LocationBlock *addLocation(LocationBlock &location);
 };
 
 typedef void (LocationBlock::*serverMethodHandlerType)(HttpRequest &req, HttpResponse &res);
@@ -94,6 +94,9 @@ class LocationBlock : public Block {
    public:
     LocationBlock(ServerBlock &serverBlock);
     ~LocationBlock();
+    // LocationBlock() {
+    //     // _proxyPass = NULL;
+    // }
     LocationBlock &operator=(const LocationBlock &b);
 
     ServerBlock &serverBlock();
@@ -119,7 +122,7 @@ class LocationBlock : public Block {
     String isCgiScriptRequest(HttpRequest &req);
     void setenvCgi(HttpRequest &req, const String &cgiScriptPath);
 
-    LocationBlock &addLocation();
+    LocationBlock *addLocation();
     void setRedirection(int statusCode, String redirectionUrl);
     void setProxyPass(const String &proxyPass);
     const String &getPath();

@@ -1,9 +1,9 @@
+#include "../parsing.hpp"
 #include "Server.hpp"
 #include "StaticClasses/MediaTypes.hpp"
 #include "StaticClasses/StatusComments.hpp"
 #include "blocks/Block.hpp"
 #include "webserv.hpp"
-#include "../parsing.hpp"
 
 std::unordered_map<int, String> StatusComments::_comments;
 std::unordered_map<String, String> MediaTypes::_types;
@@ -74,7 +74,6 @@ void handleSigint(int sig) {
 }
 
 int main(int argc, char *argv[]) {
-
     Server *server = new Server();
 
     StatusComments::init();
@@ -83,10 +82,9 @@ int main(int argc, char *argv[]) {
     std::srand(std::time(0));
     isDebug = 0;
 
-    if (parsing(argc, argv, server) == ERR)
-    {
+    if (parsing(argc, argv, server) == ERR) {
         delete server;
-		return (1);
+        return (1);
     }
 
     // g_conf_path = getRealtivePathToFile(argv[1]);

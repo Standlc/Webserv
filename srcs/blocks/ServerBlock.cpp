@@ -54,16 +54,18 @@ LocationBlock *ServerBlock::findLocationBlockByPath(const String &reqPath) {
     return (matchIndex == -1) ? NULL : &_locations[matchIndex];
 }
 
-LocationBlock &ServerBlock::addLocation() {
+LocationBlock *ServerBlock::addLocation() {
     LocationBlock newLocation(*this);
     _locations.push_back(newLocation);
-    return _locations[_locations.size() - 1];
+    std::cout << "add_location ";
+    std::cout << "->" << &_locations[_locations.size() - 1] << '\n';
+    return &_locations[_locations.size() - 1];
 }
 
-LocationBlock &ServerBlock::addLocation(LocationBlock &location) {
+LocationBlock *ServerBlock::addLocation(LocationBlock &location) {
     LocationBlock newLocation(location);
     _locations.push_back(newLocation);
-    return _locations[_locations.size() - 1];
+    return &_locations[_locations.size() - 1];
 }
 
 LocationBlock &ServerBlock::getLocationBlock(int index) {
@@ -71,17 +73,20 @@ LocationBlock &ServerBlock::getLocationBlock(int index) {
 }
 
 void ServerBlock::set(String ipAddress, String port, bool isDefault) {
+    // std::cout << "listen:" << ipAddress << ':' << port << "-\n";
     if (ipAddress == "") {
         _ipAddress = "0.0.0.0";
     } else {
         _ipAddress = ipAddress;
-        this->addHostName(ipAddress);
+        // this->addHostName(ipAddress);
     }
     _port = port;
+    // std::cout << "port :  " << this->port() << '\n';
     _isDefault = isDefault;
 }
 
 void ServerBlock::addHostName(String name) {
+    // std::cout << "hostname:" << name << "-\n";
     _hostNames.push_back(name);
 }
 

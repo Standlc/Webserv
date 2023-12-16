@@ -13,6 +13,7 @@ LocationBlock::LocationBlock(ServerBlock &serverBlock) : Block(serverBlock),
 };
 
 LocationBlock::~LocationBlock() {
+    std::cout << "deleting proxy pass this ->" << this << '\n';
     delete _proxyPass;
 }
 

@@ -58,14 +58,17 @@ bool Block::hasErrorPage(int statusCode) {
 }
 
 void Block::addErrorPage(int statusCode, String pagePath) {
+    // std::cout << "error_page:" << statusCode << ':' << pagePath << "-\n";
     _errorFiles[statusCode] = pagePath;
 }
 
 void Block::addCgiCommand(String extension, String absoluteCommandPath) {
+    // std::cout << "cgi:" << extension << ':' << absoluteCommandPath << "-\n";
     _cgiCommands[extension] = absoluteCommandPath;
 }
 
 void Block::setRoot(String root) {
+    // std::cout << "root:" << root << "-\n";
     if (root[0] == '/') {
         _root = root;
     } else {
@@ -74,6 +77,7 @@ void Block::setRoot(String root) {
 }
 
 void Block::setUploadRoot(String dir) {
+    // std::cout << "upload_root:" << dir << "-\n";
     if (dir[0] == '/') {
         _uploadRoot = dir;
     } else {
@@ -82,6 +86,7 @@ void Block::setUploadRoot(String dir) {
 }
 
 void Block::setIndex(String index) {
+    // std::cout << "index:" << index << "-\n";
     _index = index;
 }
 
@@ -90,18 +95,22 @@ void Block::setFallBack(String file) {
 }
 
 void Block::setMaxBodySize(size_t size) {
+    // std::cout << "bodysize:" << size << "-\n";
     _reqBodyMaxSize = size;
 }
 
 void Block::setAutoIndex(bool isOn) {
+    // std::cout << "auto_index:" << isOn << "-\n";
     _autoIndex = isOn;
 }
 
 void Block::addHeader(String key, String value) {
+    // std::cout << "add_header:" << key << ':' << value << "-\n";
     _headers.add(key, value);
 }
 
 void Block::addSessionCookie(String name) {
+    // std::cout << "cookie:" << name << "-\n";
     if (name == "") {
         return;
     }

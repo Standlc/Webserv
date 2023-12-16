@@ -29,7 +29,7 @@ using namespace std;
 #define MAUTIND "Error on the instruction for auto_index"
 #define MEXT "Extention not found"
 #define MHEAD "Invalid header"
-#define MFALLBACK "File location for force not found"
+#define MFALLBACK "File location for fallback not found"
 #define MREDIRECT "Redirect not valid"
 #define MBODYSIZE "Size of body not valid"
 #define MPROXY "Proxy pass not valid"
@@ -39,6 +39,7 @@ using namespace std;
 #define MNOSERV "None server"
 #define MNOLISTEN "None listen"
 #define MNOROOT "None root"
+#define MERRPAGESYNT "Syntaxe error in the error pages"
 
 #define NOEX ""
 
@@ -46,7 +47,7 @@ using namespace std;
 #define EXHOST "host_name: www.apple.com;"
 #define EXINDEX "index_file: index.html;"
 #define EXROOT "root: /var/www;"
-#define EXERRPAGE "404: /404.html;"
+#define EXERRPAGE "404:/404.html;"
 #define EXMETHOD "methods: GET;"
 #define EXAUTIND "auto_index: on;"
 #define EXREDIRECT "redirect: 303, http://apple.com;"
@@ -54,6 +55,9 @@ using namespace std;
 #define EXPROXY "proxy_pass: http://apple.com;"
 #define EXCOOKIE "cookie:blabla;"
 #define EXUPLOAD "upload_root:download/"
+#define EXHEADER "Content-Disposition:blabla;"
+#define EXEXT ".php:/bin/php;"
+#define EXFALLBACK "fallback:/index"
 
 #define NOLINE 0
 

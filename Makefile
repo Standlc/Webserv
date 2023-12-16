@@ -49,7 +49,7 @@ DEPENDENCIES = 	Makefile \
 				srcs/ServerStreams/HttpParser.hpp \
 				srcs/blocks/LocationBlock/utils.hpp \
 
-FLAGS = #-Wextra -Wall #-std=c++98 #-Werror
+FLAGS = -g#-std=c++98#-Wextra -Wall #-Werror
 
 RM = rm -rf
 
