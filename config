@@ -3,6 +3,13 @@
 debug=on
 rdfgv
 
+#pas 2 serveur identiques
+#full tests pleins de serveurz + plein de location block
+#tester plusieurs fois chaque composant (methods, etc...)
+#Makefile
+#organiser les fichiers pour le parsing
+#correction blanche
+
 server
 {
 	listen: 0.0.0.0:3000; # #0.0.0.0
