@@ -2,7 +2,7 @@ import cgi
 import os
 
 # Specify the directory where files are stored
-files_directory = "../upload/"
+files_directory = "../public/"
 
 # Print the Content-type header
 print("Content-type: text/html\n")
@@ -38,7 +38,7 @@ if file_to_delete:
                         >
                         <h2>File uploaded successfully</h2>
                         <span style='color:red;'>{file_to_delete}</span>
-                        <a href="/upload">Uploaded files</a>
+                        <a href="/public">Uploaded files</a>
                         <span style="color:gray;">Powered by Python</span>
                     </div>
                     </div>

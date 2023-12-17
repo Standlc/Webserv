@@ -3,7 +3,7 @@ from fileinput import filename
 import os
 
 # Specify the directory where uploaded files will be saved
-upload_directory = "../upload/"
+upload_directory = "../public/"
 
 # Create the upload directory if it doesn't exist
 

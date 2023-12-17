@@ -96,7 +96,7 @@ void CgiPoll::forkAndexecuteScript(const String &cgiResourcePath, const String &
             this->execveScript(cgiResourcePath, cgiScriptCommand);
         } catch (int status) {
             _pid = -1;
-            handleSigint(1);
+            throw std::runtime_error("CGI Program Failed.");
         }
     }
     this->resetStartTime();
@@ -152,11 +152,12 @@ int CgiPoll::cgiPid() {
     return _pid;
 }
 
+// check
 int cgiQuitPoll(CgiPoll *cgi) {
-    if (cgi->cgiPid() != -1 && waitpid(cgi->cgiPid(), NULL, WNOHANG) == -1) {
+    if (cgi->cgiPid() != -1 && waitpid(cgi->cgiPid(), NULL, WNOHANG) == cgi->cgiPid()) {
         return -1;
     }
-    return 0;
+    return cgi->cgiPid() == -1;
 }
 
 int handleCgiQuit(CgiPoll *cgi, int status) {
@@ -221,9 +222,8 @@ int waitCgiProcessEnd(CgiPoll *cgi) {
 
     int pid = cgi->cgiPid();
     int exitStatus = 0;
-    if (waitpid(pid, &exitStatus, WNOHANG) == -1) {
+    if (waitpid(pid, &exitStatus, WNOHANG) == pid) {
         if (WIFEXITED(exitStatus) && WEXITSTATUS(exitStatus) != 0) {
-            debug("CGI process has exit with an error", std::to_string(WEXITSTATUS(exitStatus)), RED);
             return handleCgiQuit(cgi, 502);
         }
 

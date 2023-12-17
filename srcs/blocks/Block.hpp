@@ -30,7 +30,7 @@ class Block {
 
     void loadErrPage(int statusCode, HttpResponse &res, HttpRequest &req);
     String getResourcePath(const String &reqUrl, const String &file = "");
-    String getUploadFilePath(const String &reqPath, const String &file);
+    String getUploadFilePath(const String &file);
     bool hasErrorPage(int statusCode);
     void addErrorPage(int statusCode, String pagePath);
 
@@ -114,8 +114,7 @@ class LocationBlock : public Block {
     void handleMethod(const String &httpMethod, HttpRequest &req, HttpResponse &res);
     void handleSessionCookies(ClientPoll &client);
 
-    String getReqResourcePath(HttpRequest &req);
-    String getReqUploadResourcePath(HttpRequest &req, const String &file);
+    String getReqPathInfo(HttpRequest &req);
     void getMethod(HttpRequest &req, HttpResponse &res);
     void postMethod(HttpRequest &req, HttpResponse &res);
     void deleteMethod(HttpRequest &req, HttpResponse &res);

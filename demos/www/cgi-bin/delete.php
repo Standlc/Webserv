@@ -1,7 +1,7 @@
 <?php
 
 // Specify the directory where files are stored
-$filesDirectory = '../upload/';
+$filesDirectory = '../public/';
 
 // Check if the form was submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             HTML;
                                 echo "<span style='color:red;'>";echo $fileToDelete;echo "</span>";
                                 echo <<<HTML
-                                <a href="/upload">Uploaded files</a>
+                                <a href="/public">Uploaded files</a>
                                 <span style="color:gray;">Powered by PHP/8.2.12</span>
                             </div>
                         </div>

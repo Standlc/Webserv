@@ -27,14 +27,16 @@
       const handleRequest = async (e) => {
         const fileInputElement = document.getElementById("filename");
         try {
-          const response = await fetch("/upload/" + fileInputElement.value, {
+          const response = await fetch("/public/" + fileInputElement.value, {
             method: "DELETE",
           });
+          let message = response.status;
           if (!response.ok) {
-            alert("Failed to delete resource.");
+            message += " Failed to delete resource."
           } else {
-            alert("Resource was deleted.");
+            message += " Resource was deleted successfully."
           }
+          alert(message);
         } catch (err) {
           alert(err);
         }

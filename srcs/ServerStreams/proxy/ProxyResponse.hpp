@@ -22,12 +22,11 @@ class ProxyResponse : public HttpParser {
     void setClientRes() {
         _headers.erase("Server");
         _headers.erase("Connection");
+        _headers.erase("Content-Length");
+        _headers.add("Content-Length", std::to_string(_bodySize));
         _clientRes.addDefaultHeaders(_headers);
 
-        // ??
-        // _clientRes.setBody(_body);
-        _clientRes.setBody(&_rawData[_endOfHeadersPos]);
-        // _clientRes.setBody(_rawData.substr(_endOfHeadersPos, _totalRead - _endOfHeadersPos));
+        _clientRes.setBody(_rawData.substr(_endOfHeadersPos, _bodySize));
         _clientRes.set(_responseStatus);
     }
 };

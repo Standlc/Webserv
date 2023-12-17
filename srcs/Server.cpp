@@ -54,30 +54,33 @@ void bindSocket(int socketFd, struct addrinfo* addrInfo) {
     }
 }
 
+void printServerHostnames(ServerBlock& serverBlock) {
+    if (serverBlock.hostNames().size()) {
+        String hostnames;
+        for (int i = 0; i < serverBlock.hostNames().size(); i++) {
+            hostnames += serverBlock.hostNames()[i];
+            if (i < serverBlock.hostNames().size() - 1) {
+                hostnames += ", ";
+            }
+        }
+        std::cout << " (" << hostnames << ")";
+    }
+}
+
 void printServerListeningMessage(ServerBlock& serverBlock) {
     String host = serverBlock.ipAddress();
-    String hostnames;
-    for (int i = 0; i < serverBlock.hostNames().size(); i++) {
-        hostnames += serverBlock.hostNames()[i];
-        if (i < serverBlock.hostNames().size() - 1) {
-            hostnames += ", ";
-        }
-    }
-    std::cout << "\033[0;92m> " << host << " ("
-              << hostnames
-              << ") is listening on port " << serverBlock.port() << "...\n"
-              << WHITE;
+    std::cout << "\033[0;92m> " << host;
+
+    printServerHostnames(serverBlock);
+
+    std::cout << " is listening on port " << serverBlock.port() << "..."
+              << WHITE << "\n";
 }
 
 void printServerStartFail(ServerBlock& serverBlock) {
-    String host;
-    if (serverBlock.hostNames().size() > 0) {
-        host = serverBlock.hostNames()[0];
-    } else {
-        host = serverBlock.ipAddress();
-    }
-    std::cout << serverBlock.port() << "\n";
-    std::cerr << RED << " ↳ " << host << " could not be started on port " << serverBlock.port() << WHITE << "\n";
+    std::cerr << RED << " ↳ " << serverBlock.ipAddress();
+    printServerHostnames(serverBlock);
+    std::cout << " could not be started on port " << serverBlock.port() << WHITE << "\n";
 }
 
 void listenToSocket(int socketFd, ServerBlock& serverBlock) {
@@ -248,7 +251,11 @@ void Server::loadDefaultErrPage(int statusCode, HttpResponse& res) {
     try {
         res.loadFile(statusCode, this->getDefaultErrorPagePath(statusCode));
     } catch (int status) {
-        res.set(status, ".txt", "The server encountered some issue while handling your request");
+        if (status == 500) {
+            res.set(500, ".txt", "The server encountered some issue while handling your request");
+        } else {
+            res.set(statusCode, ".txt", std::to_string(statusCode) + " Error");
+        }
     }
 }
 
@@ -265,12 +272,12 @@ ServerBlock* Server::findServerBlock(HttpRequest& req) {
         hostName = req.getSocketIpAddress();
     }
 
+    // check
     for (int i = 0; i < _serverBlockSize; i++) {
         if (_blocks[i].port() == port) {
             if (_blocks[i].isHost(hostName)) {
                 return &_blocks[i];
             }
-
             if (!defaultBlock) {
                 defaultBlock = &_blocks[i];
             }

@@ -1,12 +1,13 @@
 #include "../../Block.hpp"
 
 void LocationBlock::getMethod(HttpRequest &req, HttpResponse &res) {
-    String resourcePath = this->getReqResourcePath(req);
-    // String resourcePath = this->getResourcePath(req.url().path);
+    String pathInfo = this->getReqPathInfo(req);
+    String resourcePath = this->getResourcePath(_path, pathInfo);
     int accessStatus = checkPathAccess(resourcePath);
 
     if (accessStatus != 200 && _fallBack != "") {
-        resourcePath = this->getResourcePath(req.url().path, _fallBack);
+        // check
+        resourcePath = this->getResourcePath(_path, _fallBack);
         accessStatus = checkPathAccess(resourcePath);
     }
 
@@ -18,7 +19,7 @@ void LocationBlock::getMethod(HttpRequest &req, HttpResponse &res) {
     }
 
     try {
-        res.loadFile(200, resourcePath + "/" + _index);
+        res.loadFile(200, this->getResourcePath(_path, _index));
     } catch (int status) {
         throwIf(status == 500, 500);
         throwIf(_autoIndex == false, 403);

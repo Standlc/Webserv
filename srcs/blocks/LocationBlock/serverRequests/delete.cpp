@@ -1,8 +1,12 @@
 #include "../../Block.hpp"
 
 void LocationBlock::deleteMethod(HttpRequest &req, HttpResponse &res) {
-    String resourcePath = this->getReqResourcePath(req);
-    // String resourcePath = this->getResourcePath(req.url().path);
+    String pathInfo = this->getReqPathInfo(req);
+    if (pathInfo == "" || pathInfo == "/") {
+        throw 400;
+    }
+
+    String resourcePath = this->getResourcePath(_path, pathInfo);
 
     throwIf(checkPathAccess(resourcePath) == 404, 404);
     throwIf(isDirectory(resourcePath), 403);

@@ -35,14 +35,15 @@ LocationBlock &LocationBlock::operator=(const LocationBlock &b) {
     return *this;
 }
 
-String LocationBlock::getReqResourcePath(HttpRequest &req) {
-    String pathInfo = req.url().path.substr(_path.size());
-    String filePath = pathInfo[0] == '/' ? &pathInfo[1] : pathInfo;
-    return this->getResourcePath(_path, filePath);
-}
-
-String LocationBlock::getReqUploadResourcePath(HttpRequest &req, const String &file) {
-    return this->getUploadFilePath(_path, file);
+String LocationBlock::getReqPathInfo(HttpRequest &req) {
+    size_t pathSize = _path.size();
+    String pathInfo;
+    if (pathSize >= req.url().path.size()) {
+        pathInfo = "/";
+    } else {
+        pathInfo = req.url().path.substr(pathSize);
+    }
+    return pathInfo[0] == '/' ? &pathInfo[1] : pathInfo;
 }
 
 void LocationBlock::setPath(const String &path, bool isExact) {

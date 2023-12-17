@@ -83,7 +83,7 @@ void LocationBlock::postMethod(HttpRequest &req, HttpResponse &res) {
         }
 
         String filename = getFormFileName(req, currFormPos, formHeadersEndPos);
-        String filePath = this->getUploadFilePath(_path, filename);
+        String filePath = this->getUploadFilePath(filename);
         throwIf(checkPathAccess(filePath) != 404, 409);
         // if (filename.find('/') != NPOS) {
         //     throw 403;

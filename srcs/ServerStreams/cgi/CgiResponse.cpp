@@ -33,13 +33,10 @@ void CgiResponse::parseLocationHeader() {
 void CgiResponse::setClientResponse() {
     _headers.erase("Server");
     _headers.erase("Content-Length");
-
-    if (_headers.find("Content-Encoding") == "") {
-        _headers.add("Content-Length", std::to_string(_totalRead - _endOfHeadersPos));
-    }
-
+    _headers.add("Content-Length", std::to_string(_bodySize));
     _clientRes.addDefaultHeaders(_headers);
-    _clientRes.setBody(&_rawData[_endOfHeadersPos]);
+
+    _clientRes.setBody(_rawData.substr(_endOfHeadersPos, _bodySize));
     _clientRes.set(_statusHeaderCode);
 }
 

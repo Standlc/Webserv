@@ -1,8 +1,8 @@
-#include "parsing/parsing.hpp"
 #include "Server.hpp"
 #include "StaticClasses/MediaTypes.hpp"
 #include "StaticClasses/StatusComments.hpp"
 #include "blocks/Block.hpp"
+#include "parsing/parsing.hpp"
 #include "webserv.hpp"
 
 std::unordered_map<int, String> StatusComments::_comments;
@@ -60,6 +60,10 @@ String generateDirectoryListingPage(const String &dir, String reqUrl, struct dir
 //// Expect: 100-continue
 //// refacto
 
+// check delete folder
+// check autoindex page
+// check PollFd size
+
 String getRealtivePathToFile(String path) {
     int lastSlash = path.find_last_of("/");
     if (lastSlash == -1) {
@@ -81,6 +85,7 @@ int main(int argc, char *argv[]) {
     signal(SIGINT, handleSigint);
     std::srand(std::time(0));
     isDebug = 0;
+    g_conf_path = getRealtivePathToFile(argv[1]);
 
     // for (int i = 0; i < 300; i++) {
     //     ServerBlock *block = server->addBlock();
@@ -97,12 +102,14 @@ int main(int argc, char *argv[]) {
         return (1);
     }
 
-    g_conf_path = getRealtivePathToFile(argv[1]);
-
     try {
-        server->listen();
-    } catch (char const *str) {
-        std::cout << str << '\n';
+        try {
+            server->listen();
+        } catch (char const *str) {
+            std::cout << str << '\n';
+        }
+    } catch (const std::exception &e) {
+        return 1;
     }
 
     delete server;

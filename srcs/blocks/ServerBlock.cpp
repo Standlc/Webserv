@@ -94,7 +94,7 @@ bool ServerBlock::isHost(const String &hostName) {
     if (std::find(_hostNames.begin(), _hostNames.end(), hostName) != _hostNames.end()) {
         return true;
     }
-    return false;
+    return _ipAddress == hostName;
 }
 
 const std::vector<std::string> &ServerBlock::hostNames() {

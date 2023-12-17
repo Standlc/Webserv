@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Webserv</title>
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="flex-col" style="align-items: stretch;">
+        <h1>Max body size tests (1000 bytes)</h1>
+        <span style="color: gray;">This tests will either return 413, or 400.</span>
+        <span style="color: gray;">They're only meant to test the max body size limit.</span>
+        <div method="post" class="flex-col">
+            <h3>Enter the request body size</h3>
+            <input type="text" id="reqSizeInput" placeholder="Body size" />
+            <button type="submit" onclick="writeBytes()">Post</button>
+        </div>
+      </div>
+    </div>
+  </body>
+
+  <script>
+    const writeBytes = () => {
+      const size = document.getElementById("reqSizeInput").value;
+      let data = "";
+      for (let i = 0; i < size; i++) {
+          data += "0";
+      }
+
+      const res = fetch("/upload",{method: "POST", body: data})
+      .then(res => {
+        if (!res.ok){
+          if (res.status == 400) {
+            const message = data.length + " bytes sent" + " Body size is OK";
+            alert(message);
+          } else {
+            alert(res.status);
+          }
+        }
+      })
+    } 
+  </script>
+</html>

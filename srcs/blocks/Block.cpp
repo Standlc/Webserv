@@ -55,33 +55,13 @@ String Block::getResourcePath(const String &reqPath, const String &file) {
         std::cout << "path => " << _root + parseFileDirectory(reqPath) + file << "\n";
         return _root + parseFileDirectory(reqPath) + file;
     }
-    // std::cout << "path => " << _root + reqPath + file << "\n";
-    // return _root + reqPath + file;
 }
 
-String Block::getUploadFilePath(const String &reqPath, const String &file) {
-    String root = _root;
+String Block::getUploadFilePath(const String &file) {
     if (_uploadRoot != "") {
-        root = _uploadRoot;
+        return _uploadRoot + "/" + file;
     }
-
-    if (file == "") {
-        std::cout << "1path => " << root + reqPath << "\n";
-        return root + reqPath;
-    }
-
-    if (file[0] == '/') {
-        std::cout << "2path => " << root + file << "\n";
-        return root + file;
-    }
-
-    if (lastChar(reqPath) == '/') {
-        std::cout << "3path => " << root + reqPath + file << "\n";
-        return root + reqPath + file;
-    } else {
-        std::cout << "4path => " << root + parseFileDirectory(reqPath) + file << "\n";
-        return root + parseFileDirectory(reqPath) + file;
-    }
+    return _root + "/" + file;
 }
 
 bool Block::hasErrorPage(int statusCode) {

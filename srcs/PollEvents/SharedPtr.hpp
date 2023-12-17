@@ -30,8 +30,6 @@ class SharedPtr {
     SharedPtr &operator=(SharedPtr &other) {
         value = other.value;
         amount = other.amount;
-        // std::cout << *other.value << "\n";
-        // std::cout << *other.amount << "\n";
         *amount += 1;
         return *this;
     }
@@ -47,13 +45,17 @@ class SharedPtr {
     }
 
     SharedPtr &operator=(int *ptr) {
-        std::cout << "deleting shared ptr value\n";
-        delete value;
-        std::cout << "deleting shared ptr amount\n";
-        delete amount;
+        if (amount && *amount == 1) {
+            delete value;
+            value = NULL;
+            delete amount;
+            amount = NULL;
+        }
+        if (amount) {
+            *amount -= 1;
+        }
         value = ptr;
         amount = ptr;
-        std::cout << "done deleting shared ptr\n";
         return *this;
     }
 };

@@ -1,7 +1,7 @@
 <?php
 
 // Specify the directory where uploaded files will be saved
-$uploadDirectory = '../upload/';
+$uploadDirectory = '../public/';
 
 // Check if the form was submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </a>
                             <h2>File was uploaded</h2>
             HTML;
-                            $link = "/upload/" . basename($file['name']);
+                            $link = "/public/" . basename($file['name']);
                             echo "<a href=";echo $link;echo ">";echo basename($file['name']);echo "</a>";
                             $cgiVariables = array(
                                 'GATEWAY_INTERFACE',
