@@ -281,9 +281,7 @@ ServerBlock* Server::findServerBlock(HttpRequest& req) {
 ServerBlock* Server::addBlock() {
     _serverBlockSize++;
     ServerBlock block;
-    std::cout << _blocks.size() << "\n";
     _blocks.push_back(block);
-    std::cout << _blocks.size() - 1 << "\n";
     return &_blocks[_blocks.size() - 1];
 }
 

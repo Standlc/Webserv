@@ -21,6 +21,13 @@ class ProxyUrl {
         // debug("path", _path);
     }
 
+    ProxyUrl(const ProxyUrl &other) {
+        _fullUrl = other._fullUrl;
+        _host = other._host;
+        _port = other._path;
+        _path = other._port;
+    }
+
     String parseHost() {
         size_t start = String("http://").size();
         size_t end = _fullUrl.find(':', start);

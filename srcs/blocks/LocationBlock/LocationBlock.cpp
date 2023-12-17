@@ -13,8 +13,11 @@ LocationBlock::LocationBlock(ServerBlock &serverBlock) : Block(serverBlock),
 };
 
 LocationBlock::~LocationBlock() {
-    std::cout << "deleting proxy pass this ->" << this << '\n';
     delete _proxyPass;
+}
+
+LocationBlock::LocationBlock(const LocationBlock &b) : _serverBlock(b._serverBlock) {
+    *this = b;
 }
 
 LocationBlock &LocationBlock::operator=(const LocationBlock &b) {
@@ -24,7 +27,11 @@ LocationBlock &LocationBlock::operator=(const LocationBlock &b) {
     _allowedMethods = b._allowedMethods;
     _path = b._path;
     _isExact = b._isExact;
-    _proxyPass = b._proxyPass;
+    if (b._proxyPass) {
+        _proxyPass = new ProxyUrl(*b._proxyPass);
+    } else {
+        _proxyPass = NULL;
+    }
     _serverBlock = b._serverBlock;
     _redirection = b._redirection;
     _fallBack = b._fallBack;

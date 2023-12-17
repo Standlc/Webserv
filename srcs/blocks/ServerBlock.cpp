@@ -57,8 +57,6 @@ LocationBlock *ServerBlock::findLocationBlockByPath(const String &reqPath) {
 LocationBlock *ServerBlock::addLocation() {
     LocationBlock newLocation(*this);
     _locations.push_back(newLocation);
-    std::cout << "add_location ";
-    std::cout << "->" << &_locations[_locations.size() - 1] << '\n';
     return &_locations[_locations.size() - 1];
 }
 

@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
         return (1);
     }
 
-    // g_conf_path = getRealtivePathToFile(argv[1]);
+    g_conf_path = getRealtivePathToFile(argv[1]);
 
     // ServerBlock &block1 = server->addBlock();
     // block1.set("0.0.0.0", "3000", true);

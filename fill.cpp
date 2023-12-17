@@ -206,12 +206,10 @@ int fill_location(const string &file, ServerBlock *server) {
     while (file[i] != '}')
         i += found_location_data(&file[i], location);
     location = NULL;
-    // cout << "end loc\n";
     return (i + 1);
 }
 
 int found_data(string const &file, ServerBlock *server) {
-    // cout << "sortie 3!\n";
     if (!strncmp(file.c_str(), "listen:", strlen("listen:")))
         return (fill_port(file.substr(7), server) + 7);
     if (!strncmp(file.c_str(), "host_name:", strlen("host_name:")))
@@ -250,7 +248,6 @@ bool delete_for_fill(char c) {
 void fill_data(string file, Server *server) {
     int start = 0;
     int index = 0;
-    // ServerBlock *block;
 
     file.erase(std::remove_if(file.begin(), file.end(), delete_for_fill), file.end());
     redirect_priority = 0;
@@ -258,14 +255,13 @@ void fill_data(string file, Server *server) {
         index = file.find("server{", start);
         if (index == string::npos)
             return;
+        std::cout << "creating new server block" << std::endl;
         ServerBlock *block = server->addBlock();
         index += 7;
         start = index;
         while (file[index] && file[index] != '}') {
             index += found_data(file.substr(index), block);
-            // cout << "sortie !\n";
         }
-        // cout << "sortie 2!\n";
         cout << index << "end server\n";
     }
 }

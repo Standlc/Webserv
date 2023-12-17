@@ -93,10 +93,8 @@ class LocationBlock : public Block {
 
    public:
     LocationBlock(ServerBlock &serverBlock);
+    LocationBlock(const LocationBlock &b);
     ~LocationBlock();
-    // LocationBlock() {
-    //     // _proxyPass = NULL;
-    // }
     LocationBlock &operator=(const LocationBlock &b);
 
     ServerBlock &serverBlock();
