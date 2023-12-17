@@ -1,7 +1,6 @@
 #include "../Block.hpp"
 
-LocationBlock::LocationBlock(ServerBlock &serverBlock) : Block(serverBlock),
-                                                         _serverBlock(serverBlock) {
+LocationBlock::LocationBlock(ServerBlock &serverBlock) : Block(serverBlock), _serverBlock(serverBlock) {
     _isExact = false;
     _serverMethodshandlers["GET"] = &LocationBlock::getMethod;
     _serverMethodshandlers["POST"] = &LocationBlock::postMethod;
@@ -30,7 +29,6 @@ LocationBlock &LocationBlock::operator=(const LocationBlock &b) {
     } else {
         _proxyPass = NULL;
     }
-    _serverBlock = b._serverBlock;
     _redirection = b._redirection;
     _fallBack = b._fallBack;
     return *this;
@@ -55,10 +53,6 @@ void LocationBlock::setPath(const String &path, bool isExact) {
     _isExact = isExact;
 }
 
-LocationBlock *LocationBlock::addLocation() {
-    return _serverBlock.addLocation(*this);
-}
-
 void LocationBlock::setRedirection(int statusCode, String redirectionUrl) {
     _redirection.statusCode = statusCode;
     _redirection.url = redirectionUrl;
@@ -70,7 +64,9 @@ void LocationBlock::setProxyPass(const String &proxyPass) {
     _requestHandler = &LocationBlock::proxyHandler;
 }
 
-void LocationBlock::setAllowedMethods(String methods[]) {
+void LocationBlock::setAllowedMethods(std::vector<String> methods) {
+    _allowedMethods.clear();
+    _allowedMethods.resize(0);
     for (int i = 0; methods[i] != ""; i++) {
         _allowedMethods.push_back(methods[i]);
     }
@@ -100,9 +96,9 @@ bool LocationBlock::isAutoIndex() {
     return _autoIndex;
 }
 
-ServerBlock &LocationBlock::serverBlock() {
-    return _serverBlock;
-}
+// ServerBlock &LocationBlock::serverBlock() {
+//     return _serverBlock;
+// }
 
 bool LocationBlock::exceedsReqMaxSize(size_t size) {
     if (_reqBodyMaxSize == NPOS) {

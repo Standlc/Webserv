@@ -42,8 +42,12 @@ int	line_tracker(const string &error, string initializer = "")
 int    error_message(int row, string message, string example)
 {
 	if (row != NOLINE)
-		cerr << "\033[1;34m" << "line " << row << ":\n";
-	cerr << "\033[1;31m" << message << "\033[0m";
+		cerr << "\033[0;34m" << "> ";
+	else
+		cerr << "\033[0;31m" << "> ";
+	if (row != NOLINE)
+		cerr << "line " << row << ": ";
+	cerr << "\033[0;31m" << message << "\033[0m";
 	if (example != NOEX)
 		cerr << "\n\033[0;0mExample: " << example;
 	cerr << '\n';
@@ -199,7 +203,7 @@ int check_root(const string &content)
 
 int check_host_name(const string &content)
 {
-	int i = 10;
+	int i = 11;
 	if (!check_no_backspace(content))
 		return (error_message(line_tracker(content.substr(i)), MHOST, EXHOST));
 	do
@@ -380,6 +384,10 @@ int check_methods(const string &content)
 			return (error_message(line_tracker(content.substr(i)), MMETHOD, NOEX));
 		if (content[i] == ',')
 			i++;
+		else if (content[i] == ';')
+			;
+		else
+			return (error_message(line_tracker(content.substr(i)), MMETHOD, NOEX));
 	}
 	return (i + 1);
 }
@@ -461,7 +469,7 @@ int check_block(const string &content)
 		return (check_index(content));
 	if (!strncmp(content.c_str(), "auto_index:", strlen("auto_index:")))
 		return (check_auto_index(content));
-	if (!strncmp(content.c_str(), "cgi_extensions:", strlen("cgi_extensions")))
+	if (!strncmp(content.c_str(), "cgi_extensions:", strlen("cgi_extensions:")))
 		return (check_cgi_extensions(content));
 	if (!strncmp(content.c_str(), "add_headers:", strlen("add_headers:")))
 		return (check_add_header(content));
@@ -527,7 +535,7 @@ int check_content(const string &content)
 		return (check_listen(content));
 	if (!strncmp(content.c_str(), "root:", strlen("root:")))
 		return (check_root(content));
-	if (!strncmp(content.c_str(), "host_name:", strlen("host_name:")))
+	if (!strncmp(content.c_str(), "host_names:", strlen("host_names:")))
 		return (check_host_name(content));
 	if (!strncmp(content.c_str(), "index:", strlen("index:")))
 		return (check_index(content));
@@ -537,7 +545,7 @@ int check_content(const string &content)
 		return (check_location(content));
 	if (!strncmp(content.c_str(), "auto_index:", strlen("auto_index:")))
 		return (check_auto_index(content));
-	if (!strncmp(content.c_str(), "cgi_extensions:", strlen("cgi_extensions")))
+	if (!strncmp(content.c_str(), "cgi_extensions:", strlen("cgi_extensions:")))
 		return (check_cgi_extensions(content));
 	if (!strncmp(content.c_str(), "body_max_size:", strlen("body_max_size:")))
 		return (check_body_max_size(content));
@@ -675,7 +683,11 @@ int parsing(int argc, char **argv, Server *server)
 	if (check_error(file) == ERR)
 		return (ERR);
 
-	fill_data(file, server);
+	if (!fill_data(file, server))
+	{
+		error_message(NOLINE, MSAMESERV, NOEX);
+		return (ERR);
+	}
 
 	return (0);
 }

@@ -58,13 +58,16 @@ int fill_methods(const string &file, LocationBlock *location) {
     int i = 0;
 
     String methods = file.substr(0, file.find(';'));
+    vector<String>  arrayMethods;
     while (methods[i]) {
         if (methods[i] == ',')
             i++;
-        String method[] = {methods.substr(i, methods.find(',', i) - i), ""};
-        location->setAllowedMethods(method);
-        i += method[0].size();
+        String method = methods.substr(i, methods.find(',', i) - i);
+        i += method.size();
+        arrayMethods.push_back(method);
     }
+    arrayMethods.push_back("");
+    location->setAllowedMethods(arrayMethods);
     return (i + 1);
 }
 
@@ -211,8 +214,8 @@ int fill_location(const string &file, ServerBlock *server) {
 int found_data(string const &file, ServerBlock *server) {
     if (!strncmp(file.c_str(), "listen:", strlen("listen:")))
         return (fill_port(file.substr(7), server) + 7);
-    if (!strncmp(file.c_str(), "host_name:", strlen("host_name:")))
-        return (fill_host_name(file.substr(10), server) + 10);
+    if (!strncmp(file.c_str(), "host_names:", strlen("host_names:")))
+        return (fill_host_name(file.substr(11), server) + 11);
     if (!strncmp(file.c_str(), "auto_index:", strlen("auto_index:")))
         return (fill_auto_index(file.substr(11), server) + 11);
     if (!strncmp(file.c_str(), "root:", strlen("root:")))
@@ -221,10 +224,8 @@ int found_data(string const &file, ServerBlock *server) {
         return (fill_index(file.substr(6), server) + 6);
     if (!strncmp(file.c_str(), "error_pages:", strlen("error_pages:")))
         return (fill_error_pages(file.substr(12), server) + 12);
-    if (!strncmp(file.c_str(), "location:", strlen("location:"))) {
-        int n = fill_location(file.substr(9), server) + 9;
-        return (n);
-    }
+    if (!strncmp(file.c_str(), "location:", strlen("location:")))
+        return (fill_location(file.substr(9), server) + 9);
     if (!strncmp(file.c_str(), "body_max_size:", strlen("body_max_size:")))
         return (fill_body_max_size(file.substr(14), server) + 14);
     if (!strncmp(file.c_str(), "cookie:", strlen("cookie:")))
@@ -244,21 +245,70 @@ bool delete_for_fill(char c) {
     return (c == '\n');
 }
 
-void fill_data(string file, Server *server) {
+void    erase_duplicates(vector<String> &host_names)
+{
+    sort(host_names.begin(), host_names.end());
+    host_names.erase(unique(host_names.begin(), host_names.end()), host_names.end());
+}
+
+bool same_host_names(vector<String> host_names1, vector<String> host_names2)
+{
+    cout << "je passe\n" << "hostnames1 : " << host_names1[0] << " " << "hostnames2 : " << host_names2[0] << '\n';
+    erase_duplicates(host_names1);
+    erase_duplicates(host_names2);
+    host_names1.insert(host_names1.end(), host_names2.begin(), host_names2.end());
+    if (std::adjacent_find(host_names1.begin(), host_names1.end()) != host_names1.end())
+        return (true);
+    return (false);
+}
+
+bool same_data(ServerBlock block1, ServerBlock block2)
+{
+    if (block1.getIpAddress() == block2.getIpAddress()
+        && block1.getPort() == block2.getPort()
+        && same_host_names(block1.getHostNames(), block2.getHostNames()))
+        return (true);
+    return (false);
+}
+
+bool    check_different_server(Server *server)
+{
+    int index = 0;
+    int index_checker;
+    // ServerBlock block;
+    int size = server->getServerSize();
+
+    while (index < size)
+    {
+        index_checker = -1;
+        // block = server->getServerBlock(index);
+        while (++index_checker < size)
+            if (index_checker != index && same_data(server->getServerBlock(index), server->getServerBlock(index_checker)))
+                return (false);
+        index++;
+    }
+    return (true);
+}
+
+bool fill_data(string file, Server *server) {
     int start = 0;
     int index = 0;
+    ServerBlock *block;
 
     file.erase(std::remove_if(file.begin(), file.end(), delete_for_fill), file.end());
     redirect_priority = 0;
     while (file[index]) {
         index = file.find("server{", start);
         if (index == string::npos)
-            return;
-        ServerBlock *block = server->addBlock();
+            break ;
+        block = server->addBlock();
         index += 7;
         start = index;
         while (file[index] && file[index] != '}') {
             index += found_data(file.substr(index), block);
         }
     }
+    if (!check_different_server(server))
+        return (false);
+    return (true);
 }

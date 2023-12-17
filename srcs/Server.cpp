@@ -281,6 +281,10 @@ ServerBlock* Server::findServerBlock(HttpRequest& req) {
 
 ServerBlock* Server::addBlock() {
     _serverBlockSize++;
+
+    // ServerBlock* block = new ServerBlock();
+    // _blocks.push_back(*block);
+    // return block;
     ServerBlock block;
     _blocks.push_back(block);
     return &_blocks[_blocks.size() - 1];
@@ -288,6 +292,10 @@ ServerBlock* Server::addBlock() {
 
 ServerBlock& Server::getServerBlock(int index) {
     return _blocks[index];
+}
+
+int Server::getServerSize() {
+    return _blocks.size();
 }
 
 int handleNewConnection(PollFd* listen) {

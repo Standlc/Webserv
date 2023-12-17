@@ -1,210 +1,31 @@
-##
-#vide
 debug=on
-rdfgv
 
-#pas 2 serveur identiques
-#full tests pleins de serveurz + plein de location block
-#tester plusieurs fois chaque composant (methods, etc...)
-#Makefile
-#organiser les fichiers pour le parsing
-#correction blanche
+#fallback
+#delete, post with upload_root
+#compiler avec flags
 
-server
-{
-	listen: 0.0.0.0:3000; # #0.0.0.0
-	host_name:p;
+server{
+	listen:0.0.0.0:3000;
 	root:www/;
-	index: index.html;
-	upload_root: l;
-	cookie: blabla;
-	error_pages:{
-		404:php.html;
-
-
+	host_names: p, p;
+	location:/cgi{
+		methods:GET;
+		root:www/cgi;
 	}
-	location: / { #o ->sinon cree -> location / {}
-		methods: GET, POST, DELETE;
-		index:index.html;
-		auto_index:on;
-		add_headers:
-
-
-		{
-
-			Content-Disposit:blabla ' ;
-
-
-
-'
-
-
-
-		}
-
-
-		cgi_extensions: 
-		
-		
-		{
-
-
-.u:p;
-
-		.sh:/usr/bin/sh;
-		.sh:popo;
-		.py:/usr/bin/python3;
-		}
-		body_max_size: 20MB;
-		# fallback: /index.html;
-		# proxy_pass: http://amazon.com;
-		# redirect: 303, http://apple.com;
-		cookie:wowo;
+	location:/{
+		methods:GET;
 	}
-
-		location: /bin { #o ->sinon cree -> location / {}
-		methods: GET, POST, DELETE;
-		index:index.html;
-		auto_index:off;
-		add_headers:
-
-
-		{
-
-			Content-Disposition:blabla ' ;' 
-
-
-
-		}
-
-
-		cgi_extensions: 
-		
-		
-		{
-
-
-.u:p;
-
-		.sh:/usr/bin/sh;
-		.sh:popo;
-		.py:/usr/bin/python3;
-		}
-		body_max_size: 20MB;
-		fallback:/index.html;
-
-		proxy_pass: http://amazon.com;
-		redirect: 308,yaaa.com;
-#		cookie:wowo;
-	}
-location:/{}
-#
 }
 
-server
-{
-	listen: 0.0.0.0:3000; # #0.0.0.0
-	host_name:p;
-	root:/mnt/nfs/homes/svan-de-/webbbbbbbbb/www/;
-	index: index.html;
-	upload_root: l;
-	cookie: blabla;
-	error_pages:{
-		404:php.html;
-
-
-	}
-	location: / { #o ->sinon cree -> location / {}
-		methods: GET, POST, DELETE;
-		index:index.html;
-		auto_index:on;
-		add_headers:
-
-
-		{
-
-			Content-Disposit:blabla ' ;
-
-
-
-'
-
-
-
-		}
-
-
-		cgi_extensions: 
-		
-		
-		{
-
-
-.u:p;
-
-		.sh:/usr/bin/sh;
-		.sh:popo;
-		.py:/usr/bin/python3;
-		}
-		body_max_size: 20MB;
-		# fallback: /index.html;
-		# proxy_pass: http://amazon.com;
-		# redirect: 303, http://apple.com;
-		cookie:wowo;
-	}
-
-		location: /bin { #o ->sinon cree -> location / {}
-		methods: GET, POST, DELETE;
-		index:index.html;
-		auto_index:off;
-		add_headers:
-
-
-		{
-
-			Content-Disposition:blabla ' ;' 
-
-
-
-		}
-
-
-		cgi_extensions: 
-		
-		
-		{
-
-
-.u:p;
-
-		.sh:/usr/bin/sh;
-		.sh:popo;
-		.py:/usr/bin/python3;
-		}
-		body_max_size: 20MB;
-		fallback:/index.html;
-
-		proxy_pass: http://amazon.com;
-		redirect: 308,zou.com;
-#		cookie:wowo;
-	}
-location:/{}
-#
-}
-#localhost:3000/folder
-
-#server {
-#    listen: 80
-#    host_name: www.facebook.com facebook.com
-#    root: facebook
-#    error_page {
-#         404: /404.html
-#         500: /500.html
-#         507: /err507.html
-#     }
-	
-# }
-
-#server.blocks[0]._locationBlocks[0].handlers["GET"] = getMethod;
-#server.blocks[0]._locationBlocks[0].handlers["POST"] = postMethod;
-#server.blocks[0]._locationBlocks[0].handlers["DELETE"] = deleteMethod;
+#server{
+#	listen:3000;
+#	root:www/;
+#	host_names:p, p;
+#	location:/cgi{
+#		methods:GET;
+#		root:www/cgi;
+#	}
+#	location:/{
+#		methods:GET;
+#	}
+#}

@@ -55,6 +55,9 @@ class ServerBlock : public Block {
 
    public:
     ServerBlock();
+    ServerBlock(const ServerBlock &b) {
+        *this = b;
+    }
     ServerBlock &operator=(const ServerBlock &b);
 
     clientPollHandlerType execute(ClientPoll &client);
@@ -70,6 +73,10 @@ class ServerBlock : public Block {
     LocationBlock &getLocationBlock(int index);
     LocationBlock *addLocation();
     LocationBlock *addLocation(LocationBlock &location);
+
+    String getIpAddress();
+    String getPort();
+    std::vector<String> getHostNames();
 };
 
 typedef void (LocationBlock::*serverMethodHandlerType)(HttpRequest &req, HttpResponse &res);
@@ -92,12 +99,13 @@ class LocationBlock : public Block {
     Redirection _redirection;
 
    public:
-    LocationBlock(ServerBlock &serverBlock);
+    LocationBlock(
+        ServerBlock &serverBlock);
     LocationBlock(const LocationBlock &b);
     ~LocationBlock();
     LocationBlock &operator=(const LocationBlock &b);
 
-    ServerBlock &serverBlock();
+    // ServerBlock &serverBlock();
     bool handlesHttpMethod(const String &httpMethod);
     bool isMethodAllowed(const String &httpMethod);
     String assembleRedirectionUrl(HttpRequest &req);
@@ -122,14 +130,13 @@ class LocationBlock : public Block {
     String isCgiScriptRequest(HttpRequest &req);
     void setenvCgi(HttpRequest &req, const String &cgiScriptPath);
 
-    LocationBlock *addLocation();
     void setRedirection(int statusCode, String redirectionUrl);
     void setProxyPass(const String &proxyPass);
     const String &getPath();
     const String &getIndex();
     bool isExactPath();
     bool isAutoIndex();
-    void setAllowedMethods(String methods[]);
+    void setAllowedMethods(std::vector<String> methods);
     void setPath(const String &path, bool isExact = false);
 };
 

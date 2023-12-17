@@ -82,30 +82,22 @@ int main(int argc, char *argv[]) {
     std::srand(std::time(0));
     isDebug = 0;
 
+    // for (int i = 0; i < 300; i++) {
+    //     ServerBlock *block = server->addBlock();
+    //     block->set("0.0.0.0", "5000", false);
+    //     for (int j = 0; j < 150; j++) {
+    //         LocationBlock *location = block->addLocation();
+    //         location->setPath("/");
+    //         location->setProxyPass("http://apple.com");
+    //     }
+    // }
+
     if (parsing(argc, argv, server) == ERR) {
         delete server;
         return (1);
     }
 
     g_conf_path = getRealtivePathToFile(argv[1]);
-
-    // ServerBlock &block1 = server->addBlock();
-    // block1.set("0.0.0.0", "3000", true);
-    // // block1.setRoot("/Users/stan/42/vu/client/build");
-    // block1.setRoot("www");
-    // block1.setMaxBodySize(5000000);
-
-    // LocationBlock &location1 = block1.addLocation();
-    // location1.setPath("/", false);
-    // location1.setIndex("index.html");
-    // String test1[] = {"GET", "POST", "DELETE", ""};
-    // String test2[] = {"GET", "POST", "DELETE", "PUT", ""};
-    // location1.setAllowedMethods(test1);
-
-    // LocationBlock &location2 = block1.addLocation();
-    // location2.setPath("/api", false);
-    // location2.setAllowedMethods(test2);
-    // location2.setProxyPass("http://0.0.0.0:5000");
 
     try {
         server->listen();

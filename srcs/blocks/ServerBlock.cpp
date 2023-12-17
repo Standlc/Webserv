@@ -1,12 +1,18 @@
 #include "Block.hpp"
 
-ServerBlock::ServerBlock() : Block(), _isDefault(false){};
+ServerBlock::ServerBlock() : Block() {
+    _ipAddress = "";
+    _port = "";
+    _isDefault = 0;
+};
 
 ServerBlock &ServerBlock::operator=(const ServerBlock &b) {
     Block::operator=(b);
     _port = b._port;
+    _locations = b._locations;
     _isDefault = b._isDefault;
     _hostNames = b._hostNames;
+    _ipAddress = b._ipAddress;
     return *this;
 }
 
@@ -105,4 +111,16 @@ const String &ServerBlock::ipAddress() {
 
 bool ServerBlock::isDefault() {
     return _isDefault;
+}
+
+String ServerBlock::getIpAddress() {
+    return (_ipAddress);
+}
+
+String ServerBlock::getPort() {
+    return (_port);
+}
+
+std::vector<String> ServerBlock::getHostNames() {
+    return (_hostNames);
 }

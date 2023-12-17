@@ -40,12 +40,13 @@ using namespace std;
 #define MNOLISTEN "None listen"
 #define MNOROOT "None root"
 #define MERRPAGESYNT "Syntaxe error in the error pages"
+#define MSAMESERV "2 Servers have the same : ipAddress, Port and Hostname"
 
 #define NOEX ""
 
 #define EXPORT "listen: 80;"
 #define EXHOST "host_name: www.apple.com;"
-#define EXINDEX "index_file: index.html;"
+#define EXINDEX "index: index.html;"
 #define EXROOT "root: /var/www;"
 #define EXERRPAGE "404:/404.html;"
 #define EXMETHOD "methods: GET;"
@@ -63,5 +64,5 @@ using namespace std;
 
 extern int			isDebug;
 
-void    fill_data(std::string file, Server *server);
+bool    fill_data(std::string file, Server *server);
 int     parsing(int argc, char **argv, Server *server);

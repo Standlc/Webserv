@@ -1,13 +1,16 @@
-# debug=on
+debug=on
 rdfgv
+
+#error_pages
+#cgi
 
 server
 {
-    listen: 0.0.0.0:3000;
+    listen:127.0.0.1:3000;
     host_name:p;
-    root:www/;
+    root: /mnt/nfs/homes/svan-de-/webibibibibibibi/www/;
     index: index.html;
-    upload_root: l;
+    #upload_root: l;
     cookie: blabla;
     error_pages:{
         404:php.html;
@@ -15,14 +18,15 @@ server
 
     }
     location: / {
-        methods: GET, POST, DELETE;
+        # methods: GET, POST;
+        methods: POST, DELETE, POST, GET;
         index:index.html;
         auto_index:on;
-        body_max_size: 20MB;
+        body_max_size: 10MB;
         cookie:wowo;
     }
 
-        location: /bin {
+        location: /mnt/nfs/homes/svan-de-/webibibibibibibi/www/ {
         methods: GET, POST, DELETE;
         index:index.html;
         auto_index:off;
@@ -30,7 +34,7 @@ server
         fallback:/index.html;
 
         # proxy_pass: http://amazon.com;
-        redirect: 308,yaaa.com;
+        # redirect: 308,yaaa.com;
     }
 location:/{}
 }

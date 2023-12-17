@@ -16,16 +16,16 @@ class ProxyUrl {
         _host = this->parseHost();
         _port = this->parsePort();
         _path = this->parsePath();
-        // debug("host", _host);
-        // debug("port", _port);
-        // debug("path", _path);
+        debug("host", _host);
+        debug("port", _port);
+        debug("path", _path);
     }
 
     ProxyUrl(const ProxyUrl &other) {
         _fullUrl = other._fullUrl;
         _host = other._host;
-        _port = other._path;
-        _path = other._port;
+        _port = other._port;
+        _path = other._path;
     }
 
     String parseHost() {

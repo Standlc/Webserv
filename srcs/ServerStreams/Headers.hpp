@@ -9,12 +9,15 @@ class Headers {
     String null;
 
    public:
-    Headers(){};
+    Headers() {
+        null = "";
+    };
     Headers(const Headers &h) {
         *this = h;
     }
     Headers &operator=(const Headers &h) {
         _headers = h._headers;
+        null = "";
         return *this;
     }
 
