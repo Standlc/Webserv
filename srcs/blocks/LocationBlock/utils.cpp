@@ -2,6 +2,7 @@
 
 LocationBlock::LocationBlock(ServerBlock &serverBlock) : Block(serverBlock), _serverBlock(serverBlock) {
     _isExact = false;
+    _allowedMethods.push_back("GET");
     _serverMethodshandlers["GET"] = &LocationBlock::getMethod;
     _serverMethodshandlers["POST"] = &LocationBlock::postMethod;
     _serverMethodshandlers["DELETE"] = &LocationBlock::deleteMethod;

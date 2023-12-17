@@ -27,7 +27,25 @@ SOURCES = 	srcs/main.cpp \
 			srcs/ServerStreams/proxy/ProxyRequest.cpp \
 			srcs/ServerStreams/proxy/ProxyResponse.cpp \
 			srcs/ServerStreams/HttpParser.cpp \
-			parsing.cpp fill.cpp
+			\
+			srcs/parsing/parsing.cpp \
+			\
+			srcs/parsing/check/check_block.cpp \
+			srcs/parsing/check/check_location.cpp \
+			srcs/parsing/check/check_server.cpp \
+			srcs/parsing/check/search.cpp \
+			\
+			srcs/parsing/fill/fill_block.cpp \
+			srcs/parsing/fill/fill_location.cpp \
+			srcs/parsing/fill/fill_server.cpp \
+			srcs/parsing/fill/search.cpp \
+			\
+			srcs/parsing/other/check_global.cpp \
+			srcs/parsing/other/erase.cpp \
+			srcs/parsing/other/error_message.cpp \
+			srcs/parsing/other/required.cpp \
+			srcs/parsing/other/same_server.cpp \
+			srcs/parsing/other/utils.cpp \
 
 OBJECTS = $(SOURCES:.cpp=.o)
 
@@ -48,8 +66,9 @@ DEPENDENCIES = 	Makefile \
 				srcs/ServerStreams/proxy/ProxyResponse.hpp \
 				srcs/ServerStreams/HttpParser.hpp \
 				srcs/blocks/LocationBlock/utils.hpp \
+				srcs/parsing/parsing.hpp
 
-FLAGS = -g#-std=c++98#-Wextra -Wall #-Werror
+FLAGS = -g #-std=c++98 -Wextra -Wall -Werror
 
 RM = rm -rf
 
