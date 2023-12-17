@@ -7,7 +7,7 @@ server
 {
 	listen: 0.0.0.0:3000; # #0.0.0.0
 	host_name:p;
-	root:/mnt/nfs/homes/svan-de-/webbbbbbbbb/www/;
+	root:www/;
 	index: index.html;
 	upload_root: l;
 	cookie: blabla;
