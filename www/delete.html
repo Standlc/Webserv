@@ -24,15 +24,21 @@
     <!-- </form> -->
 
     <script>
-      const handleRequest = async () => {
-        //const formElement = document.querySelector("form");
-        //const fileInputElement = document.getElementById("filename");
-        //formElement.action = "/upload/" + fileInputElement.value;
-        const response = await fetch("/upload/" + fileInputElement.value, {
-          method: "DELETE",
-        });
+      const handleRequest = async (e) => {
+        const fileInputElement = document.getElementById("filename");
+        try {
+          const response = await fetch("/upload/" + fileInputElement.value, {
+            method: "DELETE",
+          });
+          if (!response.ok) {
+            alert("Failed to delete resource.");
+          } else {
+            alert("Resource was deleted.");
+          }
+        } catch (err) {
+          alert(err);
+        }
         //document.location.replace("/upload");
-        // console.log(response);
       };
     </script>
   </body>

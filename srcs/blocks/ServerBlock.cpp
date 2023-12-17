@@ -54,16 +54,16 @@ LocationBlock *ServerBlock::findLocationBlockByPath(const String &reqPath) {
     return (matchIndex == -1) ? NULL : &_locations[matchIndex];
 }
 
-LocationBlock &ServerBlock::addLocation() {
+LocationBlock *ServerBlock::addLocation() {
     LocationBlock newLocation(*this);
     _locations.push_back(newLocation);
-    return _locations[_locations.size() - 1];
+    return &_locations[_locations.size() - 1];
 }
 
-LocationBlock &ServerBlock::addLocation(LocationBlock &location) {
+LocationBlock *ServerBlock::addLocation(LocationBlock &location) {
     LocationBlock newLocation(location);
     _locations.push_back(newLocation);
-    return _locations[_locations.size() - 1];
+    return &_locations[_locations.size() - 1];
 }
 
 LocationBlock &ServerBlock::getLocationBlock(int index) {
@@ -75,7 +75,6 @@ void ServerBlock::set(String ipAddress, String port, bool isDefault) {
         _ipAddress = "0.0.0.0";
     } else {
         _ipAddress = ipAddress;
-        this->addHostName(ipAddress);
     }
     _port = port;
     _isDefault = isDefault;

@@ -55,13 +55,17 @@ void bindSocket(int socketFd, struct addrinfo* addrInfo) {
 }
 
 void printServerListeningMessage(ServerBlock& serverBlock) {
-    String host;
-    if (serverBlock.hostNames().size() > 0) {
-        host = serverBlock.hostNames()[0];
-    } else {
-        host = serverBlock.ipAddress();
+    String host = serverBlock.ipAddress();
+    String hostnames;
+    for (int i = 0; i < serverBlock.hostNames().size(); i++) {
+        hostnames += serverBlock.hostNames()[i];
+        if (i < serverBlock.hostNames().size() - 1) {
+            hostnames += ", ";
+        }
     }
-    std::cout << "\033[0;92m> " << host << " is listening on port " << serverBlock.port() << "...\n"
+    std::cout << "\033[0;92m> " << host << " ("
+              << hostnames
+              << ") is listening on port " << serverBlock.port() << "...\n"
               << WHITE;
 }
 
@@ -72,6 +76,7 @@ void printServerStartFail(ServerBlock& serverBlock) {
     } else {
         host = serverBlock.ipAddress();
     }
+    std::cout << serverBlock.port() << "\n";
     std::cerr << RED << " ↳ " << host << " could not be started on port " << serverBlock.port() << WHITE << "\n";
 }
 
@@ -274,11 +279,11 @@ ServerBlock* Server::findServerBlock(HttpRequest& req) {
     return defaultBlock;
 }
 
-ServerBlock& Server::addBlock() {
+ServerBlock* Server::addBlock() {
     _serverBlockSize++;
     ServerBlock block;
     _blocks.push_back(block);
-    return _blocks[_blocks.size() - 1];
+    return &_blocks[_blocks.size() - 1];
 }
 
 ServerBlock& Server::getServerBlock(int index) {

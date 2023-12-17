@@ -5,6 +5,17 @@ int isDebug;
 map<string, int>	required;
 int					error_parsing;
 
+int simple_quotes = 0;
+int double_quotes = 0;
+
+int	check_no_backspace(const string &content)
+{
+	for (int i = 0; content[i] && content[i] != ';'; i++)
+		if (content[i] == '\n')
+			return (0);
+	return (1);
+}
+
 int	line_tracker(const string &error, string initializer = "")
 {
 	static std::string file = "";
@@ -86,6 +97,8 @@ int	check_proxy_pass(const string &content)
 {
 	int i = 11;
 
+	if (!check_no_backspace(content))
+		return (error_message(line_tracker(content.substr(i)), MPROXY, EXPROXY));
 	string url = content.substr(i, content.find(';') - i);
 	if (strncmp(url.c_str(), "http://", strlen("http://")))
 		return (error_message(line_tracker(content.substr(i)), MPROXY, EXPROXY));
@@ -100,21 +113,23 @@ int check_error_page(const string &content)
 	if (content[i] != '{')
 		return (error_message(line_tracker(content.substr(i)), MBRACK, NOEX));
 	i++;
-	while (content[i] != '}' && content[i])
+	while (content[i] != '}')
 	{
 		if (content[i] == '\n')
 		{
 			i++;
 			continue ;
 		}
+		if (!check_no_backspace(&content[i]))
+			return (error_message(line_tracker(content.substr(i)), MERRPAGE, EXERRPAGE));
 		int number_error = atoi(&content[i]);
 		if (number_error <= 0)
-			return (error_message(line_tracker(content.substr(i)), MBRACK, NOEX));
+			return (error_message(line_tracker(content.substr(i)), MERRPAGESYNT, EXERRPAGE));
 		if (number_error >= 600 || number_error < 100)
-			return (error_message(line_tracker(content.substr(i)), MERRNUM, NOEX));
+			return (error_message(line_tracker(content.substr(i)), MERRNUM, EXERRPAGE));
 		i += 3;
 		if (content[i] != ':')
-			return (error_message(line_tracker(content.substr(i)), MSYNT, NOEX));
+			return (error_message(line_tracker(content.substr(i)), MERRPAGE, EXERRPAGE));
 		string file_page = content.substr(i + 1, endline(&content[i + 1]));
 		if (file_page == "")
 			return (error_message(line_tracker(content.substr(i)), MERRPAGE, EXERRPAGE));
@@ -129,6 +144,8 @@ int check_listen(const string &content)
 	int i = 7;
 
 	required["listen"] = 1;
+	if (!check_no_backspace(content))
+		return (error_message(line_tracker(content.substr(i)), MPORT, EXPORT));
 	if (!(content[i] >= '0' && content[i] <= '9'))
 		return (error_message(line_tracker(content.substr(i)), MPORT, EXPORT));
 	while (content[i] >= '0' && content[i] <= '9')
@@ -154,11 +171,15 @@ int check_listen(const string &content)
 			return (error_message(line_tracker(content.substr(i)), MPORT, EXPORT));
 		i++;
 	}
-	i = 7;
+	else
+		i = 7;
 	int port = atoi(&content[i]);
 	if (port <= 0 || port > 65535)
 		return (error_message(line_tracker(content.substr(i)), MPORT, EXPORT));
-	i = content.find(';');
+	while (content[i] >= '0' && content[i] <= '9')
+		i++;
+	if (content[i] != ';')
+		return (error_message(line_tracker(content.substr(i)), MPORT, EXPORT));
 	return (i + 1);
 }
 
@@ -167,7 +188,11 @@ int check_root(const string &content)
 	int i = 5;
 
 	required["root"] = 1;
+	if (!check_no_backspace(content))
+		return (error_message(line_tracker(content.substr(i)), MROOT, EXROOT));
 	string root = content.substr(i + 1, endline(&content[i]));
+	if (root == "")
+		return (error_message(line_tracker(content.substr(i)), MROOT, EXROOT));
 	i += endline(&content[i]);
 	return (i + 1);
 }
@@ -175,14 +200,16 @@ int check_root(const string &content)
 int check_host_name(const string &content)
 {
 	int i = 10;
+	if (!check_no_backspace(content))
+		return (error_message(line_tracker(content.substr(i)), MHOST, EXHOST));
 	do
 	{
 		if (content[i] == ',')
 			i++;
-		string root = content.substr(i, next_coma(&content[i]));
-		if (root == "")
+		string name = content.substr(i, next_coma(&content[i]));
+		if (name == "")
 			return (error_message(line_tracker(content.substr(i)), MHOST, EXHOST));
-		i += root.size();
+		i += name.size();
 	} while (content[i] != ';' && content[i]);
 	return (i + 1);
 }
@@ -190,8 +217,10 @@ int check_host_name(const string &content)
 int check_index(const string &content)
 {
 	int i = 6;
-	string root = content.substr(i, next_coma(&content[i]));
-	if (root == "")
+	if (!check_no_backspace(content))
+		return (error_message(line_tracker(content.substr(i)), MINDEX, EXINDEX));
+	string index = content.substr(i, next_coma(&content[i]));
+	if (index == "")
 		return (error_message(line_tracker(content.substr(i)), MINDEX, EXINDEX));
 	i += endline(&content[i]);
 	return (i + 1);
@@ -200,6 +229,8 @@ int check_index(const string &content)
 int check_upload_root(const string &content)
 {
 	int i = 12;
+	if (!check_no_backspace(content))
+		return (error_message(line_tracker(content.substr(i)), MUPLOAD, EXUPLOAD));
 	string root = content.substr(i, next_coma(&content[i]));
 	if (root == "")
 		return (error_message(line_tracker(content.substr(i)), MUPLOAD, EXUPLOAD));
@@ -209,26 +240,25 @@ int check_upload_root(const string &content)
 
 int good_extention(const string &content, int i)
 {
+	if (!check_no_backspace(&content[i]))
+		return (error_message(line_tracker(content.substr(i)), MEXT, EXEXT));
 	if (content[i] != '.')
-		return (error_message(line_tracker(content.substr(i)), MEXT, NOEX));
+		return (error_message(line_tracker(content.substr(i)), MEXT, EXEXT));
 	i++;
-	if (!isalpha(content[i]))
-		return (error_message(line_tracker(content.substr(i)), MEXT, NOEX));
-	while (content[i] != ':' && content[i])
-	{
+	if (!(content[i] > 31 && content[i] < 127) || content[i] == ':')
+		return (error_message(line_tracker(content.substr(i)), MEXT, EXEXT));
+	while (content[i] != ':' && content[i] != ';' && content[i] != '}' && content[i])
 		i++;
-		if (!content[i])
-			return (error_message(line_tracker(content.substr(i)), MEXT, NOEX));
-	}
+	if (content[i] != ':')
+		return (error_message(line_tracker(content.substr(i)), MEXT, EXEXT));
 	i++;
-	if (content[i] == ';')
-		error_message(line_tracker(content.substr(i)), MEXT, NOEX);
+	if (!(content[i] > 31 && content[i] < 127) || content[i] == ';')
+		return (error_message(line_tracker(content.substr(i)), MEXT, EXEXT));
 	while (content[i] != ';' && content[i] && content[i] != '}')
 		i++;
-	if (!content[i] || content[i] == '}')
-		return (error_message(line_tracker(content.substr(i)), MSYNT, NOEX));
-	i++;
-	return (i);
+	if (content[i] != ';')
+		return (error_message(line_tracker(content.substr(i)), MSYNT, EXEXT));
+	return (i + 1);
 }
 
 int check_cgi_extensions(const string &content)
@@ -269,17 +299,19 @@ int check_auto_index(const string &content)
 
 int good_header(const string &content, int i)
 {
-	if (!isalpha(content[i]))
-		return (error_message(line_tracker(content.substr(i)), MHEAD, NOEX));
+	if (!check_no_backspace(&content[i]))
+		return (error_message(line_tracker(content.substr(i)), MHEAD, EXHEADER));
+	if (!(content[i] > 31 && content[i] < 127) || content[i] == ':')
+		return (error_message(line_tracker(content.substr(i)), MHEAD, EXHEADER));
 	while (content[i] && content[i] != '}' && content[i] != ';' && content[i] != ':')
 		i++;
 	if (content[i] != ':')
-		return (error_message(line_tracker(content.substr(i)), MSYNT, NOEX));
+		return (error_message(line_tracker(content.substr(i)), MHEAD, EXHEADER));
 	i++;
 	while (content[i] && content[i] != '}' && content[i] != ';' && content[i] != ':')
 		i++;
 	if (content[i] != ';')
-		return (error_message(line_tracker(content.substr(i)), MSYNT, NOEX));
+		return (error_message(line_tracker(content.substr(i)), MHEAD, EXHEADER));
 	return (i + 1);
 }
 
@@ -308,20 +340,8 @@ int check_add_header(const string &content)
 
 int check_quotes(const string &content)
 {
-	int i = 0;
-	int count_simple_quotes = 0;
-	int count_double_quotes = 0;
-
-	while (content[i])
-	{
-		if (content[i] == '"')
-			count_double_quotes++;
-		if (content[i] == '\'')
-			count_simple_quotes++;
-		i++;
-	}
-	if (count_simple_quotes % 2 != 0 || count_double_quotes % 2 != 0)
-		return (error_message(line_tracker(content.substr(i)), MQUOTES, NOEX));
+	if (simple_quotes || double_quotes)
+		return (error_message(NOLINE, MQUOTES, NOEX));
 	return (0);
 }
 
@@ -399,13 +419,16 @@ int check_redirect(const string &content)
 {
 	int i = 9;
 
+	if (!check_no_backspace(content))
+		return (error_message(line_tracker(content.substr(i)), MREDIRECT, NOEX));
 	int number = atoi(&content[i]);
-	if (number <= 0)
+	if (!(number >= 300 && number <= 308))
 		return (error_message(line_tracker(content.substr(i)), MREDIRECT, NOEX));
 	while (content[i] >= '0' && content[i] <= '9')
 		i++;
 	if (content[i] != ',')
 		return (error_message(line_tracker(content.substr(i)), MSYNT, NOEX));
+	i++;
 	string root = content.substr(i, next_semicolon(&content[i]));
 	if (root == "")
 		return (error_message(line_tracker(content.substr(i)), MREDIRECT, NOEX));
@@ -417,16 +440,17 @@ int check_fallback(const string &content)
 {
 	int i = 9;
 
+	if (!check_no_backspace(content))
+		return (error_message(line_tracker(content.substr(i)), MFALLBACK, EXFALLBACK));
 	string root = content.substr(i, next_semicolon(&content[i]));
 	if (root == "")
-		return (error_message(line_tracker(content.substr(i)), MFALLBACK, NOEX));
+		return (error_message(line_tracker(content.substr(i)), MFALLBACK, EXFALLBACK));
 	i += root.size();
 	return (i + 1);
 }
 
 int check_block(const string &content)
 {
-	// cout << content << '\n';
 	if (content[0] == '\n')
 		return (1);
 	if (!strncmp(content.c_str(), "root:", strlen("root:")))
@@ -439,7 +463,7 @@ int check_block(const string &content)
 		return (check_auto_index(content));
 	if (!strncmp(content.c_str(), "cgi_extensions:", strlen("cgi_extensions")))
 		return (check_cgi_extensions(content));
-	if (!strncmp(content.c_str(), "add_header:", strlen("add_header")))
+	if (!strncmp(content.c_str(), "add_headers:", strlen("add_headers:")))
 		return (check_add_header(content));
 	if (!strncmp(content.c_str(), "body_max_size:", strlen("body_max_size:")))
 		return (check_body_max_size(content));
@@ -463,10 +487,10 @@ int check_location(const string &content)
 	int i = 9;
 
 	required["location"] = 1;
-	string root = content.substr(i, content.find('{') - i);
-	if (root == "")
+	string path = content.substr(i, content.find('{') - i);
+	if (path == "")
 		return (error_message(line_tracker(content.substr(i)), MLOCFOL, NOEX));
-	i += root.size();
+	i += path.size();
 	if (content[i] != '{')
 		return (error_message(line_tracker(content), MBRACK, NOEX));
 	i++;
@@ -517,9 +541,7 @@ int check_content(const string &content)
 		return (check_cgi_extensions(content));
 	if (!strncmp(content.c_str(), "body_max_size:", strlen("body_max_size:")))
 		return (check_body_max_size(content));
-	if (!strncmp(content.c_str(), "auto_index:", strlen("auto_index:")))
-		return (check_auto_index(content));
-	if (!strncmp(content.c_str(), "add_header:", strlen("add_header")))
+	if (!strncmp(content.c_str(), "add_headers:", strlen("add_headers:")))
 		return (check_add_header(content));
 	if (!strncmp(content.c_str(), "cookie:", strlen("cookie:")))
 		return (check_cookie(content));
@@ -554,6 +576,8 @@ int check_error(string &file)
 
 	check_brackets(file);
 	check_quotes(file);
+	if (error_parsing == ERR)
+		return (ERR);
 	while (file[index_check])
 	{
 		if (!strncmp(file.substr(index_check).c_str(), "debug=on", strlen("debug=on")))
@@ -584,7 +608,7 @@ void delete_comment(string &file)
 {
 	int i = 0;
 
-	while (file[i])
+	while (file.size() && file[i])
 	{
 		if (file[i] == '#')
 		{
@@ -599,21 +623,21 @@ void delete_comment(string &file)
 
 bool delete_for_parse(char c)
 {
-	static int simple_quotes = 0;
-	static int double_quotes = 0;
-	if (c == '\'')
+	if (c == '\'' && !double_quotes)
 	{
 		if (!simple_quotes)
 			simple_quotes++;
 		else
 			simple_quotes--;
+		return (1);
 	}
-	if (c == '"')
+	if (c == '"' && !simple_quotes)
 	{
 		if (!double_quotes)
 			double_quotes++;
 		else
 			double_quotes--;
+		return (1);
 	}
 	if (!simple_quotes && !double_quotes)
 		return (c == ' ' || c == '\t');
@@ -643,6 +667,8 @@ int parsing(int argc, char **argv, Server *server)
 
 	delete_comment(file);
 
+	simple_quotes = 0;
+	double_quotes = 0;
 	file.erase(std::remove_if(file.begin(), file.end(), delete_for_parse), file.end());
 	line_tracker("", file);
 

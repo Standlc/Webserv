@@ -7,12 +7,15 @@ LocationBlock::LocationBlock(ServerBlock &serverBlock) : Block(serverBlock),
     _serverMethodshandlers["POST"] = &LocationBlock::postMethod;
     _serverMethodshandlers["DELETE"] = &LocationBlock::deleteMethod;
     _requestHandler = &LocationBlock::serverMethodHandler;
-    _allowedMethods.push_back("GET");
     _proxyPass = NULL;
 };
 
 LocationBlock::~LocationBlock() {
     delete _proxyPass;
+}
+
+LocationBlock::LocationBlock(const LocationBlock &b) : _serverBlock(b._serverBlock) {
+    *this = b;
 }
 
 LocationBlock &LocationBlock::operator=(const LocationBlock &b) {
@@ -22,9 +25,14 @@ LocationBlock &LocationBlock::operator=(const LocationBlock &b) {
     _allowedMethods = b._allowedMethods;
     _path = b._path;
     _isExact = b._isExact;
-    _proxyPass = b._proxyPass;
+    if (b._proxyPass) {
+        _proxyPass = new ProxyUrl(*b._proxyPass);
+    } else {
+        _proxyPass = NULL;
+    }
     _serverBlock = b._serverBlock;
     _redirection = b._redirection;
+    _fallBack = b._fallBack;
     return *this;
 }
 
@@ -47,7 +55,7 @@ void LocationBlock::setPath(const String &path, bool isExact) {
     _isExact = isExact;
 }
 
-LocationBlock &LocationBlock::addLocation() {
+LocationBlock *LocationBlock::addLocation() {
     return _serverBlock.addLocation(*this);
 }
 
