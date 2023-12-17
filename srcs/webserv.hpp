@@ -112,6 +112,7 @@ bool isReadable(struct pollfd &pollEl);
 bool isWritable(struct pollfd &pollEl);
 int checkPollError(struct pollfd &pollEl, int error);
 int checkPollErrors(struct pollfd &pollEl);
+char lastChar(const String &str);
 
 typedef int (*clientPollHandlerType)(ClientPoll *);
 typedef int (*pollFdHandlerType)(PollFd *);
@@ -119,6 +120,6 @@ typedef int (*CgiPollHandlerType)(CgiPoll *);
 
 extern String g_conf_path;
 extern char **environ;
-extern int  isDebug;
+extern int isDebug;
 
 #endif

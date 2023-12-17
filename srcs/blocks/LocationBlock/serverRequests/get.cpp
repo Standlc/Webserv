@@ -1,7 +1,8 @@
 #include "../../Block.hpp"
 
 void LocationBlock::getMethod(HttpRequest &req, HttpResponse &res) {
-    String resourcePath = this->getResourcePath(req.url().path);
+    String resourcePath = this->getReqResourcePath(req);
+    // String resourcePath = this->getResourcePath(req.url().path);
     int accessStatus = checkPathAccess(resourcePath);
 
     if (accessStatus != 200 && _fallBack != "") {
@@ -17,7 +18,7 @@ void LocationBlock::getMethod(HttpRequest &req, HttpResponse &res) {
     }
 
     try {
-        res.loadFile(200, this->getResourcePath(req.url().path, _index));
+        res.loadFile(200, resourcePath + "/" + _index);
     } catch (int status) {
         throwIf(status == 500, 500);
         throwIf(_autoIndex == false, 403);

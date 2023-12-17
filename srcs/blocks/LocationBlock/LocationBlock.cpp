@@ -2,34 +2,6 @@
 
 class LocationBlock;
 
-LocationBlock::LocationBlock(ServerBlock &serverBlock) : Block(serverBlock),
-                                                         _serverBlock(serverBlock) {
-    _isExact = false;
-    _serverMethodshandlers["GET"] = &LocationBlock::getMethod;
-    _serverMethodshandlers["POST"] = &LocationBlock::postMethod;
-    _serverMethodshandlers["DELETE"] = &LocationBlock::deleteMethod;
-    _requestHandler = &LocationBlock::serverMethodHandler;
-    _proxyPass = NULL;
-};
-
-LocationBlock::~LocationBlock() {
-    delete _proxyPass;
-}
-
-LocationBlock &LocationBlock::operator=(const LocationBlock &b) {
-    Block::operator=(b);
-    _serverMethodshandlers = b._serverMethodshandlers;
-    _requestHandler = b._requestHandler;
-    _allowedMethods = b._allowedMethods;
-    _path = b._path;
-    _isExact = b._isExact;
-    _proxyPass = b._proxyPass;
-    _serverBlock = b._serverBlock;
-    _redirection = b._redirection;
-    _fallBack = b._fallBack;
-    return *this;
-}
-
 clientPollHandlerType LocationBlock::execute(ClientPoll &client) {
     HttpResponse &res = client.res();
     HttpRequest &req = client.req();

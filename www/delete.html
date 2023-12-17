@@ -1,18 +1,39 @@
-<body>
+<html>
+  <head>
+    <title>Webserv</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
     <!-- <form method="DELETE" X-HTTP-Method-Override="DELETE"> -->
-        <label for="filename">File name:</label>
-        <input type="text" id="filename"><br><br>
-        <input type="submit" value="delete" onclick="handleRequest()">
+    <div class="wrapper">
+      <div class="flex-col">
+        <a href="/index.html">
+          <img src="/icons/back.svg" alt="" />
+          Home</a
+        >
+        <h1>Delete files</h1>
+        <input
+          type="text"
+          id="filename"
+          autofocus
+          placeholder="Type a file to delete"
+        />
+        <button type="submit" onclick="handleRequest()">Delete</button>
+      </div>
+    </div>
     <!-- </form> -->
 
     <script>
-        const handleRequest = async () => {
-            // const formElement = document.querySelector("form");
-            const fileInputElement = document.getElementById("filename");
-            // formElement.action = "/upload/" + fileInputElement.value;
-            const response = await fetch("http://localhost:3000/upload/" + fileInputElement.value, {method:"DELETE"});
-            document.location.replace("/upload");
-            // console.log(response);
-        }
+      const handleRequest = async () => {
+        //const formElement = document.querySelector("form");
+        //const fileInputElement = document.getElementById("filename");
+        //formElement.action = "/upload/" + fileInputElement.value;
+        const response = await fetch("/upload/" + fileInputElement.value, {
+          method: "DELETE",
+        });
+        //document.location.replace("/upload");
+        // console.log(response);
+      };
     </script>
-</body>
+  </body>
+</html>

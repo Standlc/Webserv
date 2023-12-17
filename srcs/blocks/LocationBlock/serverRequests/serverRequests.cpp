@@ -121,6 +121,7 @@ void LocationBlock::setenvCgi(HttpRequest &req, const String &cgiScriptPath) {
         trySetenv("CONTENT_TYPE", req.getHeader("Content-Type"));
     } else {
         tryUnsetenv("CONTENT_LENGTH");
+        tryUnsetenv("CONTENT_TYPE");
     }
 
     trySetenv("REDIRECT_STATUS", "200");  // Security needed to execute php-cgi

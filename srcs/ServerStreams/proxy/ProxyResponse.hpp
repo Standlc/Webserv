@@ -14,7 +14,7 @@ class ProxyResponse : public HttpParser {
 
     bool resumeParsing() {
         if (this->parseResponseHead() == true) {
-            return HttpParser::resumeParsing(true);
+            return HttpParser::resumeParsing(false);
         }
         return false;
     }
@@ -23,7 +23,11 @@ class ProxyResponse : public HttpParser {
         _headers.erase("Server");
         _headers.erase("Connection");
         _clientRes.addDefaultHeaders(_headers);
-        _clientRes.setBody(_rawData.substr(_endOfHeadersPos, _totalRead - _endOfHeadersPos));
+
+        // ??
+        // _clientRes.setBody(_body);
+        _clientRes.setBody(&_rawData[_endOfHeadersPos]);
+        // _clientRes.setBody(_rawData.substr(_endOfHeadersPos, _totalRead - _endOfHeadersPos));
         _clientRes.set(_responseStatus);
     }
 };

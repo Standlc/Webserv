@@ -170,7 +170,7 @@ bool HttpParser::handleBodyParsing(bool copyBody) {
     }
     _bodySize = _totalRead - _endOfHeadersPos;
     this->appendBody(copyBody, _endOfHeadersPos, _bodySize);
-    return true;
+    return copyBody;
 }
 
 bool HttpParser::resumeDecodingBody(bool copyBody) {

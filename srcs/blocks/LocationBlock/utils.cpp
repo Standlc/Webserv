@@ -1,5 +1,43 @@
 #include "../Block.hpp"
 
+LocationBlock::LocationBlock(ServerBlock &serverBlock) : Block(serverBlock),
+                                                         _serverBlock(serverBlock) {
+    _isExact = false;
+    _serverMethodshandlers["GET"] = &LocationBlock::getMethod;
+    _serverMethodshandlers["POST"] = &LocationBlock::postMethod;
+    _serverMethodshandlers["DELETE"] = &LocationBlock::deleteMethod;
+    _requestHandler = &LocationBlock::serverMethodHandler;
+    _allowedMethods.push_back("GET");
+    _proxyPass = NULL;
+};
+
+LocationBlock::~LocationBlock() {
+    delete _proxyPass;
+}
+
+LocationBlock &LocationBlock::operator=(const LocationBlock &b) {
+    Block::operator=(b);
+    _serverMethodshandlers = b._serverMethodshandlers;
+    _requestHandler = b._requestHandler;
+    _allowedMethods = b._allowedMethods;
+    _path = b._path;
+    _isExact = b._isExact;
+    _proxyPass = b._proxyPass;
+    _serverBlock = b._serverBlock;
+    _redirection = b._redirection;
+    return *this;
+}
+
+String LocationBlock::getReqResourcePath(HttpRequest &req) {
+    String pathInfo = req.url().path.substr(_path.size());
+    String filePath = pathInfo[0] == '/' ? &pathInfo[1] : pathInfo;
+    return this->getResourcePath(_path, filePath);
+}
+
+String LocationBlock::getReqUploadResourcePath(HttpRequest &req, const String &file) {
+    return this->getUploadFilePath(_path, file);
+}
+
 void LocationBlock::setPath(const String &path, bool isExact) {
     if (path[0] != '/') {
         _path = "/" + path;

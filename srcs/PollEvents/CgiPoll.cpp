@@ -192,7 +192,7 @@ int readCgiResponse(CgiPoll *cgi) {
 
 int handleCgiResponse(CgiPoll *cgi) {
     CgiResponse &cgiRes = cgi->cgiRes();
-    if (cgi->clientStatus() != 0 || !cgiRes.isComplete()) {
+    if (cgi->clientStatus() != 0) {
         return handleCgiQuit(cgi, 502);
     }
 

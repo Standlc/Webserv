@@ -4,7 +4,9 @@ Server::Server() : _serverBlockSize(0) {
 }
 
 Server::~Server() {
+    std::cout << _pollFds.size() << "\n";
     for (size_t i = 0; i < _pollFds.size(); i++) {
+        std::cout << i << '\n';
         delete _pollFds[i];
     }
 }

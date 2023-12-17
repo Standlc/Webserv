@@ -10,6 +10,7 @@
 #include "../ServerStreams/proxy/ProxyResponse.hpp"
 #include "../blocks/Block.hpp"
 #include "../webserv.hpp"
+#include "SharedPtr.hpp"
 
 typedef int (*clientPollHandlerType)(ClientPoll *);
 typedef int (*pollFdHandlerType)(PollFd *);
@@ -35,53 +36,6 @@ int handleCgiResponse(CgiPoll *cgi);
 int timeoutProxy(ProxyPoll *proxy);
 int sendProxyRequest(ProxyPoll *proxy);
 int recvProxyResponse(ProxyPoll *proxy);
-
-class SharedPtr {
-   public:
-    int *value;
-    std::vector<int *> ptrs;
-
-    SharedPtr() {
-        value = NULL;
-    }
-
-    SharedPtr(SharedPtr &other) {
-        this->operator=(other);
-    }
-
-    SharedPtr(int *ptr) {
-        value = ptr;
-    }
-
-    ~SharedPtr() {
-        delete value;
-    }
-
-    SharedPtr &operator=(SharedPtr &other) {
-        value = new int(*other.value);
-        other.ptrs.push_back(value);
-        return *this;
-    }
-
-    int &operator*() {
-        return *value;
-    }
-
-    SharedPtr &operator=(int newValue) {
-        for (int i = 0; i < ptrs.size(); i++) {
-            *ptrs[i] = newValue;
-        }
-        *value = newValue;
-        return *this;
-    }
-
-    SharedPtr &operator=(void *null) {
-        ptrs.clear();
-        delete value;
-        value = NULL;
-        return *this;
-    }
-};
 
 class PollFd {
    protected:

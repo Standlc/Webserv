@@ -1,66 +1,83 @@
 body {
-    /* font-family: 'Arial', sans-serif; */
-    font-family: "monospace";
-    background: darkcyan;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: rgba(20, 20, 20, 1);
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  color: white;
 }
 
-.glass-container {
-    text-align: center;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(10px);
-    color: #fff;
+.wrapper {
+  width: 400px;
+  text-overflow: ellipsis;
+  max-width: 400px;
+}
+
+span {
+  text-overflow: ellipsis;
+  word-break: break-all;
+  font-size: 14px;
+}
+
+a {
+  text-decoration: none;
+  color: rgb(146 127 255);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+a:hover {
+  text-decoration: underline;
 }
 
 h1 {
-    font-size: 2rem;
-    margin-bottom: 20px;
+  font-size: 2rem;
+  margin-top: 0;
+  /* margin-bottom: 20px; */
 }
 
-.glass-content {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(10px);
+.flex-col {
+  gap: 20px;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: start;
 }
 
 button {
-    background-color: #3498db;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    padding: 10px 20px;
-    cursor: pointer;
-    margin-top: 10px;
+  background-color: white;
+  align-self: flex-end;
+  border-radius: 5px;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: medium;
 }
 
-button:hover {
-    background-color: #2976c8;
+input,
+select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  background-color: rgba(255, 255, 255, 0.1);
+  outline: none;
+  color: white;
+  font-size: medium;
 }
 
-.object {
-    width: 20px;
-    height: 20px;
-    background-color: #e74c3c;
-    border-radius: 50%;
-    position: absolute;
-    animation: bounce 2s ease-in-out infinite;
+input:focus {
+  outline: 1px solid rgba(255, 255, 255, 0.4);
 }
-
-@keyframes bounce {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-20px);
-    }
-}
+/* 
+img {
+  height: 20px;
+  color: white;
+} */

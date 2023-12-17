@@ -21,6 +21,7 @@ Block &Block::operator=(const Block &b) {
     _autoIndex = b._autoIndex;
     _headers = b._headers;
     _sessionCookies = b._sessionCookies;
+    _fallBack = b._fallBack;
     return *this;
 }
 
@@ -36,21 +37,51 @@ void Block::loadErrPage(int statusCode, HttpResponse &res, HttpRequest &req) {
     }
 }
 
-String Block::getResourcePath(const String &reqUrl, const String &file) {
+String Block::getResourcePath(const String &reqPath, const String &file) {
     if (file == "") {
-        return _root + reqUrl;
+        std::cout << "path => " << _root + reqPath << "\n";
+        return _root + reqPath;
     }
+
     if (file[0] == '/') {
+        std::cout << "path => " << _root + file << "\n";
         return _root + file;
     }
-    return _root + reqUrl + "/" + file;
+
+    if (lastChar(reqPath) == '/') {
+        std::cout << "path => " << _root + reqPath + file << "\n";
+        return _root + reqPath + file;
+    } else {
+        std::cout << "path => " << _root + parseFileDirectory(reqPath) + file << "\n";
+        return _root + parseFileDirectory(reqPath) + file;
+    }
+    // std::cout << "path => " << _root + reqPath + file << "\n";
+    // return _root + reqPath + file;
 }
 
-String Block::getUploadFilePath(const String &filename) {
+String Block::getUploadFilePath(const String &reqPath, const String &file) {
+    String root = _root;
     if (_uploadRoot != "") {
-        return _uploadRoot + "/" + filename;
+        root = _uploadRoot;
     }
-    return _root + "/" + filename;
+
+    if (file == "") {
+        std::cout << "1path => " << root + reqPath << "\n";
+        return root + reqPath;
+    }
+
+    if (file[0] == '/') {
+        std::cout << "2path => " << root + file << "\n";
+        return root + file;
+    }
+
+    if (lastChar(reqPath) == '/') {
+        std::cout << "3path => " << root + reqPath + file << "\n";
+        return root + reqPath + file;
+    } else {
+        std::cout << "4path => " << root + parseFileDirectory(reqPath) + file << "\n";
+        return root + parseFileDirectory(reqPath) + file;
+    }
 }
 
 bool Block::hasErrorPage(int statusCode) {

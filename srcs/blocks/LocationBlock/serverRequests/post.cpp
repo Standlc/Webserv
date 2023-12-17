@@ -3,13 +3,11 @@
 String getFormBoundary(HttpRequest &req) {
     std::vector<String> values = split(req.getHeader("Content-Type"), ";");
     if (values.size() < 2 || values[0] != "multipart/form-data") {
-        debug("400: 4", "", YELLOW);
         throw 400;
     }
 
     std::vector<String> boundary = split(values[1], "=");
     if (boundary.size() != 2 || boundary[0] != "boundary" || boundary[1] == "") {
-        debug("400: 5", "", YELLOW);
         throw 400;
     }
     return boundary[1];
@@ -19,13 +17,11 @@ String getFormFileName(HttpRequest &req, size_t from, size_t to) {
     String formContentDisposition = req.findBodyHeader("Content-Disposition", from, to);
     std::vector<String> headerValues = split(formContentDisposition, ";");
     if (headerValues.size() < 3 || headerValues[0] != "form-data") {
-        debug("400: 6", "", YELLOW);
         throw 400;
     }
 
     std::vector<String> filenameKey = split(headerValues[2], "=");
     if (filenameKey.size() != 2 || filenameKey[0] != "filename" || filenameKey[1] == "\"\"") {
-        debug("400: 7", "", YELLOW);
         throw 400;
     }
 
@@ -41,8 +37,8 @@ void createFile(const String &name, const char *data, size_t size) {
         throw 500;
     }
 
-    debug("> creating file", name, CYAN);
-    debug("> size", std::to_string(size), CYAN);
+    debug("> creating file", name, YELLOW);
+    debug("> size", std::to_string(size), YELLOW);
 
     file.write(data, size);
     file.close();
@@ -54,7 +50,6 @@ void createFile(const String &name, const char *data, size_t size) {
 bool findFormBoundaries(HttpRequest &req, const String &boundary, size_t &currFormPos, size_t &formHeadersEndPos, size_t &formBodyEndPos) {
     currFormPos = req.searchBody(boundary, currFormPos);
     if (currFormPos == NPOS) {
-        debug("400: 1", "", YELLOW);
         throw 400;
     }
     currFormPos += boundary.size();
@@ -64,13 +59,11 @@ bool findFormBoundaries(HttpRequest &req, const String &boundary, size_t &currFo
 
     formBodyEndPos = req.searchBody(boundary, currFormPos);
     if (formBodyEndPos == NPOS) {
-        debug("400: 3", "", YELLOW);
         throw 400;
     }
 
     formHeadersEndPos = req.searchBody(CRLF_CRLF, currFormPos + 1, formBodyEndPos);
     if (formHeadersEndPos == NPOS) {
-        debug("400: 2", "", YELLOW);
         throw 400;
     }
     formHeadersEndPos += 4;
@@ -82,18 +75,15 @@ void LocationBlock::postMethod(HttpRequest &req, HttpResponse &res) {
     size_t currFormPos = 0;
     size_t formHeadersEndPos = 0;
     size_t formBodyEndPos = 0;
-    String filePath;
 
     while (true) {
-        debug("> begin form", "", YELLOW);
         bool isEnd = findFormBoundaries(req, boundary, currFormPos, formHeadersEndPos, formBodyEndPos);
         if (isEnd) {
-            debug("> end of form", "", YELLOW);
             break;
         }
 
         String filename = getFormFileName(req, currFormPos, formHeadersEndPos);
-        filePath = this->getUploadFilePath(filename);
+        String filePath = this->getUploadFilePath(_path, filename);
         throwIf(checkPathAccess(filePath) != 404, 409);
         // if (filename.find('/') != NPOS) {
         //     throw 403;
@@ -103,5 +93,5 @@ void LocationBlock::postMethod(HttpRequest &req, HttpResponse &res) {
         createFile(filePath, &req.getBody()[formHeadersEndPos], fileSize);
     }
 
-    res.loadFile(200, filePath);
+    res.set(200, ".txt", "File successfully uploaded.");
 }

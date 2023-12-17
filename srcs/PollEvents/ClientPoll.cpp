@@ -3,8 +3,8 @@
 ClientPoll::ClientPoll(int fd, Server& server) : PollFd(fd, server) {
     _req = new HttpRequest(fd);
     _res = new HttpResponse(*_req);
-    _cgiPollStatus = (void*)NULL;
-    _proxyStatus = (void*)NULL;
+    _cgiPollStatus = (int*)NULL;
+    _proxyStatus = (int*)NULL;
 }
 
 ClientPoll::~ClientPoll() {
@@ -17,8 +17,8 @@ void ClientPoll::resetConnection() {
     delete _req;
     _req = new HttpRequest(_fd);
     _res = new HttpResponse(*_req);
-    _cgiPollStatus = (void*)NULL;
-    _proxyStatus = (void*)NULL;
+    _cgiPollStatus = (int*)NULL;
+    _proxyStatus = (int*)NULL;
     this->resetStartTime();
 }
 

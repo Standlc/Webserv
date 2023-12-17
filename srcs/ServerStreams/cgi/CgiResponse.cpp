@@ -32,6 +32,12 @@ void CgiResponse::parseLocationHeader() {
 
 void CgiResponse::setClientResponse() {
     _headers.erase("Server");
+    _headers.erase("Content-Length");
+
+    if (_headers.find("Content-Encoding") == "") {
+        _headers.add("Content-Length", std::to_string(_totalRead - _endOfHeadersPos));
+    }
+
     _clientRes.addDefaultHeaders(_headers);
     _clientRes.setBody(&_rawData[_endOfHeadersPos]);
     _clientRes.set(_statusHeaderCode);

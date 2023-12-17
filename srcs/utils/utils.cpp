@@ -53,6 +53,14 @@ int checkPollErrors(struct pollfd &pollEl) {
     return error;
 }
 
+char lastChar(const String &str) {
+    size_t size = str.size();
+    if (!size) {
+        return str[0];
+    }
+    return str[size - 1];
+}
+
 void compressSlashes(String &str) {
     int startSlashPos = str.find_first_of("/");
     int endSlashPos = str.find_first_not_of("/", startSlashPos);
