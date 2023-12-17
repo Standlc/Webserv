@@ -71,20 +71,16 @@ LocationBlock &ServerBlock::getLocationBlock(int index) {
 }
 
 void ServerBlock::set(String ipAddress, String port, bool isDefault) {
-    // std::cout << "listen:" << ipAddress << ':' << port << "-\n";
     if (ipAddress == "") {
         _ipAddress = "0.0.0.0";
     } else {
         _ipAddress = ipAddress;
-        // this->addHostName(ipAddress);
     }
     _port = port;
-    // std::cout << "port :  " << this->port() << '\n';
     _isDefault = isDefault;
 }
 
 void ServerBlock::addHostName(String name) {
-    // std::cout << "hostname:" << name << "-\n";
     _hostNames.push_back(name);
 }
 

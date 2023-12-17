@@ -100,7 +100,6 @@ int Server::startServers() {
 
     for (int i = 0; i < _serverBlockSize; i++) {
         try {
-            std::cout << "port: " << _blocks[i].port() << "\n";
             if (std::find(usedPorts.begin(), usedPorts.end(), _blocks[i].port()) != usedPorts.end()) {
                 printServerListeningMessage(_blocks[i]);
                 continue;

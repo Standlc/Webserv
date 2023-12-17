@@ -102,7 +102,6 @@ int fill_port(const string &file, ServerBlock *server) {
     } else
         ipAddress = "";
     server->set(ipAddress, listen, true);
-    // std::cout << "port parsing :  " << server->port() << "\n";
     return (file.find(';') + 1);
 }
 
@@ -255,13 +254,11 @@ void fill_data(string file, Server *server) {
         index = file.find("server{", start);
         if (index == string::npos)
             return;
-        std::cout << "creating new server block" << std::endl;
         ServerBlock *block = server->addBlock();
         index += 7;
         start = index;
         while (file[index] && file[index] != '}') {
             index += found_data(file.substr(index), block);
         }
-        cout << index << "end server\n";
     }
 }

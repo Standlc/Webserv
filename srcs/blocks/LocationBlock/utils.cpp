@@ -1,7 +1,6 @@
 #include "../Block.hpp"
 
 void LocationBlock::setPath(const String &path, bool isExact) {
-    // std::cout << "path :" << path << " isexact " << isExact << '\n';
     if (path[0] != '/') {
         _path = "/" + path;
     }
@@ -15,20 +14,17 @@ LocationBlock *LocationBlock::addLocation() {
 }
 
 void LocationBlock::setRedirection(int statusCode, String redirectionUrl) {
-    // std::cout << "redirect:" << statusCode << ',' << redirectionUrl << "-\n";
     _redirection.statusCode = statusCode;
     _redirection.url = redirectionUrl;
     _requestHandler = &LocationBlock::redirectionHandler;
 }
 
 void LocationBlock::setProxyPass(const String &proxyPass) {
-    // std::cout << "proxypass:" << proxyPass << "-\n";
     _proxyPass = new ProxyUrl(proxyPass);
     _requestHandler = &LocationBlock::proxyHandler;
 }
 
 void LocationBlock::setAllowedMethods(String methods[]) {
-    // std::cout << "methods:" << methods[0] << "-\n";
     for (int i = 0; methods[i] != ""; i++) {
         _allowedMethods.push_back(methods[i]);
     }

@@ -1,11 +1,11 @@
-debug=on
+# debug=on
 rdfgv
 
 server
 {
     listen: 0.0.0.0:3000;
     host_name:p;
-    root:/mnt/nfs/homes/svan-de-/webbbbbbbbb/www/;
+    root:www/;
     index: index.html;
     upload_root: l;
     cookie: blabla;
@@ -29,7 +29,7 @@ server
         body_max_size: 20MB;
         fallback:/index.html;
 
-        proxy_pass: http://amazon.com;
+        # proxy_pass: http://amazon.com;
         redirect: 308,yaaa.com;
     }
 location:/{}
