@@ -20,6 +20,22 @@ clientPollHandlerType LocationBlock::execute(ClientPoll &client) {
     }
 }
 
+clientPollHandlerType LocationBlock::serverMethodHandler(ClientPoll &client) {
+    HttpResponse &res = client.res();
+    HttpRequest &req = client.req();
+    const String &reqHttpMethod = req.getHttpMethod();
+
+    throwIf(!handlesHttpMethod(reqHttpMethod), 501);
+
+    String cgiScriptPath = this->isCgiScriptRequest(req);
+    if (cgiScriptPath != "") {
+        return this->handleCgi(client, cgiScriptPath);
+    }
+
+    (this->*(_serverMethodshandlers[reqHttpMethod]))(req, res);
+    return sendResponseToClient;
+}
+
 bool isEmpty(const String &str) {
     return str != "" && str != "\"\"";
 }

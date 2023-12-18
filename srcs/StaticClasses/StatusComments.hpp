@@ -5,7 +5,7 @@
 
 class StatusComments {
    private:
-    static std::unordered_map<int, String> _comments;
+    static std::map<int, String> _comments;
 
    public:
     StatusComments() {

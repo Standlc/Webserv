@@ -5,8 +5,8 @@
 #include "parsing/parsing.hpp"
 #include "webserv.hpp"
 
-std::unordered_map<int, String> StatusComments::_comments;
-std::unordered_map<String, String> MediaTypes::_types;
+std::map<int, String> StatusComments::_comments;
+std::map<String, String> MediaTypes::_types;
 
 // check autoindex
 String generateDirectoryListingPage(const String &dir, String reqUrl, struct dirent *entry, DIR *dirStream) {
@@ -63,19 +63,6 @@ String generateDirectoryListingPage(const String &dir, String reqUrl, struct dir
 // check delete folder
 // check autoindex page
 // check PollFd size
-
-String getRealtivePathToFile(String path) {
-    int lastSlash = path.find_last_of("/");
-    if (lastSlash == -1) {
-        return "";
-    }
-    return path.substr(0, lastSlash + 1);
-}
-
-void handleSigint(int sig) {
-    (void)sig;
-    throw "\nGracefully shutting down...";
-}
 
 int main(int argc, char *argv[]) {
     Server *server = new Server();

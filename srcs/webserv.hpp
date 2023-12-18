@@ -23,7 +23,6 @@
 #include <map>
 #include <sstream>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #define WEBSERV_V "webserv/1.0"
@@ -48,7 +47,7 @@
 #define WHITE "\033[0m"
 
 typedef std::string String;
-typedef std::unordered_map<String, String> unorderedStringMap;
+typedef std::map<String, String> stringMap;
 typedef std::unordered_multimap<String, String> unorderedStringMultiMap;
 
 class Server;
@@ -83,6 +82,10 @@ void debugHttpMessage(const String &httpMessage, const String &color = WHITE);
 void debug(const String &title, const String &arg = "", const String &color = WHITE);
 void debugErr(const String &title, const char *err = NULL);
 
+String lowercase(String str);
+String capitalize(String str);
+void handleSigint(int sig);
+String getRealtivePathToFile(String path);
 void throwIf(bool condition, int status);
 size_t tryFind(const String &str, const String &find, size_t from = 0);
 struct addrinfo *getServerAddressInfo(String serverIpAddress, String port);

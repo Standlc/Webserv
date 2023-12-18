@@ -9,8 +9,8 @@
 #include "../ServerStreams/proxy/ProxyRequest.hpp"
 #include "../ServerStreams/proxy/ProxyResponse.hpp"
 #include "../blocks/Block.hpp"
+#include "../utils/SharedPtr.hpp"
 #include "../webserv.hpp"
-#include "SharedPtr.hpp"
 
 typedef int (*clientPollHandlerType)(ClientPoll *);
 typedef int (*pollFdHandlerType)(PollFd *);

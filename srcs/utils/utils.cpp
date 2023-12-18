@@ -2,6 +2,19 @@
 #include "../Server.hpp"
 #include "../webserv.hpp"
 
+void handleSigint(int sig) {
+    (void)sig;
+    throw "\nGracefully shutting down...";
+}
+
+String getRealtivePathToFile(String path) {
+    int lastSlash = path.find_last_of("/");
+    if (lastSlash == -1) {
+        return "";
+    }
+    return path.substr(0, lastSlash + 1);
+}
+
 void throwIf(bool condition, int status) {
     if (condition) {
         throw status;
@@ -13,6 +26,28 @@ void closeOpenFd(int &fd) {
         close(fd);
         fd = -1;
     }
+}
+
+String capitalize(String str) {
+    size_t size = str.size();
+    for (int i = 0; i < size; i++) {
+        if (std::isalpha(str[i]) && std::isupper(str[i])) {
+            if (i == 0 || !std::isalpha(str[i - 1])) {
+                str[i] = std::toupper(str[i]);
+            }
+        }
+    }
+    return str;
+}
+
+String lowercase(String str) {
+    size_t size = str.size();
+    for (int i = 0; i < size; i++) {
+        if (std::isupper(str[i])) {
+            str[i] = std::tolower(str[i]);
+        }
+    }
+    return str;
 }
 
 size_t tryFind(const String &str, const String &find, size_t from) {

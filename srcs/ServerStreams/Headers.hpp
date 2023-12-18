@@ -9,64 +9,15 @@ class Headers {
     String null;
 
    public:
-    Headers() {
-        null = "";
-    };
-    Headers(const Headers &h) {
-        *this = h;
-    }
-    Headers &operator=(const Headers &h) {
-        _headers = h._headers;
-        null = "";
-        return *this;
-    }
-
-    void add(const String &field, const String &value) {
-        _headers.push_back((header){field, value});
-    }
-
-    void erase(const String &field) {
-        for (size_t i = 0; i < _headers.size(); i++) {
-            if (_headers[i].field == field) {
-                _headers.erase(_headers.begin() + i);
-            }
-        }
-    }
-
-    void add(Headers &headers) {
-        _headers.insert(_headers.end(), headers._headers.begin(), headers._headers.end());
-    }
-
-    const String &find(const String &field) {
-        for (size_t i = 0; i < _headers.size(); i++) {
-            if (_headers[i].field == field) {
-                return _headers[i].value;
-            }
-        }
-        return null;
-    }
-
-    void putIn(String &buf, String headersToDiscard[] = NULL) {
-        for (size_t i = 0; i < _headers.size(); i++) {
-            if (headersToDiscard) {
-                bool discard = false;
-                for (size_t j = 0; headersToDiscard[j] != ""; j++) {
-                    if ((discard = _headers[i].field == headersToDiscard[j])) {
-                        break;
-                    }
-                }
-                if (discard) {
-                    continue;
-                }
-            }
-
-            buf += _headers[i].field + ": " + _headers[i].value + CRLF;
-        }
-    }
-
-    void clear() {
-        _headers.clear();
-    }
+    Headers();
+    Headers(const Headers &h);
+    Headers &operator=(const Headers &h);
+    void add(const String &field, const String &value);
+    void erase(const String &field);
+    void add(Headers &headers);
+    const String &find(const String &field);
+    void putIn(String &buf, String headersToDiscard[] = NULL);
+    void clear();
 };
 
 #endif

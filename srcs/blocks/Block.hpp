@@ -18,8 +18,8 @@ class Block {
     String _fallBack;
 
     Headers _headers;
-    std::unordered_map<int, String> _errorFiles;
-    std::unordered_map<String, String> _cgiCommands;
+    std::map<int, String> _errorFiles;
+    std::map<String, String> _cgiCommands;
     std::vector<String> _sessionCookies;
 
    public:
@@ -105,7 +105,6 @@ class LocationBlock : public Block {
     ~LocationBlock();
     LocationBlock &operator=(const LocationBlock &b);
 
-    // ServerBlock &serverBlock();
     bool handlesHttpMethod(const String &httpMethod);
     bool isMethodAllowed(const String &httpMethod);
     String assembleRedirectionUrl(HttpRequest &req);

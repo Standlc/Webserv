@@ -1,25 +1,9 @@
-#include "../../Block.hpp"
-
-clientPollHandlerType LocationBlock::serverMethodHandler(ClientPoll &client) {
-    HttpResponse &res = client.res();
-    HttpRequest &req = client.req();
-    const String &reqHttpMethod = req.getHttpMethod();
-
-    throwIf(!handlesHttpMethod(reqHttpMethod), 501);
-
-    String cgiScriptPath = this->isCgiScriptRequest(req);
-    if (cgiScriptPath != "") {
-        return this->handleCgi(client, cgiScriptPath);
-    }
-
-    (this->*(_serverMethodshandlers[reqHttpMethod]))(req, res);
-    return sendResponseToClient;
-}
+#include "../Block.hpp"
 
 String LocationBlock::isCgiScriptRequest(HttpRequest &req) {
     const String &reqUrl = req.url().path;
 
-    for (unorderedStringMap::iterator i = _cgiCommands.begin(); i != _cgiCommands.end(); ++i) {
+    for (stringMap::iterator i = _cgiCommands.begin(); i != _cgiCommands.end(); ++i) {
         size_t pos = reqUrl.find(i->first);
 
         while (pos != NPOS) {

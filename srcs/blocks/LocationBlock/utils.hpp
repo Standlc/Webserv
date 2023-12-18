@@ -16,9 +16,9 @@ class ProxyUrl {
         _host = this->parseHost();
         _port = this->parsePort();
         _path = this->parsePath();
-        debug("host", _host);
-        debug("port", _port);
-        debug("path", _path);
+        // debug("host", _host);
+        // debug("port", _port);
+        // debug("path", _path);
     }
 
     ProxyUrl(const ProxyUrl &other) {

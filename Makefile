@@ -2,17 +2,17 @@ NAME = webserv
 
 SOURCES = 	srcs/main.cpp \
 			srcs/utils/utils.cpp \
-			srcs/Server.cpp \
+			srcs/Server.cpp srcs/utils/SharedPtr.cpp \
 			\
 			srcs/blocks/Block.cpp \
 			srcs/blocks/ServerBlock.cpp \
 			srcs/blocks/LocationBlock/LocationBlock.cpp \
 			srcs/blocks/LocationBlock/utils.cpp \
-			srcs/blocks/LocationBlock/serverRequests/get.cpp \
-			srcs/blocks/LocationBlock/serverRequests/post.cpp \
-			srcs/blocks/LocationBlock/serverRequests/delete.cpp \
-			srcs/blocks/LocationBlock/serverRequests/serverRequests.cpp \
+			srcs/blocks/LocationBlock/serverMethods/get.cpp \
+			srcs/blocks/LocationBlock/serverMethods/post.cpp \
+			srcs/blocks/LocationBlock/serverMethods/delete.cpp \
 			srcs/blocks/LocationBlock/reverseProxy.cpp \
+			srcs/blocks/LocationBlock/cgi.cpp \
 			srcs/blocks/LocationBlock/redirections.cpp \
 			\
 			srcs/PollEvents/PollFd.cpp \
@@ -20,6 +20,7 @@ SOURCES = 	srcs/main.cpp \
 			srcs/PollEvents/CgiPoll.cpp \
 			srcs/PollEvents/ProxyPoll.cpp \
 			\
+			srcs/ServerStreams/Headers.cpp \
 			srcs/ServerStreams/HttpRequest.cpp \
 			srcs/ServerStreams/HttpResponse.cpp \
 			srcs/ServerStreams/cgi/CgiRequest.cpp \
@@ -50,16 +51,18 @@ SOURCES = 	srcs/main.cpp \
 OBJECTS = $(SOURCES:.cpp=.o)
 
 DEPENDENCIES = 	Makefile \
+				srcs/utils/SharedPtr.hpp \
 				srcs/Server.hpp \
 				srcs/blocks/Block.hpp \
 				srcs/PollEvents/PollFd.hpp \
-				srcs/ServerStreams/HttpResponse.hpp \
-				srcs/ServerStreams/HttpRequest.hpp \
 				srcs/StaticClasses/MediaTypes.hpp \
 				srcs/webserv.hpp \
 				srcs/StaticClasses/StatusComments.hpp \
 				srcs/StaticClasses/MediaTypes.hpp \
+				srcs/ServerStreams/HttpResponse.hpp \
+				srcs/ServerStreams/HttpRequest.hpp \
 				srcs/ServerStreams/ServerStream.hpp \
+				srcs/ServerStreams/Headers.hpp \
 				srcs/ServerStreams/cgi/CgiRequest.hpp \
 				srcs/ServerStreams/cgi/CgiResponse.hpp \
 				srcs/ServerStreams/proxy/ProxyRequest.hpp \

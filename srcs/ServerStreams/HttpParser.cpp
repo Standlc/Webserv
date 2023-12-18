@@ -152,9 +152,9 @@ void HttpParser::parseHeaderLine(const String &line) {
     }
 }
 
-bool HttpParser::handleBodyParsing(bool copyBody) {
+bool HttpParser::handleBodyParsing(bool parseBody) {
     if (_isEncodingChunked) {
-        if (this->resumeDecodingBody(copyBody) == true) {
+        if (this->resumeDecodingBody(parseBody) == true) {
             return true;
         }
         return false;
@@ -163,14 +163,15 @@ bool HttpParser::handleBodyParsing(bool copyBody) {
     if (_contentLengthHeader >= 0) {
         if ((long)(_totalRead - _endOfHeadersPos) >= _contentLengthHeader) {
             _bodySize = _contentLengthHeader;
-            this->appendBody(copyBody, _endOfHeadersPos, _bodySize);
+            this->appendBody(parseBody, _endOfHeadersPos, _bodySize);
             return true;
         }
         return false;
     }
+
     _bodySize = _totalRead - _endOfHeadersPos;
-    this->appendBody(copyBody, _endOfHeadersPos, _bodySize);
-    return copyBody;
+    this->appendBody(parseBody, _endOfHeadersPos, _bodySize);
+    return parseBody;
 }
 
 bool HttpParser::resumeDecodingBody(bool copyBody) {
@@ -202,7 +203,6 @@ void HttpParser::appendBody(bool copyBody, size_t from, size_t size) {
 bool HttpParser::readChunk(bool copyBody) {
     size_t i = _parsingPos;
     while (i < _totalRead && i < _parsingPos + _encodedBytesLeftToRead) {
-        // std::putchar(_rawData[i]);
         i++;
     }
 

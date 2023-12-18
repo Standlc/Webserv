@@ -5,7 +5,7 @@
 
 class MediaTypes {
    private:
-    static std::unordered_map<String, String> _types;
+    static std::map<String, String> _types;
 
    public:
     MediaTypes() {

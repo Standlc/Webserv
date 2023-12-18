@@ -17,8 +17,7 @@ class HttpResponse : public ServerStream {
     String _body;
     HttpRequest &_req;
     bool _keepAlive;
-
-    unorderedStringMap _cgiHeaders;
+    stringMap _cgiHeaders;
 
     void setHead(int statusCode);
     void assembleHeaders();
