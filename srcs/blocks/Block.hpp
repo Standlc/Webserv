@@ -105,6 +105,8 @@ class LocationBlock : public Block {
     ~LocationBlock();
     LocationBlock &operator=(const LocationBlock &b);
 
+    ServerBlock &serverBlock();
+
     bool handlesHttpMethod(const String &httpMethod);
     bool isMethodAllowed(const String &httpMethod);
     String assembleRedirectionUrl(HttpRequest &req);

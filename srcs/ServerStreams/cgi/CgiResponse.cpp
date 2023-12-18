@@ -12,7 +12,7 @@ void CgiResponse::parseStatusHeader() {
     const String &statusHeader = _headers.find("Status");
     if (statusHeader != "") {
         try {
-            _statusHeaderCode = std::stoi(statusHeader);
+            _statusHeaderCode = toInt(statusHeader);
         } catch (const std::exception &e) {
             std::cerr << e.what() << '\n';
             throw 502;
@@ -33,7 +33,7 @@ void CgiResponse::parseLocationHeader() {
 void CgiResponse::setClientResponse() {
     _headers.erase("Server");
     _headers.erase("Content-Length");
-    _headers.add("Content-Length", std::to_string(_bodySize));
+    _headers.add("Content-Length", toString(_bodySize));
     _clientRes.addDefaultHeaders(_headers);
 
     _clientRes.setBody(_rawData.substr(_endOfHeadersPos, _bodySize));

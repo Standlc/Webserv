@@ -14,7 +14,7 @@ void ProxyResponse::setClientRes() {
     _headers.erase("Server");
     _headers.erase("Connection");
     _headers.erase("Content-Length");
-    _headers.add("Content-Length", std::to_string(_bodySize));
+    _headers.add("Content-Length", toString(_bodySize));
     _clientRes.addDefaultHeaders(_headers);
 
     _clientRes.setBody(_rawData.substr(_endOfHeadersPos, _bodySize));

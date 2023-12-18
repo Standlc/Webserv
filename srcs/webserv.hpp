@@ -48,7 +48,7 @@
 
 typedef std::string String;
 typedef std::map<String, String> stringMap;
-typedef std::unordered_multimap<String, String> unorderedStringMultiMap;
+// typedef std::unordered_multimap<String, String> unorderedStringMultiMap;
 
 class Server;
 class Block;
@@ -82,6 +82,9 @@ void debugHttpMessage(const String &httpMessage, const String &color = WHITE);
 void debug(const String &title, const String &arg = "", const String &color = WHITE);
 void debugErr(const String &title, const char *err = NULL);
 
+long hexToInt(const String &str);
+long toInt(const String &str);
+String toString(long n);
 String lowercase(String str);
 String capitalize(String str);
 void handleSigint(int sig);

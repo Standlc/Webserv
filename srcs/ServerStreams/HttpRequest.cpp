@@ -90,7 +90,7 @@ String HttpRequest::getSocketPort() {
         debugErr("getsockname", strerror(errno));
         throw 500;
     }
-    return std::to_string(ntohs(sin.sin_port));
+    return toString(ntohs(sin.sin_port));
 }
 
 void HttpRequest::setUrl(const String &url) {

@@ -16,7 +16,7 @@ clientPollHandlerType LocationBlock::proxyHandler(ClientPoll &client) {
     try {
         proxyInfo = getServerAddressInfo(_proxyPass->host(), _proxyPass->port());
         proxySocket = createSocket(proxyInfo);
-        debug("> connecting to remote server", std::to_string(proxySocket), BLUE);
+        debug("> connecting to remote server", toString(proxySocket), BLUE);
         connectToSocket(proxySocket, proxyInfo);
         freeaddrinfo(proxyInfo);
     } catch (int err) {

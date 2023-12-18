@@ -7,7 +7,7 @@ void HttpResponse::setBody(const String &body) {
 void HttpResponse::setHead(int statusCode) {
     _statusCode = statusCode;
     _head = String(HTTP_VERSION) + " ";
-    _head += std::to_string(statusCode) + " ";
+    _head += toString(statusCode) + " ";
     _head += StatusComments::get(statusCode) + CRLF;
 }
 
@@ -73,14 +73,14 @@ void HttpResponse::set(int statusCode, const String &path, const String &body) {
 
     _defaultHeaders.clear();
     this->addDefaultHeader("Content-Type", MediaTypes::getType(path));
-    this->addDefaultHeader("Content-Length", std::to_string(body.size()));
+    this->addDefaultHeader("Content-Length", toString(body.size()));
 
     this->setBody(body);
     this->assembleResponse();
 }
 
 void HttpResponse::loadFile(int serverStatusCode, const String &path) {
-    if (path.back() == '/') {
+    if (lastChar(path) == '/') {
         throw 403;
     }
 

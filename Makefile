@@ -71,7 +71,7 @@ DEPENDENCIES = 	Makefile \
 				srcs/blocks/LocationBlock/utils.hpp \
 				srcs/parsing/parsing.hpp
 
-FLAGS = -g #-std=c++98 -Wextra -Wall -Werror
+FLAGS = -g -std=c++98 -Wextra -Wall -Werror
 
 RM = rm -rf
 

@@ -86,38 +86,9 @@ int CgiPoll::tryFork() {
     return pid;
 }
 
-void CgiPoll::forkAndexecuteScript(const String &cgiResourcePath, const String &cgiScriptCommand) {
-    debug("> forking and executing CGI script, socket", std::to_string(_fd), PURPLE);
-    _pid = tryFork();
+void execveScript(Server *server, String cgiScriptResourcePath, String cgiScriptCommand) {
+    delete server;
 
-    if (_pid == 0) {
-        try {
-            this->redirectCgiProcessInputOutput();
-            this->execveScript(cgiResourcePath, cgiScriptCommand);
-        } catch (int status) {
-            _pid = -1;
-            throw std::runtime_error("CGI Program Failed.");
-        }
-    }
-    this->resetStartTime();
-}
-
-void CgiPoll::redirectCgiProcessInputOutput() {
-    if (dup2(_cgiSockets.request[0], 0) == -1) {
-        debugErr("dup2", strerror(errno));
-        throw 1;
-    }
-    if (dup2(_cgiSockets.response[1], 1) == -1) {
-        debugErr("dup2", strerror(errno));
-        throw 1;
-    }
-    closeOpenFd(_cgiSockets.response[0]);
-    closeOpenFd(_cgiSockets.response[1]);
-    closeOpenFd(_cgiSockets.request[0]);
-    closeOpenFd(_cgiSockets.request[1]);
-}
-
-void CgiPoll::execveScript(const String &cgiScriptResourcePath, const String &cgiScriptCommand) {
     String cgiScriptDir = parseFileDirectory(cgiScriptResourcePath);
     String scriptName = "./" + parsePathFileName(cgiScriptResourcePath);
     // debugErr("cgi dir", &cgiScriptDir[0]);
@@ -140,6 +111,41 @@ void CgiPoll::execveScript(const String &cgiScriptResourcePath, const String &cg
     }
 }
 
+void preventChildFromKillingItself(int &pid) {
+    pid = -1;
+}
+
+void CgiPoll::forkAndexecuteScript(Server *server, const String &cgiResourcePath, const String &cgiScriptCommand) {
+    debug("> forking and executing CGI script, socket", toString(_fd), PURPLE);
+    _pid = tryFork();
+
+    if (_pid == 0) {
+        try {
+            preventChildFromKillingItself(_pid);
+            this->redirectCgiProcessInputOutput();
+            execveScript(server, cgiResourcePath, cgiScriptCommand);
+        } catch (int status) {
+            throw std::runtime_error("CGI Program Failed.");
+        }
+    }
+    this->resetStartTime();
+}
+
+void CgiPoll::redirectCgiProcessInputOutput() {
+    if (dup2(_cgiSockets.request[0], 0) == -1) {
+        debugErr("dup2", strerror(errno));
+        throw 1;
+    }
+    if (dup2(_cgiSockets.response[1], 1) == -1) {
+        debugErr("dup2", strerror(errno));
+        throw 1;
+    }
+    closeOpenFd(_cgiSockets.response[0]);
+    closeOpenFd(_cgiSockets.response[1]);
+    closeOpenFd(_cgiSockets.request[0]);
+    closeOpenFd(_cgiSockets.request[1]);
+}
+
 CgiRequest &CgiPoll::cgiReq() {
     return *_cgiReq;
 }
@@ -152,12 +158,13 @@ int CgiPoll::cgiPid() {
     return _pid;
 }
 
-// check
 int cgiQuitPoll(CgiPoll *cgi) {
-    if (cgi->cgiPid() != -1 && waitpid(cgi->cgiPid(), NULL, WNOHANG) == cgi->cgiPid()) {
+    int pid = cgi->cgiPid();
+
+    if (pid != -1 && waitpid(pid, NULL, WNOHANG) == pid) {
         return -1;
     }
-    return cgi->cgiPid() == -1;
+    return pid == -1;
 }
 
 int handleCgiQuit(CgiPoll *cgi, int status) {
@@ -172,7 +179,7 @@ int readCgiResponse(CgiPoll *cgi) {
         return handleCgiQuit(cgi, -1);
     }
 
-    debug(">> reading CGI response", std::to_string(cgi->getFd()), PURPLE);
+    debug(">> reading CGI response", toString(cgi->getFd()), PURPLE);
     CgiResponse &cgiRes = cgi->cgiRes();
     if (cgiRes.recvAll(cgi->getFd()) <= 0) {
         return handleCgiQuit(cgi, 500);
@@ -203,7 +210,7 @@ int handleCgiResponse(CgiPoll *cgi) {
         cgi->client().req().setUrl(locationRedirect);
         cgi->client().setWriteHandler(executeClientRequest);
     } else {
-        debug("> setting client response, socket", std::to_string(cgi->client().getFd()), PURPLE);
+        debug("> setting client response, socket", toString(cgi->client().getFd()), PURPLE);
         cgiRes.setClientResponse();
         cgi->client().setWriteHandler(sendResponseToClient);
     }
@@ -227,7 +234,7 @@ int waitCgiProcessEnd(CgiPoll *cgi) {
             return handleCgiQuit(cgi, 502);
         }
 
-        debug("CGI process has exit", std::to_string(pid), GRAY);
+        debug("CGI process has exit", toString(pid), GRAY);
         cgi->setCgiPid(-1);
         cgi->setWriteHandler(handleCgiResponse);
     }

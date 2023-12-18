@@ -11,28 +11,14 @@ class ServerStream {
     size_t _totalRead;
     size_t _totalSentBytes;
 
-    // int sendAll(int fd, char *data, size_t size) {
-    //     int sentBytes = send(fd, &data[_totalSentBytes], size - _totalSentBytes, 0);
-    //     _totalSentBytes += sentBytes;
-
-    //     if (sentBytes == -1 || sentBytes == 0) {
-    //         debug("size", std::to_string(size), YELLOW);
-    //         debug("size - _totalSentBytes", std::to_string(size - _totalSentBytes), YELLOW);
-    //         debug("sent bytes", std::to_string(sentBytes), YELLOW);
-    //         debugErr("Error while writing to fd", &std::to_string(fd)[0]);
-    //         return -1;
-    //     }
-    //     return size - _totalSentBytes;
-    // }
-
     int sendAll(int fd, char *data, size_t size) {
         int sentBytes = send(fd, &data[_totalSentBytes], size - _totalSentBytes, 0);
         _totalSentBytes += sentBytes;
 
         if (sentBytes == -1 || sentBytes == 0) {
-            debug("size", std::to_string(size), YELLOW);
-            debug("sent bytes", std::to_string(sentBytes), YELLOW);
-            debugErr("Error while writing to fd", &std::to_string(fd)[0]);
+            debug("size", toString(size), YELLOW);
+            debug("sent bytes", toString(sentBytes), YELLOW);
+            debugErr("Error while writing to fd", &toString(fd)[0]);
             return -1;
         }
         return size - _totalSentBytes;
@@ -65,7 +51,7 @@ class ServerStream {
         _totalRead += readBytes;
 
         if (readBytes == -1) {
-            debug("Error while reading fd", std::to_string(fd), RED);
+            debug("Error while reading fd", toString(fd), RED);
             return -1;
         }
         return readBytes;

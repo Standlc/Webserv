@@ -83,6 +83,8 @@ class ClientPoll : public PollFd {
 
    public:
     ClientPoll(int fd, Server &server);
+    ClientPoll(const ClientPoll &other);
+    ClientPoll &operator=(const ClientPoll &other);
     ~ClientPoll();
 
     HttpResponse &res();
@@ -94,6 +96,7 @@ class ClientPoll : public PollFd {
     void setProxyStatus(SharedPtr &proxyStatus);
     void setCgiPollStatus(SharedPtr &cgiStatus);
 
+    void loadErrorPageFromLocation(LocationBlock *location, int statusCode);
     void setWriteHandler(clientPollHandlerType f);
     void setReadHandler(clientPollHandlerType f);
     int handleWrite(PollFd *pollFd);
@@ -131,9 +134,8 @@ class CgiPoll : public PollFd {
     CgiResponse &cgiRes();
     int clientStatus();
     ClientPoll &client();
-    void forkAndexecuteScript(const String &cgiResourcePath, const String &cgiScriptCommand);
+    void forkAndexecuteScript(Server *server, const String &cgiResourcePath, const String &cgiScriptCommand);
     void redirectCgiProcessInputOutput();
-    void execveScript(const String &cgiScriptResourcePath, const String &cgiScriptCommand);
 
     void switchToResponseReadableSocket();
     void switchToRequestWritableSocket();

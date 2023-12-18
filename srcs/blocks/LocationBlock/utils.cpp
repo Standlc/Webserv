@@ -18,6 +18,10 @@ LocationBlock::LocationBlock(const LocationBlock &b) : _serverBlock(b._serverBlo
     *this = b;
 }
 
+ServerBlock &LocationBlock::serverBlock() {
+    return _serverBlock;
+}
+
 LocationBlock &LocationBlock::operator=(const LocationBlock &b) {
     Block::operator=(b);
     _serverMethodshandlers = b._serverMethodshandlers;

@@ -7,6 +7,32 @@ void handleSigint(int sig) {
     throw "\nGracefully shutting down...";
 }
 
+long hexToInt(const String &str) {
+    std::stringstream ss(str);
+    long n;
+    ss >> std::hex >> n;
+    if (ss.fail()) {
+        throw std::invalid_argument("Invalid input");
+    }
+    return n;
+}
+
+long toInt(const String &str) {
+    std::stringstream ss(str);
+    long n;
+    ss >> n;
+    if (ss.fail()) {
+        throw std::invalid_argument("Invalid input");
+    }
+    return n;
+}
+
+String toString(long n) {
+    std::stringstream ss;
+    ss << n;
+    return ss.str();
+}
+
 String getRealtivePathToFile(String path) {
     int lastSlash = path.find_last_of("/");
     if (lastSlash == -1) {
@@ -30,7 +56,7 @@ void closeOpenFd(int &fd) {
 
 String capitalize(String str) {
     size_t size = str.size();
-    for (int i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         if (std::isalpha(str[i]) && std::isupper(str[i])) {
             if (i == 0 || !std::isalpha(str[i - 1])) {
                 str[i] = std::toupper(str[i]);
@@ -42,7 +68,7 @@ String capitalize(String str) {
 
 String lowercase(String str) {
     size_t size = str.size();
-    for (int i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         if (std::isupper(str[i])) {
             str[i] = std::tolower(str[i]);
         }
@@ -68,7 +94,7 @@ bool isWritable(struct pollfd &pollEl) {
 
 int checkPollError(struct pollfd &pollEl, int error) {
     if ((pollEl.revents & error) == error) {
-        debug("error", std::to_string(error) + ", on socket: " + std::to_string(pollEl.fd), DIM_RED);
+        debug("error", toString(error) + ", on socket: " + toString(pollEl.fd), DIM_RED);
         return error;
     }
     return 0;
@@ -168,7 +194,8 @@ String getFileExtension(const String &fileName) {
 }
 
 void getFileContent(const String &path, String &buf) {
-    std::ifstream file(path);
+    std::ifstream file;
+    file.open(&path[0]);
     if (!file) {
         throw 500;
     }
@@ -216,7 +243,6 @@ void tryUnsetenv(const String &name) {
 }
 
 void trySetenv(const String &name, const String &value) {
-    debug(name, value, YELLOW);
     if (setenv(&name[0], &value[0], 1) == -1) {
         debugErr("setenv", strerror(errno));
         throw 1;

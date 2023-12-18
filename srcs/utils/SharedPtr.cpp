@@ -22,7 +22,7 @@ SharedPtr::~SharedPtr() {
     }
 }
 
-SharedPtr &SharedPtr::operator=(SharedPtr &other) {
+SharedPtr &SharedPtr::operator=(const SharedPtr &other) {
     _value = other._value;
     _amount = other._amount;
     *_amount += 1;

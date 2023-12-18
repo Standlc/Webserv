@@ -74,7 +74,7 @@ bool HttpParser::parseResponseHead() {
 
     _httpProtocol = headElements[0];
     try {
-        _responseStatus = std::stoi(headElements[1]);
+        _responseStatus = toInt(headElements[1]);
     } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         throw 1;
@@ -103,7 +103,7 @@ void HttpParser::getBodyInfos() {
     const String &contentLengthHeader = _headers.find("Content-Length");
     if (contentLengthHeader != "") {
         try {
-            _contentLengthHeader = std::stol(&contentLengthHeader[0]);
+            _contentLengthHeader = toInt(&contentLengthHeader[0]);
         } catch (const std::exception &e) {
             std::cerr << e.what() << '\n';
             throw 1;
@@ -237,7 +237,7 @@ bool HttpParser::readChunkSize() {
 
     try {
         String chunkSize = _rawData.substr(_parsingPos, chunkSizeEndPos - _parsingPos);
-        _currChunkSize = std::stol(chunkSize, NULL, 16);
+        _currChunkSize = hexToInt(chunkSize);
     } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         throw 1;

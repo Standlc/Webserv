@@ -4,9 +4,7 @@ Server::Server() : _serverBlockSize(0) {
 }
 
 Server::~Server() {
-    std::cout << _pollFds.size() << "\n";
     for (size_t i = 0; i < _pollFds.size(); i++) {
-        std::cout << i << '\n';
         delete _pollFds[i];
     }
 }
@@ -57,7 +55,7 @@ void bindSocket(int socketFd, struct addrinfo* addrInfo) {
 void printServerHostnames(ServerBlock& serverBlock) {
     if (serverBlock.hostNames().size()) {
         String hostnames;
-        for (int i = 0; i < serverBlock.hostNames().size(); i++) {
+        for (size_t i = 0; i < serverBlock.hostNames().size(); i++) {
             hostnames += serverBlock.hostNames()[i];
             if (i < serverBlock.hostNames().size() - 1) {
                 hostnames += ", ";
@@ -193,7 +191,7 @@ int Server::checkReadableORWritable(int i) {
 }
 
 void Server::removePollFd(int index, int socketStatus) {
-    debug("<= closing connection", std::to_string(_fds[index].fd), GRAY);
+    debug("<= closing connection", toString(_fds[index].fd), GRAY);
     _pollFds[index]->destroy(socketStatus);
     delete _pollFds[index];
     _pollFds.erase(_pollFds.begin() + index);
@@ -254,13 +252,13 @@ void Server::loadDefaultErrPage(int statusCode, HttpResponse& res) {
         if (status == 500) {
             res.set(500, ".txt", "The server encountered some issue while handling your request");
         } else {
-            res.set(statusCode, ".txt", std::to_string(statusCode) + " Error");
+            res.set(statusCode, ".txt", toString(statusCode) + " Error");
         }
     }
 }
 
 String Server::getDefaultErrorPagePath(int statusCode) {
-    return "defaultPages/error/" + std::to_string(statusCode) + ".html";
+    return "defaultPages/error/" + toString(statusCode) + ".html";
 }
 
 ServerBlock* Server::findServerBlock(HttpRequest& req) {
@@ -311,7 +309,7 @@ int handleNewConnection(PollFd* listen) {
         debugErr("accept", strerror(errno));
         return 0;
     }
-    debug("=> adding new client", std::to_string(newClientSocket), GREEN);
+    debug("=> adding new client", toString(newClientSocket), GREEN);
     listen->server().pushNewClient(newClientSocket);
     return 0;
 }

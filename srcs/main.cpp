@@ -10,7 +10,7 @@ std::map<String, String> MediaTypes::_types;
 
 // check autoindex
 String generateDirectoryListingPage(const String &dir, String reqUrl, struct dirent *entry, DIR *dirStream) {
-    if (reqUrl.back() != '/') {
+    if (lastChar(reqUrl) != '/') {
         reqUrl += "/";
     }
 
@@ -35,7 +35,16 @@ String generateDirectoryListingPage(const String &dir, String reqUrl, struct dir
 }
 
 // TO DO:
-//// let client download files ✅
+//// let client download files ✅    // for (int i = 0; i < 300; i++) {
+//     ServerBlock *block = server->addBlock();
+//     block->set("0.0.0.0", "5000", false);
+//     for (int j = 0; j < 150; j++) {
+//         LocationBlock *location = block->addLocation();
+//         location->setPath("/");
+//         location->setProxyPass("http://apple.com");
+//     }
+// }
+
 //// upload files on server ✅
 //// cookies ✅
 //// continuous parsing ✅
@@ -73,16 +82,6 @@ int main(int argc, char *argv[]) {
     std::srand(std::time(0));
     isDebug = 0;
     g_conf_path = getRealtivePathToFile(argv[1]);
-
-    // for (int i = 0; i < 300; i++) {
-    //     ServerBlock *block = server->addBlock();
-    //     block->set("0.0.0.0", "5000", false);
-    //     for (int j = 0; j < 150; j++) {
-    //         LocationBlock *location = block->addLocation();
-    //         location->setPath("/");
-    //         location->setProxyPass("http://apple.com");
-    //     }
-    // }
 
     if (parsing(argc, argv, server) == ERR) {
         delete server;

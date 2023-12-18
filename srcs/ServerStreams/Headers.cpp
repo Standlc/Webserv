@@ -15,7 +15,7 @@ Headers &Headers::operator=(const Headers &h) {
 }
 
 void Headers::add(const String &field, const String &value) {
-    _headers.push_back((header){lowercase(field), lowercase(value)});
+    _headers.push_back((header){lowercase(field), value});
 }
 
 void Headers::erase(const String &field) {

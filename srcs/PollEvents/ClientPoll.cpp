@@ -7,6 +7,21 @@ ClientPoll::ClientPoll(int fd, Server& server) : PollFd(fd, server) {
     _proxyStatus = (int*)NULL;
 }
 
+ClientPoll::ClientPoll(const ClientPoll& other) : PollFd(other._fd, other._server) {
+    *this = other;
+}
+
+ClientPoll& ClientPoll::operator=(const ClientPoll& other) {
+    _writeHandler = other._writeHandler;
+    _readHandler = other._readHandler;
+    _location = other._location;
+    _req = new HttpRequest(other._fd);
+    _res = new HttpResponse(*_req);
+    _cgiPollStatus = other._cgiPollStatus;
+    _proxyStatus = other._proxyStatus;
+    return *this;
+}
+
 ClientPoll::~ClientPoll() {
     delete _res;
     delete _req;
@@ -66,21 +81,29 @@ int ClientPoll::handleRead(PollFd* pollFd) {
     return _readHandler((ClientPoll*)pollFd);
 }
 
+void ClientPoll::loadErrorPageFromLocation(LocationBlock* location, int statusCode) {
+    try {
+        location->loadErrPage(statusCode, *_res, *_req);
+    } catch (int status) {
+        try {
+            location->serverBlock().loadErrPage(statusCode, *_res, *_req);
+        } catch (int status) {
+            _server.loadDefaultErrPage(status, *_res);
+        }
+    }
+}
+
 int ClientPoll::sendErrorPage(int statusCode) {
     if (statusCode >= -1 && statusCode <= POLLNVAL) {
         statusCode = 500;
     }
 
-    // try {
-    //     _location->loadErrPage(statusCode, *_res, *_req);
-    // } catch (int status) {
-    //     try {
-    //         _location->serverBlock().loadErrPage(statusCode, *_res, *_req);
-    //     } catch (int status) {
-    //         _server.loadDefaultErrPage(status, *_res);
-    //     }
-    // }
-    _server.loadDefaultErrPage(statusCode, *_res);
+    if (_location) {
+        this->loadErrorPageFromLocation(_location, statusCode);
+    } else {
+        _server.loadDefaultErrPage(statusCode, *_res);
+    }
+
     this->setWriteHandler(sendResponseToClient);
     return sendResponseToClient(this);
 }
@@ -103,7 +126,7 @@ int sendResponseToClient(ClientPoll* client) {
 int readClientRequest(ClientPoll* client) {
     HttpRequest& req = client->req();
 
-    debug(">> recieving client request", std::to_string(client->getFd()), CYAN);
+    debug(">> recieving client request", toString(client->getFd()), CYAN);
     if (req.recvAll(client->getFd()) <= 0) {
         return -1;
     }

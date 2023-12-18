@@ -45,8 +45,6 @@ CgiSockets createCgiReqResSocketPairs() {
 
 clientPollHandlerType LocationBlock::handleCgi(ClientPoll &client, const String &cgiScriptPath) {
     String cgiResourcePath = this->getResourcePath(cgiScriptPath);
-    // debug("cgi script path", cgiScriptPath, YELLOW);
-    // debug("cgi resource path", cgiResourcePath, YELLOW);
     this->checkCgiScriptAccess(cgiResourcePath);
     this->setenvCgi(client.req(), cgiScriptPath);
 
@@ -59,7 +57,7 @@ clientPollHandlerType LocationBlock::handleCgi(ClientPoll &client, const String 
         cgiPoll.setReadHandler(NULL);
         cgiPoll.setWriteHandler(sendCgiRequest);
     }
-    cgiPoll.forkAndexecuteScript(cgiResourcePath, _cgiCommands[cgiExtension]);
+    cgiPoll.forkAndexecuteScript(&client.server(), cgiResourcePath, _cgiCommands[cgiExtension]);
     return checkCgiPoll;
 }
 
@@ -101,7 +99,7 @@ void LocationBlock::setenvCgi(HttpRequest &req, const String &cgiScriptPath) {
     }
 
     if (req.hasBody()) {
-        trySetenv("CONTENT_LENGTH", std::to_string(req.getBodySize()));
+        trySetenv("CONTENT_LENGTH", toString(req.getBodySize()));
         trySetenv("CONTENT_TYPE", req.getHeader("Content-Type"));
     } else {
         tryUnsetenv("CONTENT_LENGTH");

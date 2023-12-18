@@ -55,7 +55,7 @@ int recvProxyResponse(ProxyPoll *proxy) {
     }
 
     ProxyResponse &proxyRes = proxy->proxyRes();
-    debug(">> reading proxy response", std::to_string(proxy->getFd()), BLUE);
+    debug(">> reading proxy response", toString(proxy->getFd()), BLUE);
     int recvStatus = proxyRes.recvAll(proxy->getFd());
     if (recvStatus == -1) {
         return 500;

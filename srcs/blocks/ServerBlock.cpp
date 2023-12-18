@@ -44,7 +44,7 @@ LocationBlock *ServerBlock::findLocationBlockByPath(const String &reqPath) {
         String locationPath = _locations[i].getPath();
         int pathSize = locationPath.size();
         if (pathSize > maxMatchLen && reqPath.compare(0, pathSize, locationPath) == 0) {
-            if (reqPath[pathSize] == '/' || locationPath.back() == '/') {
+            if (reqPath[pathSize] == '/' || lastChar(locationPath) == '/') {
                 maxMatchLen = pathSize;
                 matchIndex = i;
             }

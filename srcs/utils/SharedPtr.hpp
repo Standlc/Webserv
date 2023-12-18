@@ -9,7 +9,7 @@ class SharedPtr {
     SharedPtr(SharedPtr &other);
     SharedPtr(int *ptr);
     ~SharedPtr();
-    SharedPtr &operator=(SharedPtr &other);
+    SharedPtr &operator=(const SharedPtr &other);
     int &operator*();
     SharedPtr &operator=(int newValue);
     SharedPtr &operator=(int *ptr);
