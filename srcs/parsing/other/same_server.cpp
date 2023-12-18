@@ -8,7 +8,9 @@ void    erase_duplicates(vector<String> &host_names)
 
 bool same_host_names(vector<String> host_names1, vector<String> host_names2)
 {
-    cout << "je passe\n" << "hostnames1 : " << host_names1[0] << " " << "hostnames2 : " << host_names2[0] << '\n';
+    // cout << "je passe\n" << "hostnames1 : " << host_names1[0] << " " << "hostnames2 : " << host_names2[0] << '\n';
+    if (host_names1.size() == 0 && host_names2.size() == 0)
+        return (true);
     erase_duplicates(host_names1);
     erase_duplicates(host_names2);
     host_names1.insert(host_names1.end(), host_names2.begin(), host_names2.end());

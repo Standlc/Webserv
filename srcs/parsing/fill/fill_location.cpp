@@ -27,8 +27,7 @@ int fill_methods(const string &file, LocationBlock *location) {
         arrayMethods.push_back(method);
     }
     arrayMethods.push_back("");
-    if (arrayMethods[0] != "")
-        location->setAllowedMethods(arrayMethods);
+    location->setAllowedMethods(arrayMethods);
     return (i + 1);
 }
 

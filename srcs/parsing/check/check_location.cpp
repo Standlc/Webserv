@@ -23,6 +23,18 @@ int check_methods(const string &content)
 			i += 4;
 		else if (!strncmp(&content[i], "DELETE", strlen("DELETE")))
 			i += 6;
+		else if (!strncmp(&content[i], "PUT", strlen("PUT")))
+			i += 3;
+		else if (!strncmp(&content[i], "TRACE", strlen("TRACE")))
+			i += 5;
+		else if (!strncmp(&content[i], "CONNECT", strlen("CONNECT")))
+			i += 7;
+		else if (!strncmp(&content[i], "HEAD", strlen("HEAD")))
+			i += 4;
+		else if (!strncmp(&content[i], "OPTION", strlen("OPTION")))
+			i += 6;
+		else if (!strncmp(&content[i], "PATCH", strlen("PATCH")))
+			i += 5;
 		else
 			return (error_message(line_tracker(content.substr(i)), MMETHOD, NOEX));
 		if (content[i] == ',')
