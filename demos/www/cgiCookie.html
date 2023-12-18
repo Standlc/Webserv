@@ -1,0 +1,33 @@
+<html>
+  <head>
+    <title>Webserv</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="flex-col">
+        <a href="/index.html">
+          <img src="/icons/back.svg" alt="" />
+          Home</a
+        >
+        <h1>Cookie page</h1>
+        <input
+          type="text"
+          id="username"
+          autofocus
+          placeholder="Enter a username"
+          required
+        />
+        <button type="submit" onclick="handleRequest()">Get a cookie!</button>
+      </div>
+    </div>
+
+    <script>
+      const handleRequest = async (e) => {
+        const username = document.getElementById("username");
+        document.cookie = "username=" + username.value;
+        document.location.replace("/cgi-bin/cookie.php");
+      };
+    </script>
+  </body>
+</html>
