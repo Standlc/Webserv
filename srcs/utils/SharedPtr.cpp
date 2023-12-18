@@ -34,7 +34,6 @@ int &SharedPtr::operator*() {
 }
 
 SharedPtr &SharedPtr::operator=(int newValue) {
-    std::cout << newValue << "\n";
     *_value = newValue;
     return *this;
 }

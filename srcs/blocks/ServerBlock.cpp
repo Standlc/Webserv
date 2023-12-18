@@ -23,7 +23,7 @@ clientPollHandlerType ServerBlock::execute(ClientPoll &client) {
 
         return macthingLocation->execute(client);
     } catch (int status) {
-        this->loadErrPage(status, client.res(), client.req());
+        this->loadErrPage(status, client.res(), "/");
         return sendResponseToClient;
     }
 }

@@ -5,6 +5,7 @@ ClientPoll::ClientPoll(int fd, Server& server) : PollFd(fd, server) {
     _res = new HttpResponse(*_req);
     _cgiPollStatus = (int*)NULL;
     _proxyStatus = (int*)NULL;
+    _location = NULL;
 }
 
 ClientPoll::ClientPoll(const ClientPoll& other) : PollFd(other._fd, other._server) {
@@ -83,10 +84,10 @@ int ClientPoll::handleRead(PollFd* pollFd) {
 
 void ClientPoll::loadErrorPageFromLocation(LocationBlock* location, int statusCode) {
     try {
-        location->loadErrPage(statusCode, *_res, *_req);
+        location->loadErrPage(statusCode, *_res, location->getPath());
     } catch (int status) {
         try {
-            location->serverBlock().loadErrPage(statusCode, *_res, *_req);
+            location->serverBlock().loadErrPage(statusCode, *_res, location->getPath());
         } catch (int status) {
             _server.loadDefaultErrPage(status, *_res);
         }

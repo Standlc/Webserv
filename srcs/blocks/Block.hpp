@@ -28,7 +28,7 @@ class Block {
     Block &operator=(const Block &b);
     virtual ~Block();
 
-    void loadErrPage(int statusCode, HttpResponse &res, HttpRequest &req);
+    void loadErrPage(int statusCode, HttpResponse &res, const String &locationPath);
     String getResourcePath(const String &reqUrl, const String &file = "");
     String getUploadFilePath(const String &file);
     bool hasErrorPage(int statusCode);
@@ -115,6 +115,7 @@ class LocationBlock : public Block {
     void handleMethod(const String &httpMethod, HttpRequest &req, HttpResponse &res);
     void handleSessionCookies(ClientPoll &client);
 
+    String cgiScriptResourcePath(const String &cgiScriptPath);
     String getReqPathInfo(HttpRequest &req);
     void getMethod(HttpRequest &req, HttpResponse &res);
     void postMethod(HttpRequest &req, HttpResponse &res);

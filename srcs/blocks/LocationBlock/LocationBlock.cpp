@@ -15,7 +15,7 @@ clientPollHandlerType LocationBlock::execute(ClientPoll &client) {
 
         return (this->*_requestHandler)(client);
     } catch (int status) {
-        this->loadErrPage(status, res, req);
+        this->loadErrPage(status, res, _path);
         return sendResponseToClient;
     }
 }

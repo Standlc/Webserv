@@ -227,7 +227,7 @@ void Server::pushNewListeningSocket(int listeningSocket) {
 
 CgiPoll& Server::pushNewCgiPoll(CgiSockets& cgiSockets, ClientPoll& client) {
     this->pushStructPollfd(cgiSockets.response[0]);
-    fcntl(cgiSockets.request[1], F_SETFL, O_NONBLOCK);
+    fcntl(cgiSockets.request[1], F_SETFL, O_NONBLOCK, FD_CLOEXEC);
 
     CgiPoll* newCgi = new CgiPoll(cgiSockets, client, _fds[_fds.size() - 1]);
     newCgi->setWriteHandler(waitCgiProcessEnd);
@@ -237,7 +237,7 @@ CgiPoll& Server::pushNewCgiPoll(CgiSockets& cgiSockets, ClientPoll& client) {
 }
 
 void Server::pushStructPollfd(int fd) {
-    fcntl(fd, F_SETFL, O_NONBLOCK);
+    fcntl(fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
     struct pollfd element;
     element.fd = fd;
     element.events = POLLIN | POLLOUT;

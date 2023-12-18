@@ -6,7 +6,6 @@ void LocationBlock::getMethod(HttpRequest &req, HttpResponse &res) {
     int accessStatus = checkPathAccess(resourcePath);
 
     if (accessStatus != 200 && _fallBack != "") {
-        // check
         resourcePath = this->getResourcePath(_path, _fallBack);
         accessStatus = checkPathAccess(resourcePath);
     }

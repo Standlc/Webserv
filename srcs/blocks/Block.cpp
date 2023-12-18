@@ -25,13 +25,13 @@ Block &Block::operator=(const Block &b) {
     return *this;
 }
 
-void Block::loadErrPage(int statusCode, HttpResponse &res, HttpRequest &req) {
+void Block::loadErrPage(int statusCode, HttpResponse &res, const String &locationPath) {
     if (this->hasErrorPage(statusCode) == false) {
         throw statusCode;
     }
 
     try {
-        res.loadFile(statusCode, this->getResourcePath(req.url().path, _errorFiles[statusCode]));
+        res.loadFile(statusCode, this->getResourcePath(locationPath, _errorFiles[statusCode]));
     } catch (int loadFileError) {
         throw loadFileError == 500 ? 500 : statusCode;
     }
