@@ -1,47 +1,44 @@
 <html>
-  <head>
-    <title>Webserv</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <!-- <form method="DELETE" X-HTTP-Method-Override="DELETE"> -->
-    <div class="wrapper">
-      <div class="flex-col">
-        <a href="/index.html">
-          <img src="/icons/back.svg" alt="" />
-          Home</a
-        >
-        <h1>Delete files</h1>
-        <input
-          type="text"
-          id="filename"
-          autofocus
-          placeholder="Type a file to delete"
-        />
-        <button type="submit" onclick="handleRequest()">Delete</button>
-      </div>
-    </div>
-    <!-- </form> -->
 
-    <script>
-      const handleRequest = async (e) => {
-        const fileInputElement = document.getElementById("filename");
-        try {
-          const response = await fetch("/public/" + fileInputElement.value, {
-            method: "DELETE",
-          });
-          let message = response.status;
-          if (!response.ok) {
-            message += " Failed to delete resource."
-          } else {
-            message += " Resource was deleted successfully."
-          }
-          alert(message);
-        } catch (err) {
-          alert(err);
+<head>
+  <title>Webserv</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+
+<body>
+  <!-- <form method="DELETE" X-HTTP-Method-Override="DELETE"> -->
+  <div class="wrapper">
+    <div class="flex-col">
+      <a href="/index.html">
+        <img src="/icons/back.svg" alt="" />
+        Home</a>
+      <h1>Delete files</h1>
+      <input type="text" id="filename" autofocus placeholder="Type a file to delete" />
+      <button type="submit" onclick="handleRequest()">Delete</button>
+    </div>
+  </div>
+  <!-- </form> -->
+
+  <script>
+    const handleRequest = async (e) => {
+      const fileInputElement = document.getElementById("filename");
+      try {
+        const response = await fetch("/public/" + fileInputElement.value, {
+          method: "DELETE",
+        });
+        let message = response.status;
+        if (!response.ok) {
+          message += " Failed to delete resource."
+        } else {
+          message += " Resource was deleted successfully."
         }
-        //document.location.replace("/upload");
-      };
-    </script>
-  </body>
+        alert(message);
+      } catch (err) {
+        alert(err);
+      }
+      //document.location.replace("/upload");
+    };
+  </script>
+</body>
+
 </html>

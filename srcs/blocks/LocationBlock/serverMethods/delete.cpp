@@ -7,6 +7,7 @@ void LocationBlock::deleteMethod(HttpRequest &req, HttpResponse &res) {
     }
 
     String resourcePath = this->getResourcePath(_path, pathInfo);
+    debug("path", resourcePath, YELLOW);
 
     throwIf(checkPathAccess(resourcePath) == 404, 404);
     throwIf(isDirectory(resourcePath), 403);

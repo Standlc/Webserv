@@ -35,7 +35,7 @@ int check_block(const string &content)
 
 int check_content(const string &content)
 {
-	if (content[0] == '\n') // } has been delete
+	if (content[0] == '\n')
 		return (1);
 	if (!strncmp(content.c_str(), "server", strlen("server")))
 		return (check_server(content));

@@ -1,93 +1,155 @@
-NAME = webserv
+NAME					=	webserv
 
-SOURCES = 	srcs/main.cpp \
-			srcs/utils/utils.cpp \
-			srcs/Server.cpp srcs/utils/SharedPtr.cpp \
-			\
-			srcs/blocks/Block.cpp \
-			srcs/blocks/ServerBlock.cpp \
-			srcs/blocks/LocationBlock/LocationBlock.cpp \
-			srcs/blocks/LocationBlock/utils.cpp \
-			srcs/blocks/LocationBlock/serverMethods/get.cpp \
-			srcs/blocks/LocationBlock/serverMethods/post.cpp \
-			srcs/blocks/LocationBlock/serverMethods/delete.cpp \
-			srcs/blocks/LocationBlock/reverseProxy.cpp \
-			srcs/blocks/LocationBlock/cgi.cpp \
-			srcs/blocks/LocationBlock/redirections.cpp \
-			\
-			srcs/PollEvents/PollFd.cpp \
-			srcs/PollEvents/ClientPoll.cpp \
-			srcs/PollEvents/CgiPoll.cpp \
-			srcs/PollEvents/ProxyPoll.cpp \
-			\
-			srcs/ServerStreams/Headers.cpp \
-			srcs/ServerStreams/HttpRequest.cpp \
-			srcs/ServerStreams/HttpResponse.cpp \
-			srcs/ServerStreams/cgi/CgiRequest.cpp \
-			srcs/ServerStreams/cgi/CgiResponse.cpp \
-			srcs/ServerStreams/proxy/ProxyRequest.cpp \
-			srcs/ServerStreams/proxy/ProxyResponse.cpp \
-			srcs/ServerStreams/HttpParser.cpp \
-			\
-			srcs/parsing/parsing.cpp \
-			\
-			srcs/parsing/check/check_block.cpp \
-			srcs/parsing/check/check_location.cpp \
-			srcs/parsing/check/check_server.cpp \
-			srcs/parsing/check/search.cpp \
-			\
-			srcs/parsing/fill/fill_block.cpp \
-			srcs/parsing/fill/fill_location.cpp \
-			srcs/parsing/fill/fill_server.cpp \
-			srcs/parsing/fill/search.cpp \
-			\
-			srcs/parsing/other/check_global.cpp \
-			srcs/parsing/other/erase.cpp \
-			srcs/parsing/other/error_message.cpp \
-			srcs/parsing/other/required.cpp \
-			srcs/parsing/other/same_server.cpp \
-			srcs/parsing/other/utils.cpp \
 
-OBJECTS = $(SOURCES:.cpp=.o)
 
-DEPENDENCIES = 	Makefile \
-				srcs/utils/SharedPtr.hpp \
-				srcs/Server.hpp \
-				srcs/blocks/Block.hpp \
-				srcs/PollEvents/PollFd.hpp \
-				srcs/StaticClasses/MediaTypes.hpp \
-				srcs/webserv.hpp \
-				srcs/StaticClasses/StatusComments.hpp \
-				srcs/StaticClasses/MediaTypes.hpp \
-				srcs/ServerStreams/HttpResponse.hpp \
-				srcs/ServerStreams/HttpRequest.hpp \
-				srcs/ServerStreams/ServerStream.hpp \
-				srcs/ServerStreams/Headers.hpp \
-				srcs/ServerStreams/cgi/CgiRequest.hpp \
-				srcs/ServerStreams/cgi/CgiResponse.hpp \
-				srcs/ServerStreams/proxy/ProxyRequest.hpp \
-				srcs/ServerStreams/proxy/ProxyResponse.hpp \
-				srcs/ServerStreams/HttpParser.hpp \
-				srcs/blocks/LocationBlock/utils.hpp \
-				srcs/parsing/parsing.hpp
+SRC_SERVER_METHODS		=	delete.cpp \
+							get.cpp \
+							post.cpp \
 
-FLAGS = -g -std=c++98 -Wextra -Wall -Werror
+SRC_LOCATION_BLOCK		=	cgi.cpp \
+							LocationBlock.cpp \
+							redirections.cpp \
+							reverseProxy.cpp \
+							utils.cpp \
+							${addprefix serverMethods/, ${SRC_SERVER_METHODS}} \
 
-RM = rm -rf
+SRC_BLOCKS				=	Block.cpp \
+							ServerBlock.cpp \
+							${addprefix LocationBlock/, ${SRC_LOCATION_BLOCK}} \
+
+SRC_CHECK				=	check_block.cpp \
+							check_location.cpp \
+							check_server.cpp \
+							search.cpp \
+
+SRC_FILL				=	fill_block.cpp \
+							fill_location.cpp \
+							fill_server.cpp \
+							search.cpp \
+
+SRC_OTHER				=	check_global.cpp \
+							erase.cpp \
+							error_message.cpp \
+							required.cpp \
+							same_server.cpp \
+							utils.cpp \
+
+SRC_PARSING				=	parsing.cpp \
+							${addprefix check/, ${SRC_CHECK}} \
+							${addprefix fill/, ${SRC_FILL}} \
+							${addprefix other/, ${SRC_OTHER}} \
+
+SRC_POLL_EVENTS			=	CgiPoll.cpp \
+							ClientPoll.cpp \
+							PollFd.cpp \
+							ProxyPoll.cpp \
+
+SRC_CGI					=	CgiRequest.cpp \
+							CgiResponse.cpp \
+
+SRC_PROXY				=	ProxyRequest.cpp \
+							ProxyResponse.cpp \
+
+SRC_SERVER_STREAMS		=	Headers.cpp \
+							HttpParser.cpp \
+							HttpRequest.cpp \
+							HttpResponse.cpp \
+							${addprefix cgi/, ${SRC_CGI}} \
+							${addprefix proxy/, ${SRC_PROXY}} \
+
+SRC_UTILS				=	SharedPtr.cpp \
+							utils.cpp \
+
+SRC						=	main.cpp \
+							Server.cpp \
+							${addprefix blocks/, ${SRC_BLOCKS}} \
+							${addprefix parsing/, ${SRC_PARSING}} \
+							${addprefix PollEvents/, ${SRC_POLL_EVENTS}} \
+							${addprefix ServerStreams/, ${SRC_SERVER_STREAMS}} \
+							${addprefix utils/, ${SRC_UTILS}} \
+
+SRCS					=	${addprefix srcs/, ${SRC}} \
+
+
+
+OBJ						=	${addprefix binaries/, ${SRC}} \
+
+
+
+OBJECTS					=	$(OBJ:.cpp=.o) \
+
+
+
+HEADER_UTILS			=	SharedPtr.hpp \
+
+HEADER_STATIC_CLASSES	=	MediaTypes.hpp \
+							StatusComments.hpp \
+
+HEADER_CGI				=	CgiRequest.hpp \
+							CgiResponse.hpp \
+
+HEADER_PROXY			=	ProxyRequest.hpp \
+							ProxyResponse.hpp \
+
+HEADER_SERVER_STREAM	=	Headers.hpp \
+							HttpParser.hpp \
+							HttpRequest.hpp \
+							HttpResponse.hpp \
+							ServerStream.hpp \
+							${addprefix cgi/, ${HEADER_CGI}} \
+							${addprefix proxy/, ${HEADER_PROXY}} \
+
+HEADER_POLL_EVENTS		=	PollFd.hpp \
+
+HEADER_PARSING			=	parsing.hpp \
+
+HEADER_LOCATION_BLOCK	=	utils.hpp \
+
+HEADER_BLOCKS			=	Block.hpp \
+							${addprefix LocationBlock/, ${HEADER_LOCATION_BLOCK}} \
+
+HEADER_SRCS				=	Server.hpp \
+							webserv.hpp \
+							${addprefix blocks/, ${HEADER_BLOCKS}} \
+							${addprefix parsing/, ${HEADER_PARSING}} \
+							${addprefix PollEvents/, ${HEADER_POLL_EVENTS}} \
+							${addprefix ServerStreams/, ${HEADER_SERVER_STREAM}} \
+							${addprefix StaticClasses/, ${HEADER_STATIC_CLASS}} \
+							${addprefix utils/, ${HEADER_UTILS}} \
+
+DEPENDENCIES			=	Makefile \
+							${addprefix srcs/, ${HEADER_SRCS}} \
+
+
+
+FLAGS					=	-Wextra -Wall -Werror -std=c++98
+
+
+
+RM						=	rm -rf
+
+
 
 all: $(NAME)
 
 $(NAME): $(OBJECTS)
-	c++ $(OBJECTS) -o $(NAME)
+	@c++ $(FLAGS) $(OBJECTS) -o $(NAME)
+	@echo "\033[32mwebserv compiled"
 
-%.o: %.cpp  $(DEPENDENCIES)
-	c++ $(FLAGS) -c $< -o $@
+binaries/%.o: srcs/%.cpp $(DEPENDENCIES)
+	@mkdir -p $(@D)
+	@c++ $(FLAGS) -c $< -o $@
+
+binaries :
+	@mkdir -p binaries/
 
 clean:
-	$(RM) $(OBJECTS)
+	@$(RM) binaries/
+	@echo "\033[36mwebserv binaries files have been deleted"
 
 fclean: clean
-	$(RM) $(NAME)
+	@$(RM) $(NAME)
+	@echo "\033[36mwebserv file is delete"
 
 re: fclean all
 

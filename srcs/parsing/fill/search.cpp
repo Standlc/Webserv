@@ -56,6 +56,6 @@ int found_data(string const &file, ServerBlock *server) {
     if (!strncmp(file.c_str(), "add_headers:", strlen("add_headers:")))
         return (fill_add_header(file.substr(12), server) + 12);
     if (!strncmp(file.c_str(), "fallback:", strlen("fallback:")))
-        return (fill_fallback(file.substr(6), server) + 6);
+        return (fill_fallback(file.substr(9), server) + 9);
     return (1);
 }

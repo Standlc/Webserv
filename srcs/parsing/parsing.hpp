@@ -36,9 +36,9 @@ using namespace std;
 #define MCOOKIE "Cookie syntaxes not valid"
 #define MUPLOAD "Upload root not found"
 #define MQUOTES "Opening of quotes not closed"
-#define MNOSERV "None server"
-#define MNOLISTEN "None listen"
-#define MNOROOT "None root"
+#define MNOSERV "No server"
+#define MNOLISTEN "No listen"
+#define MNOROOT "No root"
 #define MERRPAGESYNT "Syntaxe error in the error pages"
 #define MSAMESERV "2 Servers have the same : ipAddress, Port and Hostname"
 

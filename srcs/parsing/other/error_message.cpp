@@ -28,7 +28,7 @@ int	line_tracker(const string &error, string initializer)
 int    error_message(int row, string message, string example)
 {
 	if (row != NOLINE)
-		cerr << "\033[0;34m" << "> ";
+		cerr << "\033[1;34m" << "> ";
 	else
 		cerr << "\033[0;31m" << "> ";
 	if (row != NOLINE)
