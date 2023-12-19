@@ -42,8 +42,6 @@ void CgiResponse::setClientResponse() {
 
 bool CgiResponse::resumeParsing() {
     if (HttpParser::resumeParsing(false) == true) {
-        this->parseLocationHeader();
-        this->parseStatusHeader();
         return true;
     }
     return false;
