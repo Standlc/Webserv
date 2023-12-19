@@ -207,6 +207,9 @@ void getFileContent(const String &path, String &buf) {
 
     file.read(&buf[0], len);
     file.close();
+    if (!file) {
+        throw 500;
+    }
 
     // std::ifstream file(path);
     // if (!file) {
