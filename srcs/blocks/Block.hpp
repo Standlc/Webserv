@@ -115,6 +115,7 @@ class LocationBlock : public Block {
     void handleMethod(const String &httpMethod, HttpRequest &req, HttpResponse &res);
     void handleSessionCookies(ClientPoll &client);
 
+    String getPathTranslated(const String &pathInfo, const String &cgiResourcePath);
     String cgiScriptResourcePath(const String &cgiScriptPath);
     String getReqPathInfo(HttpRequest &req);
     void getMethod(HttpRequest &req, HttpResponse &res);
@@ -129,7 +130,7 @@ class LocationBlock : public Block {
     clientPollHandlerType handleCgi(ClientPoll &client, const String &cgiScriptPath);
     void checkCgiScriptAccess(const String &cgiScriptPath);
     String isCgiScriptRequest(HttpRequest &req);
-    void setenvCgi(HttpRequest &req, const String &cgiScriptPath);
+    void setenvCgi(HttpRequest &req, const String &cgiResourcePath, const String &cgiScriptPath);
 
     void setRedirection(int statusCode, String redirectionUrl);
     void setProxyPass(const String &proxyPass);

@@ -58,7 +58,7 @@ String LocationBlock::cgiScriptResourcePath(const String &cgiScriptPath) {
 clientPollHandlerType LocationBlock::handleCgi(ClientPoll &client, const String &cgiScriptPath) {
     String cgiResourcePath = this->cgiScriptResourcePath(cgiScriptPath);
     this->checkCgiScriptAccess(cgiResourcePath);
-    this->setenvCgi(client.req(), cgiScriptPath);
+    this->setenvCgi(client.req(), cgiResourcePath, cgiScriptPath);
 
     String cgiExtension = getFileExtension(cgiScriptPath);
     CgiSockets cgiSockets = createCgiReqResSocketPairs();
@@ -89,31 +89,45 @@ String parseCgiPathInfo(HttpRequest &req, const String &cgiScriptPath) {
     return reqUrl.substr(cgiScriptPathSize, -1);
 }
 
-String getPathTranslated(const String &sriptPath, const String &pathInfo) {
+int countSlashes(String path) {
+    compressSlashes(path);
+
     int slashCount = 0;
     size_t pos = 0;
     size_t end = 0;
+
     while (end != NPOS) {
-        pos = sriptPath.find_first_of('/', end);
+        pos = path.find_first_of('/', end);
         if (pos == NPOS) {
             break;
         }
         slashCount++;
-        end = sriptPath.find_last_not_of('/', pos + 1);
+        end = path.find_last_not_of('/', pos + 1);
     }
-    slashCount--;
-
-    String res;
-    if (slashCount) {
-        for (int i = 0; i < slashCount; i++) {
-            res += "..";
-            res += i == slashCount - 1 ? "" : "/";
-        }
-    }
-    return res + pathInfo;
+    return slashCount;
 }
 
-void LocationBlock::setenvCgi(HttpRequest &req, const String &cgiScriptPath) {
+String LocationBlock::getPathTranslated(const String &pathInfo, const String &cgiResourcePath) {
+    String pathInfoResourcePath = this->getResourcePath(_path, pathInfo[0] == '/' ? &pathInfo[1] : pathInfo);
+    if (_root[0] == '/') {
+        return pathInfoResourcePath;
+    }
+
+    int cgiResourcePathSlashCount = countSlashes(cgiResourcePath);
+    if (startsWith(_root, "./")) {
+        cgiResourcePathSlashCount -= 1;
+    }
+
+    String res;
+    for (int i = 0; i < cgiResourcePathSlashCount; i++) {
+        res += "../";
+    }
+    res += pathInfoResourcePath;
+    compressSlashes(res);
+    return res;
+}
+
+void LocationBlock::setenvCgi(HttpRequest &req, const String &cgiResourcePath, const String &cgiScriptPath) {
     trySetenv("GATEWAY_INTERFACE", "CGI/1.1");
     trySetenv("SERVER_SOFTWARE", WEBSERV_V);
     String host = req.getHeader("Host");
@@ -129,12 +143,12 @@ void LocationBlock::setenvCgi(HttpRequest &req, const String &cgiScriptPath) {
 
     trySetenv("REQUEST_METHOD", req.getHttpMethod());
     trySetenv("QUERY_STRING", req.url().params);
-    trySetenv("SCRIPT_NAME", cgiScriptPath);
+    trySetenv("SCRIPT_NAME", cgiResourcePath);
 
     String pathInfo = parseCgiPathInfo(req, cgiScriptPath);
     trySetenv("PATH_INFO", pathInfo);
     if (pathInfo != "") {
-        trySetenv("PATH_TRANSLATED", getPathTranslated(cgiScriptPath, pathInfo));
+        trySetenv("PATH_TRANSLATED", getPathTranslated(pathInfo, cgiResourcePath));
     } else {
         unsetenv("PATH_TRANSLATED");
     }
@@ -150,7 +164,7 @@ void LocationBlock::setenvCgi(HttpRequest &req, const String &cgiScriptPath) {
     trySetenv("REDIRECT_STATUS", "200");  // Security needed to execute php-cgi
 
     trySetenv("REQUEST_URI", req.rawUrl());
-    trySetenv("SCRIPT_FILENAME", parsePathFileName(cgiScriptPath));
+    trySetenv("SCRIPT_FILENAME", parsePathFileName(cgiResourcePath));
 
     trySetenv("HTTP_COOKIE", req.getHeader("Cookie"));
 }

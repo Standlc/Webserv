@@ -82,6 +82,7 @@ void Block::setRoot(String root) {
     } else {
         _root = g_conf_path + root;
     }
+    compressSlashes(_root);
 }
 
 void Block::setUploadRoot(String dir) {
@@ -90,6 +91,7 @@ void Block::setUploadRoot(String dir) {
     } else {
         _uploadRoot = g_conf_path + dir;
     }
+    compressSlashes(_uploadRoot);
 }
 
 void Block::setIndex(String index) {

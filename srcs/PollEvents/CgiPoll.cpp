@@ -102,8 +102,8 @@ void execveScript(Server *server, String cgiScriptResourcePath, String cgiScript
 
     char *args[] = {(char *)&cgiScriptCommand[0], (char *)&scriptName[0], NULL};
     // char *args[] = {(char *)"/opt/homebrew/bin/php-cgi", (char *)"./php.php", NULL};
-    // debug("arg 0", String(args[0]));
-    // debug("arg 1", String(args[1]));
+    // debugErr("arg 0", args[0]);
+    // debugErr("arg 1", args[1]);
 
     if (execve(args[0], &args[0], environ) == -1) {
         debugErr("execve", strerror(errno));
