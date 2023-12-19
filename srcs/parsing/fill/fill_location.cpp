@@ -41,6 +41,7 @@ int fill_proxy_pass(const string &file, LocationBlock *server) {
 
 int fill_location(const string &file, ServerBlock *server) {
     int i = 0;
+    redirect_priority = 0;
     LocationBlock *location;
 
     location = server->addLocation();

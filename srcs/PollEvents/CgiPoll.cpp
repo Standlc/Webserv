@@ -187,7 +187,6 @@ int readCgiResponse(CgiPoll *cgi) {
 
     try {
         if (!cgiRes.isComplete() && cgiRes.resumeParsing()) {
-            debugParsingSuccesss(cgiRes, cgi->getFd(), PURPLE);
             return handleCgiResponse(cgi);
         }
         cgi->setWriteHandler(waitCgiProcessEnd);
@@ -203,6 +202,10 @@ int handleCgiResponse(CgiPoll *cgi) {
     if (cgi->clientStatus() != 0) {
         return handleCgiQuit(cgi, 502);
     }
+
+    debugParsingSuccesss(cgiRes, cgi->getFd(), PURPLE);
+    cgi->cgiRes().parseLocationHeader();
+    cgi->cgiRes().parseStatusHeader();
 
     const String &locationRedirect = cgiRes.getHeader("Location");
     if (locationRedirect != "" && locationRedirect[0] == '/') {

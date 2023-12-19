@@ -31,8 +31,8 @@ bool fill_data(string file, Server *server) {
     ServerBlock *block;
 
     file.erase(std::remove_if(file.begin(), file.end(), delete_for_fill), file.end());
-    redirect_priority = 0;
     while (file[index]) {
+        redirect_priority = 0;
         index = file.find("server{", start);
         if (file.find("server{", start) == string::npos)
             break ;
