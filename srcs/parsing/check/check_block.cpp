@@ -20,7 +20,7 @@ int check_error_page(const string &content)
 		int number_error = atoi(&content[i]);
 		if (number_error <= 0)
 			return (error_message(line_tracker(content.substr(i)), MERRPAGESYNT, EXERRPAGE));
-		if (number_error >= 600 || number_error < 100)
+		if (number_error >= 600 || number_error < 300)
 			return (error_message(line_tracker(content.substr(i)), MERRNUM, EXERRPAGE));
 		i += 3;
 		if (content[i] != ':')

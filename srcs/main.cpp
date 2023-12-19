@@ -81,7 +81,8 @@ int main(int argc, char *argv[]) {
     signal(SIGINT, handleSigint);
     std::srand(std::time(0));
     isDebug = 0;
-    g_conf_path = getRealtivePathToFile(argv[1]);
+    if (argc == 2 && argv[1])
+        g_conf_path = getRealtivePathToFile(argv[1]);
 
     if (parsing(argc, argv, server) == ERR) {
         delete server;
