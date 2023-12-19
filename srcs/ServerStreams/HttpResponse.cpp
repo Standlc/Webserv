@@ -24,8 +24,8 @@ void HttpResponse::assembleHeaders() {
 
 void HttpResponse::assembleResponse() {
     this->assembleHeaders();
-
     _outputData += CRLF;
+
     _outputData += _body;
     _outputDataSize = _outputData.size();
 }
@@ -98,15 +98,21 @@ void HttpResponse::listDirectory(const String &dir, const String &reqUrl) {
     DIR *dirStream = opendir(&dir[0]);
     if (!dirStream) {
         debugErr("opendir", strerror(errno));
+        closedir(dirStream);
         throw 500;
     }
 
     struct dirent *entry;
     readNextEntry(dirStream, &entry);
-
-    String listingPage = generateDirectoryListingPage(dir, reqUrl, entry, dirStream);
-    closedir(dirStream);
-    this->set(200, ".html", listingPage);
+    try {
+        String listingPage = generateDirectoryListingPage(dir, reqUrl, entry, dirStream);
+        closedir(dirStream);
+        this->set(200, ".html", listingPage);
+    }
+    catch (int err) {
+        closedir(dirStream);
+        throw err;
+    }
 }
 
 int HttpResponse::sendResponse(int fd) {

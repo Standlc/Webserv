@@ -11,9 +11,9 @@ long hexToInt(const String &str) {
     std::stringstream ss(str);
     long n;
     ss >> std::hex >> n;
-    if (ss.fail()) {
-        throw std::invalid_argument("Invalid input");
-    }
+    // if (ss.fail()) {
+    //     throw std::invalid_argument("Invalid input");
+    // }
     return n;
 }
 
@@ -21,9 +21,9 @@ long toInt(const String &str) {
     std::stringstream ss(str);
     long n;
     ss >> n;
-    if (ss.fail()) {
-        throw std::invalid_argument("Invalid input");
-    }
+    // if (ss.fail()) {
+    //     throw std::invalid_argument("Invalid input");
+    // }
     return n;
 }
 
@@ -395,7 +395,6 @@ std::vector<String> split(const String &str, const String &sep, size_t maxSize) 
         if (sep.find(str[i]) == NPOS) {
             start = i;
             start += countFrontSpaces(str, start);
-            // std::cout << start << '\n';
             while (i < strlen && (sep.find(str[i]) == NPOS || str[i] == '\"')) {
                 while (str[i] == '\"') {
                     i++;
@@ -417,7 +416,6 @@ std::vector<String> split(const String &str, const String &sep, size_t maxSize) 
             }
             if (size > 0) {
                 String item = str.substr(start, size);
-                // std::cout << "-" << item << '-' << '\n';
                 split.push_back(item);
                 splitSize++;
             }
@@ -425,4 +423,29 @@ std::vector<String> split(const String &str, const String &sep, size_t maxSize) 
         i++;
     }
     return split;
+}
+
+String generateDirectoryListingPage(const String &dir, String reqUrl, struct dirent *entry, DIR *dirStream) {
+    if (lastChar(reqUrl) != '/') {
+        reqUrl += "/";
+    }
+
+    String page = "<!DOCTYPE html><html><head>";
+    page += "<title>Index of " + reqUrl + "</title></head><body ";
+    page += "><h1> Index of " + reqUrl + " </h1><hr><pre style='display: flex;flex-direction:column;'>";
+
+    errno = 0;
+    while (entry) {
+        String entry_name = entry->d_name;
+        if (entry_name != "." && checkPathAccess(dir) == 200) {
+            if (isDirectory(dir + "/" + entry_name)) {
+                entry_name += "/";
+            }
+            page += "<a href='" + reqUrl + entry_name + "'>" + entry_name + "</a>";
+        }
+        readNextEntry(dirStream, &entry);
+    }
+
+    page += "</pre><hr></body></html>";
+    return page;
 }

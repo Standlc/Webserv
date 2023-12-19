@@ -122,7 +122,7 @@ DEPENDENCIES			=	Makefile \
 
 
 
-FLAGS					=	#-Wextra -Wall -Werror -std=c++98
+FLAGS					=	-Wextra -Wall -Werror -std=c++98
 
 
 

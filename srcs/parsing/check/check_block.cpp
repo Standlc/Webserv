@@ -192,7 +192,7 @@ int check_body_max_size(const string &content)
 	int i = 14;
 
 	int number = atoi(&content[i]);
-	if (number <= 0)
+	if (number < 0)
 		return (error_message(line_tracker(content.substr(i)), MBODYSIZE, NOEX));
 	while (content[i] >= '0' && content[i] <= '9')
 		i++;

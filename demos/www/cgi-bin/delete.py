@@ -36,7 +36,7 @@ if file_to_delete:
                         <img src="/icons/back.svg" alt="" />
                         Home</a
                         >
-                        <h2>File uploaded successfully</h2>
+                        <h2>File deleted successfully</h2>
                         <span style='color:red;'>{file_to_delete}</span>
                         <a href="/public">Uploaded files</a>
                         <span style="color:gray;">Powered by Python</span>

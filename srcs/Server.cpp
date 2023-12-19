@@ -270,7 +270,6 @@ ServerBlock* Server::findServerBlock(HttpRequest& req) {
         hostName = req.getSocketIpAddress();
     }
 
-    // check
     for (int i = 0; i < _serverBlockSize; i++) {
         if (_blocks[i].port() == port) {
             if (_blocks[i].isHost(hostName)) {
@@ -287,9 +286,6 @@ ServerBlock* Server::findServerBlock(HttpRequest& req) {
 ServerBlock* Server::addBlock() {
     _serverBlockSize++;
 
-    // ServerBlock* block = new ServerBlock();
-    // _blocks.push_back(*block);
-    // return block;
     ServerBlock block;
     _blocks.push_back(block);
     return &_blocks[_blocks.size() - 1];

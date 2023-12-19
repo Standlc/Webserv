@@ -11,13 +11,8 @@ const String &CgiResponse::getHeader(const String &field) {
 void CgiResponse::parseStatusHeader() {
     const String &statusHeader = _headers.find("Status");
     if (statusHeader != "") {
-        try {
-            _statusHeaderCode = toInt(statusHeader);
-            if (_statusHeaderCode < 300 || _statusHeaderCode > 599) {
-                throw 502;
-            }
-        } catch (const std::exception &e) {
-            std::cerr << e.what() << '\n';
+        _statusHeaderCode = toInt(statusHeader);
+        if (_statusHeaderCode < 300 || _statusHeaderCode > 599) {
             throw 502;
         }
     }
