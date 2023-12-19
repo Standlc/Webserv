@@ -5,11 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="/styles.css" />
     <title>Webserv</title>
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+      .center-text {
+        text-align: center;
+      }
+    </style>
   </head>
 
   <body>
     <div class="wrapper">
       <div class="flex-col">
+        <div class="center-text">
+          <h1 id="title">
+            Your cookie is:
+          </h1>
+        </div>
         <script>
             function getCookie(cookieName) {
                 const name = cookieName + "=";
@@ -26,9 +43,16 @@
                 }
                 return "";
                 }
-            const valeurMonCookie = getCookie("truc");
+            const valeurMonCookie = getCookie("SessionCookie");
             console.log(valeurMonCookie);
-            document.body.style.backgroundColor = "#" + valeurMonCookie;
+            let titleEl = document.getElementById("title");
+            if (valeurMonCookie != "") {
+              document.body.style.backgroundColor = "#" + valeurMonCookie;
+              titleEl.textContent = titleEl.textContent + " " + valeurMonCookie;
+            }
+            else {
+              titleEl.textContent = "You don't have a cookie :(";
+            }
         </script>
       </div>
     </div>
