@@ -20,6 +20,7 @@ clientPollHandlerType ServerBlock::execute(ClientPoll &client) {
     try {
         LocationBlock *macthingLocation = this->findLocationBlockByPath(client.req().url().path);
         throwIf(macthingLocation == NULL, 404);
+        client.setLocation(*macthingLocation);
 
         return macthingLocation->execute(client);
     } catch (int status) {

@@ -90,6 +90,7 @@ class ClientPoll : public PollFd {
     HttpResponse &res();
     HttpRequest &req();
 
+    void setLocation(LocationBlock &loc);
     int proxyPollStatus();
     int cgiPollStatus();
     void resetConnection();

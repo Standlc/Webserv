@@ -95,17 +95,16 @@ class LocationBlock : public Block {
     String _path;
     bool _isExact;
     ProxyUrl *_proxyPass;
-    ServerBlock &_serverBlock;
+    ServerBlock *_serverBlock;
     Redirection _redirection;
 
    public:
-    LocationBlock(
-        ServerBlock &serverBlock);
+    LocationBlock();
+    LocationBlock(ServerBlock &serverBlock);
     LocationBlock(const LocationBlock &b);
     ~LocationBlock();
     LocationBlock &operator=(const LocationBlock &b);
-
-    ServerBlock &serverBlock();
+    ServerBlock *serverBlock();
 
     bool handlesHttpMethod(const String &httpMethod);
     bool isMethodAllowed(const String &httpMethod);

@@ -13,20 +13,13 @@ void CgiResponse::parseStatusHeader() {
     if (statusHeader != "") {
         try {
             _statusHeaderCode = toInt(statusHeader);
+            if (_statusHeaderCode < 300 || _statusHeaderCode > 599) {
+                throw 502;
+            }
         } catch (const std::exception &e) {
             std::cerr << e.what() << '\n';
             throw 502;
         }
-    }
-}
-
-void CgiResponse::parseLocationHeader() {
-    const String &location = _headers.find("Location");
-    if (location == "") {
-        return;
-    }
-    if (!startsWith(location, "http://") && !startsWith(location, "https://") && location[0] != '/') {
-        throw 502;
     }
 }
 

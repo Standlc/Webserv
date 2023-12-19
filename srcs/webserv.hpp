@@ -48,7 +48,6 @@
 
 typedef std::string String;
 typedef std::map<String, String> stringMap;
-// typedef std::unordered_multimap<String, String> unorderedStringMultiMap;
 
 class Server;
 class Block;

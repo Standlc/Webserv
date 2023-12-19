@@ -95,7 +95,7 @@ String HttpRequest::getSocketPort() {
 
 void HttpRequest::setUrl(const String &url) {
     _rawUrl = url;
-    this->processUrl(url);
+    this->processUrl(_rawUrl);
 }
 
 void HttpRequest::putHeaders(String &buf, String headersToDiscard[]) {

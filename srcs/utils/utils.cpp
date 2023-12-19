@@ -210,16 +210,6 @@ void getFileContent(const String &path, String &buf) {
     if (!file) {
         throw 500;
     }
-
-    // std::ifstream file(path);
-    // if (!file) {
-    //     debugErr("Error while reading", &path[0]);
-    //     throw 500;
-    // }
-    // std::stringstream fileContent;
-    // fileContent << file.rdbuf();
-    // buf = fileContent.str();
-    // file.close();
 }
 
 String parsePathFileName(const String &path) {

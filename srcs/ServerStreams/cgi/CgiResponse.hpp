@@ -13,7 +13,6 @@ class CgiResponse : public HttpParser {
    public:
     CgiResponse(HttpResponse &clientRes);
     void parseStatusHeader();
-    void parseLocationHeader();
     void setClientResponse();
     bool resumeParsing();
     const String &getHeader(const String &field);

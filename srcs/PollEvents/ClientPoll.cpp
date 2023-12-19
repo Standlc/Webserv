@@ -9,13 +9,21 @@ ClientPoll::ClientPoll(int fd, Server& server) : PollFd(fd, server) {
 }
 
 ClientPoll::ClientPoll(const ClientPoll& other) : PollFd(other._fd, other._server) {
+    _location = NULL;
     *this = other;
 }
 
 ClientPoll& ClientPoll::operator=(const ClientPoll& other) {
     _writeHandler = other._writeHandler;
     _readHandler = other._readHandler;
-    _location = other._location;
+
+    delete _location;
+    if (other._location) {
+        _location = new LocationBlock(*other._location);
+    } else {
+        _location = NULL;
+    }
+
     _req = new HttpRequest(other._fd);
     _res = new HttpResponse(*_req);
     _cgiPollStatus = other._cgiPollStatus;
@@ -26,6 +34,7 @@ ClientPoll& ClientPoll::operator=(const ClientPoll& other) {
 ClientPoll::~ClientPoll() {
     delete _res;
     delete _req;
+    delete _location;
 }
 
 void ClientPoll::resetConnection() {
@@ -35,7 +44,14 @@ void ClientPoll::resetConnection() {
     _res = new HttpResponse(*_req);
     _cgiPollStatus = (int*)NULL;
     _proxyStatus = (int*)NULL;
+    delete _location;
+    _location = NULL;
     this->resetStartTime();
+}
+
+void ClientPoll::setLocation(LocationBlock &loc) {
+    delete _location;
+    _location = new LocationBlock(loc);
 }
 
 void ClientPoll::setCgiPollStatus(SharedPtr& cgiStatus) {
@@ -87,7 +103,11 @@ void ClientPoll::loadErrorPageFromLocation(LocationBlock* location, int statusCo
         location->loadErrPage(statusCode, *_res, location->getPath());
     } catch (int status) {
         try {
-            location->serverBlock().loadErrPage(statusCode, *_res, location->getPath());
+            if (location->serverBlock()) {
+                location->serverBlock()->loadErrPage(statusCode, *_res, location->getPath());
+            } else {
+                throw status;
+            }
         } catch (int status) {
             _server.loadDefaultErrPage(status, *_res);
         }

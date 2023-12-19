@@ -162,9 +162,9 @@ int cgiQuitPoll(CgiPoll *cgi) {
     int pid = cgi->cgiPid();
 
     if (pid != -1 && waitpid(pid, NULL, WNOHANG) == pid) {
-        return -1;
+        return *(cgi->getStatus());
     }
-    return pid == -1;
+    return pid == -1 ? *(cgi->getStatus()) : 0;
 }
 
 int handleCgiQuit(CgiPoll *cgi, int status) {
@@ -202,20 +202,24 @@ int handleCgiResponse(CgiPoll *cgi) {
     if (cgi->clientStatus() != 0) {
         return handleCgiQuit(cgi, 502);
     }
-
     debugParsingSuccesss(cgiRes, cgi->getFd(), PURPLE);
-    cgi->cgiRes().parseLocationHeader();
-    cgi->cgiRes().parseStatusHeader();
 
-    const String &locationRedirect = cgiRes.getHeader("Location");
-    if (locationRedirect != "" && locationRedirect[0] == '/') {
-        debug("> internal redirect >>", "", PURPLE);
-        cgi->client().req().setUrl(locationRedirect);
-        cgi->client().setWriteHandler(executeClientRequest);
-    } else {
-        debug("> setting client response, socket", toString(cgi->client().getFd()), PURPLE);
-        cgiRes.setClientResponse();
-        cgi->client().setWriteHandler(sendResponseToClient);
+    try {
+        cgi->cgiRes().parseStatusHeader();
+        const String &locationRedirect = cgiRes.getHeader("Location");
+
+        if (locationRedirect != "" && !startsWith(locationRedirect, "http://") && !startsWith(locationRedirect, "https://")) {
+            debug("> internal redirect >>", "", PURPLE);
+            cgi->client().req().setUrl(locationRedirect);
+            cgi->client().setWriteHandler(executeClientRequest);
+        } else {
+            debug("> setting client response, socket", toString(cgi->client().getFd()), PURPLE);
+            cgiRes.setClientResponse();
+            cgi->client().setWriteHandler(sendResponseToClient);
+        }
+    }
+    catch (int status) {
+        return handleCgiQuit(cgi, 502);
     }
     return handleCgiQuit(cgi, -1);
 }

@@ -1,6 +1,17 @@
 #include "../Block.hpp"
 
-LocationBlock::LocationBlock(ServerBlock &serverBlock) : Block(serverBlock), _serverBlock(serverBlock) {
+LocationBlock::LocationBlock() : Block() {
+    _isExact = false;
+    _allowedMethods.push_back("GET");
+    _serverMethodshandlers["GET"] = &LocationBlock::getMethod;
+    _serverMethodshandlers["POST"] = &LocationBlock::postMethod;
+    _serverMethodshandlers["DELETE"] = &LocationBlock::deleteMethod;
+    _requestHandler = &LocationBlock::serverMethodHandler;
+    _proxyPass = NULL;
+    _serverBlock = NULL;
+};
+
+LocationBlock::LocationBlock(ServerBlock &serverBlock) : Block(serverBlock), _serverBlock(new ServerBlock(serverBlock)) {
     _isExact = false;
     _allowedMethods.push_back("GET");
     _serverMethodshandlers["GET"] = &LocationBlock::getMethod;
@@ -12,13 +23,16 @@ LocationBlock::LocationBlock(ServerBlock &serverBlock) : Block(serverBlock), _se
 
 LocationBlock::~LocationBlock() {
     delete _proxyPass;
+    delete _serverBlock;
 }
 
-LocationBlock::LocationBlock(const LocationBlock &b) : _serverBlock(b._serverBlock) {
+LocationBlock::LocationBlock(const LocationBlock &b) {
+    _proxyPass = NULL;
+    _serverBlock = NULL;
     *this = b;
 }
 
-ServerBlock &LocationBlock::serverBlock() {
+ServerBlock *LocationBlock::serverBlock() {
     return _serverBlock;
 }
 
@@ -29,6 +43,8 @@ LocationBlock &LocationBlock::operator=(const LocationBlock &b) {
     _allowedMethods = b._allowedMethods;
     _path = b._path;
     _isExact = b._isExact;
+
+    delete _proxyPass;
     if (b._proxyPass) {
         _proxyPass = new ProxyUrl(*b._proxyPass);
     } else {
@@ -36,6 +52,13 @@ LocationBlock &LocationBlock::operator=(const LocationBlock &b) {
     }
     _redirection = b._redirection;
     _fallBack = b._fallBack;
+
+    delete _serverBlock;
+    if (b._serverBlock) {
+        _serverBlock = new ServerBlock(*b._serverBlock);
+    } else {
+        _serverBlock = NULL;
+    }
     return *this;
 }
 

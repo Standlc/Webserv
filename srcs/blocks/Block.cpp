@@ -39,20 +39,16 @@ void Block::loadErrPage(int statusCode, HttpResponse &res, const String &locatio
 
 String Block::getResourcePath(const String &reqPath, const String &file) {
     if (file == "") {
-        std::cout << "path => " << _root + reqPath << "\n";
         return _root + reqPath;
     }
 
     if (file[0] == '/') {
-        std::cout << "path => " << _root + file << "\n";
         return _root + file;
     }
 
     if (lastChar(reqPath) == '/') {
-        std::cout << "path => " << _root + reqPath + file << "\n";
         return _root + reqPath + file;
     } else {
-        std::cout << "path => " << _root + parseFileDirectory(reqPath) + file << "\n";
         return _root + parseFileDirectory(reqPath) + file;
     }
 }
