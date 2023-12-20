@@ -4,17 +4,14 @@ Server::Server() : _serverBlockSize(0) {
 }
 
 Server::~Server() {
-    for (size_t i = 0; i < _pollFds.size(); i++) {
-        delete _pollFds[i];
-        _pollFds.erase(_pollFds.begin() + i);
-    }
+    this->deleteResource();
 }
 
 void Server::deleteResource() {
     for (size_t i = 0; i < _pollFds.size(); i++) {
         delete _pollFds[i];
-        _pollFds.erase(_pollFds.begin() + i);
     }
+    _pollFds.resize(0);
 }
 
 struct addrinfo* getServerAddressInfo(String serverIpAddress, String port) {

@@ -19,7 +19,6 @@ int main(int argc, char *argv[]) {
     g_conf_path = getRealtivePathToFile(argc == 2 ? argv[1] : "");
 
     if (parsing(argc, argv, &server) == ERR) {
-        server.deleteResource();
         return (1);
     }
 
@@ -30,10 +29,8 @@ int main(int argc, char *argv[]) {
             std::cout << str << '\n';
         }
     } catch (const std::exception &e) {
-        std::cout << e.what() << "\n";
         return 1;
     }
 
-    server.deleteResource();
     return 0;
 }
