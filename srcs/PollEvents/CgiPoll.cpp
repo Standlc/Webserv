@@ -247,8 +247,8 @@ int waitCgiProcessEnd(CgiPoll *cgi) {
 }
 
 int sendCgiRequest(CgiPoll *cgi) {
-    if (cgi->clientStatus() != 0) {
-        return handleCgiQuit(cgi, -1);
+    if (cgi->clientStatus() != 0 || checkTimeout(cgi->startTime(), CGI_TIMEOUT)) {
+        return handleCgiQuit(cgi, 504);
     }
 
     int sendStatus = cgi->cgiReq().send(cgi->getFd());
