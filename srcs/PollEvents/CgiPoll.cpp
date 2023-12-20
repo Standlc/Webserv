@@ -7,7 +7,6 @@ CgiPoll::CgiPoll(CgiSockets &cgiSockets, ClientPoll &client, struct pollfd &stru
     _pid = -1;
     _clientStatus = client.getStatus();
     client.setCgiPollStatus(_status);
-    // _concurrentReadWrite = false;
     _cgiReq = new CgiRequest(client.req());
     _cgiRes = new CgiResponse(client.res());
 }
@@ -87,13 +86,10 @@ int CgiPoll::tryFork() {
 }
 
 void execveScript(Server *server, String cgiScriptResourcePath, String cgiScriptCommand) {
-    delete server;
+    server->deleteResource();
 
     String cgiScriptDir = parseFileDirectory(cgiScriptResourcePath);
     String scriptName = "./" + parsePathFileName(cgiScriptResourcePath);
-    // debugErr("cgi dir", &cgiScriptDir[0]);
-    // debugErr("script name", &scriptName[0]);
-    // debugErr("command", &cgiScriptCommand[0]);
 
     if (chdir(&cgiScriptDir[0]) == -1) {
         debugErr("chdir", strerror(errno));
@@ -101,10 +97,6 @@ void execveScript(Server *server, String cgiScriptResourcePath, String cgiScript
     }
 
     char *args[] = {(char *)&cgiScriptCommand[0], (char *)&scriptName[0], NULL};
-    // char *args[] = {(char *)"/opt/homebrew/bin/php-cgi", (char *)"./php.php", NULL};
-    // debugErr("arg 0", args[0]);
-    // debugErr("arg 1", args[1]);
-
     if (execve(args[0], &args[0], environ) == -1) {
         debugErr("execve", strerror(errno));
         throw 1;
@@ -115,7 +107,7 @@ void preventChildFromKillingItself(int &pid) {
     pid = -1;
 }
 
-void CgiPoll::forkAndexecuteScript(Server *server, const String &cgiResourcePath, const String &cgiScriptCommand) {
+void CgiPoll::forkAndexecuteScript(Server &server, const String &cgiResourcePath, const String &cgiScriptCommand) {
     debug("> forking and executing CGI script, socket", toString(_fd), PURPLE);
     _pid = tryFork();
 
@@ -123,8 +115,9 @@ void CgiPoll::forkAndexecuteScript(Server *server, const String &cgiResourcePath
         try {
             preventChildFromKillingItself(_pid);
             this->redirectCgiProcessInputOutput();
-            execveScript(server, cgiResourcePath, cgiScriptCommand);
+            execveScript(&server, cgiResourcePath, cgiScriptCommand);
         } catch (int status) {
+            // std::exit(1);
             throw std::runtime_error("CGI Program Failed.");
         }
     }
@@ -161,8 +154,12 @@ int CgiPoll::cgiPid() {
 int cgiQuitPoll(CgiPoll *cgi) {
     int pid = cgi->cgiPid();
 
-    if (pid != -1 && waitpid(pid, NULL, WNOHANG) == pid) {
-        return *(cgi->getStatus());
+    if (pid != -1) {
+        int waitPidStatus = waitpid(pid, NULL, WNOHANG);
+        if (waitPidStatus == pid || waitPidStatus == -1) {
+            return *(cgi->getStatus());
+        }
+        return 0;
     }
     return pid == -1 ? *(cgi->getStatus()) : 0;
 }
@@ -217,8 +214,7 @@ int handleCgiResponse(CgiPoll *cgi) {
             cgiRes.setClientResponse();
             cgi->client().setWriteHandler(sendResponseToClient);
         }
-    }
-    catch (int status) {
+    } catch (int status) {
         return handleCgiQuit(cgi, 502);
     }
     return handleCgiQuit(cgi, -1);
@@ -236,8 +232,10 @@ int waitCgiProcessEnd(CgiPoll *cgi) {
 
     int pid = cgi->cgiPid();
     int exitStatus = 0;
-    if (waitpid(pid, &exitStatus, WNOHANG) == pid) {
+    int waitPidStatus = waitpid(pid, &exitStatus, WNOHANG);
+    if (waitPidStatus == pid || waitPidStatus == -1) {
         if (WIFEXITED(exitStatus) && WEXITSTATUS(exitStatus) != 0) {
+            debug("CGI process has exit with an error", toString(pid), GRAY);
             return handleCgiQuit(cgi, 502);
         }
 

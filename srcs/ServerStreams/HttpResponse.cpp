@@ -108,8 +108,7 @@ void HttpResponse::listDirectory(const String &dir, const String &reqUrl) {
         String listingPage = generateDirectoryListingPage(dir, reqUrl, entry, dirStream);
         closedir(dirStream);
         this->set(200, ".html", listingPage);
-    }
-    catch (int err) {
+    } catch (int err) {
         closedir(dirStream);
         throw err;
     }

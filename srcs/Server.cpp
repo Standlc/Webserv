@@ -6,6 +6,14 @@ Server::Server() : _serverBlockSize(0) {
 Server::~Server() {
     for (size_t i = 0; i < _pollFds.size(); i++) {
         delete _pollFds[i];
+        _pollFds.erase(_pollFds.begin() + i);
+    }
+}
+
+void Server::deleteResource() {
+    for (size_t i = 0; i < _pollFds.size(); i++) {
+        delete _pollFds[i];
+        _pollFds.erase(_pollFds.begin() + i);
     }
 }
 

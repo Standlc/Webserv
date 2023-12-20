@@ -17,6 +17,10 @@ void ProxyResponse::setClientRes() {
     _headers.add("Content-Length", toString(_bodySize));
     _clientRes.addDefaultHeaders(_headers);
 
-    _clientRes.setBody(_rawData.substr(_endOfHeadersPos, _bodySize));
+    if (_endOfHeadersPos != NPOS && _bodySize > 0) {
+        _clientRes.setBody(_rawData.substr(_endOfHeadersPos, _bodySize));
+    } else {
+        _clientRes.setBody("");
+    }
     _clientRes.set(_responseStatus);
 }

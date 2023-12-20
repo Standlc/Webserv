@@ -135,7 +135,7 @@ class CgiPoll : public PollFd {
     CgiResponse &cgiRes();
     int clientStatus();
     ClientPoll &client();
-    void forkAndexecuteScript(Server *server, const String &cgiResourcePath, const String &cgiScriptCommand);
+    void forkAndexecuteScript(Server &server, const String &cgiResourcePath, const String &cgiScriptCommand);
     void redirectCgiProcessInputOutput();
 
     void switchToResponseReadableSocket();

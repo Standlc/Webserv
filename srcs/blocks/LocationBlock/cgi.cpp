@@ -69,7 +69,7 @@ clientPollHandlerType LocationBlock::handleCgi(ClientPoll &client, const String 
         cgiPoll.setReadHandler(NULL);
         cgiPoll.setWriteHandler(sendCgiRequest);
     }
-    cgiPoll.forkAndexecuteScript(&client.server(), cgiResourcePath, _cgiCommands[cgiExtension]);
+    cgiPoll.forkAndexecuteScript(client.server(), cgiResourcePath, _cgiCommands[cgiExtension]);
     return checkCgiPoll;
 }
 

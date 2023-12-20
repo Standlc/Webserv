@@ -34,6 +34,10 @@ String toString(long n) {
 }
 
 String getRealtivePathToFile(String path) {
+    if (path == "") {
+        return "";
+    }
+
     int lastSlash = path.find_last_of("/");
     if (lastSlash == -1) {
         return "";
