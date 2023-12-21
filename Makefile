@@ -1,4 +1,4 @@
-NAME					=	webserv
+NAME					=	almondServ
 
 
 
@@ -134,7 +134,7 @@ all: $(NAME)
 
 $(NAME): $(OBJECTS)
 	@c++ $(FLAGS) $(OBJECTS) -o $(NAME)
-	@echo "\033[32mwebserv compiled"
+	@echo "\033[32malmondServ compiled"
 
 binaries/%.o: srcs/%.cpp $(DEPENDENCIES)
 	@mkdir -p $(@D)
@@ -145,11 +145,11 @@ binaries :
 
 clean:
 	@$(RM) binaries/
-	@echo "\033[36mwebserv binaries files have been deleted"
+	@echo "\033[36malmondServ binaries files have been deleted."
 
 fclean: clean
 	@$(RM) $(NAME)
-	@echo "\033[36mwebserv file is delete"
+	@echo "\033[36malmondServ executable is deleted."
 
 re: fclean all
 
