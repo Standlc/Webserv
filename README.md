@@ -78,7 +78,7 @@ server {
 | upload_root | Root where uploaded files using the core webserv POST method will be stored. | absolute or relative path | ```uploaded_root: /some/dir;```
 | listen | IP address and/or port for a server block. | [ip_address]:[port] | ```listen: 0.0.0.0:3000;```
 | host_names | Host names your server block will respond to. | list of [host_name] | ```host_names: random.io;```
-| location | Declaration of a location block. | [location_path] {} | ```location: /some/path {index: index.html}```
+| location | Declaration of a location block. | [location_path] {...} | ```location: /some/path {index: index.html}```
 | index | File to be maped by a request's url if it maps to a directory. | absolute or relative path | ```index: /index.html;``` 
 | fallback | File or directory to be maped by a request's url if the requested resource doesn't exits. | absolute or relative path | ```fallback: /index.html;``` 
 | methods | HTTP methods allowed for a specific path. | list of [valid_HTTP_method] | ```methods: GET, POST, PUT;```
