@@ -76,17 +76,17 @@ server {
 | -------- | -------- | ------ | ------- |
 | root | Root directory where your website files are located. | absolute or relative path | ```root: /some/dir;```
 | upload_root | Root where uploaded files using the core webserv POST method will be stored. | absolute or relative path | ```uploaded_root: /some/dir;```
-| listen | IP address and/or port for a server block. | <ip_address>:<port> | ```listen: 0.0.0.0:3000;```
-| host_names | Host names your server block will respond to. | list of <host_name> | ```host_names: random.io;```
-| location | Declaration of a location block. | <location_path> {} | ```location: /some/path:{index: index.html}```
+| listen | IP address and/or port for a server block. | [ip_address]:[port] | ```listen: 0.0.0.0:3000;```
+| host_names | Host names your server block will respond to. | list of [host_name] | ```host_names: random.io;```
+| location | Declaration of a location block. | <location_path> {} | ```location: /some/path {index: index.html}```
 | index | File to be maped by a request's url if it maps to a directory. | absolute or relative path | ```index: /index.html;``` 
 | fallback | File or directory to be maped by a request's url if the requested resource doesn't exits. | absolute or relative path | ```fallback: /index.html;``` 
-| methods | HTTP methods allowed for a specific path. | list of <valid_HTTP_method> | ```methods: GET, POST, PUT;```
-| error_pages | Your error pages to send. | { list of <error_status>: <path/to/page>; } | ```error_pages: {404: 404.html}```
+| methods | HTTP methods allowed for a specific path. | list of [valid_HTTP_method] | ```methods: GET, POST, PUT;```
+| error_pages | Your error pages to send. | { list of [error_status]: [path/to/page]; } | ```error_pages: {404: 404.html}```
 | auto_index | Listing of a directory if index file doesn't exist in it. | on/off | ```auto_index: on;```
-| add_headers | Headers to add if client request was successfull. | { list of <field>: <value>; } | ```add_headers: {Content-Disposition: attachment;}```
+| add_headers | Headers to add if client request was successfull. | { list of [field]: [value]; } | ```add_headers: {Content-Disposition: attachment;}```
 | redirect | Client redirection for a specific path.  | absolute or local URI | ```redirect: </index.html>;```
-| body_max_size | Client's body request maximum size in bytes. | <some_limit> (MB/KB/ or plain bytes) | ```body_max_size: 10MB;```
+| body_max_size | Client's body request maximum size in bytes. | [some_limit] (MB/KB/ or plain bytes) | ```body_max_size: 10MB;```
 | proxy_pass | Absolute URI a specific location will proxy its requests to. | HTTP absolute URI | ```proxy_pass: http://localhost:5000;```
 
 # Resource mapping
