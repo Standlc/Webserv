@@ -1,6 +1,6 @@
-# AlmondServ - A Web Server in C++
+# Webserv - A Web Server in C++
 
-AlmondServ is a lightweight web server made in C++98 style. It provides essential built-in functionalities, supporting the GET, POST and DELETE methods.
+Webserv is a lightweight web server made in C++98 style. It provides essential built-in functionalities, supporting the GET, POST and DELETE methods.
 
 ## Features
 
@@ -16,7 +16,7 @@ AlmondServ is a lightweight web server made in C++98 style. It provides essentia
 
 # Usage
 
-Compile AlmondServ with the provided Makefile:
+Compile Webserv with the provided Makefile:
 
 ```bash
 make
@@ -25,14 +25,14 @@ make
 Run the server with the desired configuration file:
 
 ```bash
-./AlmondServ [config_file]
+./webserv [config_file]
 ```
 
-AlmondServ must be run from the project's root.
+Webserv must be run from the project's root.
 
 # Configuration File
 
-AlmondServ uses a configuration file to specify the servers's settings.
+Webserv uses a configuration file to specify the servers's settings.
 It features directives inheritance, meaning server blocks' directives can be passed down to location blocks or overitten by if redeclared.
 
 ```
@@ -52,7 +52,7 @@ server {
 
 ## Proxy Pass
 
-AlmondServ supports proxying any HTTP method.
+Webserv supports proxying any HTTP method.
 To use it as a proxy server, configure the `proxy_pass` directive in your configuration file:
 
 ```
@@ -65,7 +65,7 @@ server {
 }
 ```
 
-Keep in mind that AlmondServ, being an HTTP server does not support HTTPS proxies.
+Keep in mind that Webserv, being an HTTP server does not support HTTPS proxies.
 
 ## CGI Execution
 
